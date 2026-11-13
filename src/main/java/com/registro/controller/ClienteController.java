@@ -2,6 +2,7 @@ package com.registro.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -25,7 +26,8 @@ public class ClienteController extends HttpServlet {
 
         switch (accion) {
             case "listar":
-                response.sendRedirect(request.getContextPath() + "/ListaClientes.xhtml");
+                // 1. Aquí llamamos a la nueva función de búsqueda que creamos abajo
+                buscarYListarClientes(request, response);
                 break;
 
             case "nuevo":
@@ -39,13 +41,13 @@ public class ClienteController extends HttpServlet {
             case "grabar":
                 ClienteDTO nuevo = extraerCliente(request);
                 facade.registrarCliente(nuevo);
-                response.sendRedirect(request.getContextPath() + "/ListaClientes.xhtml");
+                response.sendRedirect(request.getContextPath() + "/ClienteController?accion=listar");
                 break;
 
             case "actualizar":
                 ClienteDTO editado = extraerCliente(request);
                 facade.actualizarCliente(editado);
-                response.sendRedirect(request.getContextPath() + "/ListaClientes.xhtml");
+                response.sendRedirect(request.getContextPath() + "/ClienteController?accion=listar");
                 break;
 
             case "eliminar":
@@ -53,15 +55,16 @@ public class ClienteController extends HttpServlet {
                 ClienteDTO del = new ClienteDTO();
                 del.setCliente_ID(idEliminar);
                 facade.EliminarCliente(del);
-                response.sendRedirect(request.getContextPath() + "/ListaClientes.xhtml");
+                response.sendRedirect(request.getContextPath() + "/ClienteController?accion=listar");
                 break;
 
             default:
-                response.sendRedirect(request.getContextPath() + "/ListaClientes.xhtml");
+                buscarYListarClientes(request, response);
                 break;
         }
     }
 
+    // FUNCIÓN AUXILIAR 1: Extrae los parámetros del formulario HTTP hacia el DTO
     private ClienteDTO extraerCliente(HttpServletRequest request) {
         ClienteDTO c = new ClienteDTO();
         c.setCliente_ID(request.getParameter("codigo"));
@@ -80,6 +83,51 @@ public class ClienteController extends HttpServlet {
         return c;
     }
 
+
+    private void buscarYListarClientes(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        String tipoBusqueda = request.getParameter("tipo"); // nombre, dni, codigo
+        String valor = request.getParameter("valor");       // texto ingresado
+        
+        List<ClienteDTO> listaClientes = new ArrayList<>();
+
+        try {
+            if (tipoBusqueda == null || valor == null || valor.trim().isEmpty()) {
+
+                listaClientes = facade.ObtenerListadoCliente();
+            } else {
+                switch (tipoBusqueda.toLowerCase()) {
+                    case "nombre":
+                        listaClientes = facade.ListaClientesXNombre(valor);
+                        break;
+                    case "dni":
+                        ClienteDTO  clienteDni = facade.ListaClienteXRucDni(valor);
+                        if (clienteDni != null) {
+                        listaClientes.add(clienteDni);
+                    }
+                        break;
+                    case "codigo":
+                        ClienteDTO clienteCod = facade.ListaClienteXCod(valor); 
+                         if (clienteCod != null) {
+                        listaClientes.add(clienteCod);
+                    }
+                        break;
+                    default:
+                        listaClientes = facade.ObtenerListadoCliente();
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("error", "Error en el sistema de búsqueda.");
+        }
+
+        // Enviamos la lista al JSP
+        request.setAttribute("listaClientes", listaClientes);
+        request.getRequestDispatcher("listaClientes.jsp").forward(request, response);
+    }
+        
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

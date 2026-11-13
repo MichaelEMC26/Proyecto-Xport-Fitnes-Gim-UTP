@@ -1,3 +1,4 @@
+
 *{box-sizing:border-box}
 :root{--navy:#102653;--blue:#2864F0;--blue-dark:#174CC5;--page:#EEF2F8;--text:#14284F;--muted:#64748B;--border:#D5DDE8}
 html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--page);color:var(--text)}
@@ -38,9 +39,69 @@ html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;backgr
 .foto-ayuda{font-size:10px;line-height:1.4;color:#718096;margin:10px 0 0}
 .botones-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;border-top:1px solid #E0E6EF;padding-top:18px;margin-top:22px}
 .btn-form{border:0;border-radius:7px;min-height:38px;padding:9px 10px;color:#fff;font-size:12px;font-weight:700;cursor:pointer}
-.btn-nuevo{background:#2864F0}.btn-grabar{background:#20C464}.btn-actualizar{background:#3D83F6}.btn-salir{background:#F04444}
+.btn-nuevo{background:#2864F0}.btn-grabar{background-color:#F04444}.btn-actualizar{background-color:#F04444}.btn-salir{background:#F04444}
 .btn-form:hover{filter:brightness(.94)}
 .nota-funcionalidad{font-size:11px;color:#7B8798;margin:12px 0 0}
+
 @media(max-width:1150px){.contenido-form{grid-template-columns:minmax(0,1fr) 190px}.fila-tres{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.dashboard-container{display:block}.sidebar{width:100%;min-height:auto;padding:15px}.saludo-admin h2{margin-bottom:14px}.sidebar-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.sidebar-menu li{margin:0}.sidebar-menu2{display:flex;gap:8px;margin-top:12px;padding-top:10px}.main-content{padding:12px}.panel{padding:17px}.contenido-form{grid-template-columns:minmax(0,1fr)}.foto-card{max-width:300px;width:100%;justify-self:center}}
 @media(max-width:620px){.fila,.fila-tres{grid-template-columns:1fr}.botones-form{grid-template-columns:repeat(2,minmax(0,1fr))}.titulo-modulo h1{font-size:19px}}
+
+
+
+/* =========================================
+   BOTONES DE REGISTRO DE SOCIOS Y PERSONAL
+========================================= */
+
+.botones-form .btn-form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    color: #FFFFFF !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+/* GUARDAR / GRABAR */
+.botones-form .btn-guardar {
+    background: #20C464 !important;
+    color: #FFFFFF !important;
+}
+
+.botones-form .btn-guardar:hover {
+    background: #159C4C !important;
+    transform: translateY(-1px);
+}
+
+/* LIMPIAR */
+.botones-form .btn-limpiar {
+    background: #2864F0 !important;
+    color: #FFFFFF !important;
+}
+
+.botones-form .btn-limpiar:hover {
+    background: #174CC5 !important;
+}
+
+/* SALIR */
+.botones-form .btn-salir {
+    background: #F04444 !important;
+    color: #FFFFFF !important;
+}
+
+.botones-form .btn-salir:hover {
+    background: #D92F2F !important;
+}
+
+.botones-form .btn-form:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}

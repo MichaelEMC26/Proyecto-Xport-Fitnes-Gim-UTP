@@ -2,6 +2,7 @@ package com.registro.dao;
 
 import com.registro.config.ConexionBD;
 import com.registro.dto.ClienteDTO;
+import com.registro.dto.ProductosDTO;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -185,4 +186,170 @@ public class ClienteDAO {
         }
         return EliminacionCorrecta;
     }
+    
+    public ClienteDTO ListaClienteXCod(String Cliente_ID)
+    {
+      ClienteDTO listaCliente = null;
+      Connection cn = null;
+      CallableStatement cs = null;
+      ResultSet rs = null;
+      
+      try
+      {
+          cn = ConexionBD.obtenerConexion();
+          String sql = "{call sp_lista_ClienteXcod(?)}";
+          
+          cs = cn.prepareCall(sql);
+          cs.setString(1,Cliente_ID);
+          
+          rs = cs.executeQuery();
+
+          if(rs.next())
+          {
+              listaCliente = new ClienteDTO();
+              
+               listaCliente.setCliente_ID(rs.getString("Cliente_ID"));
+               listaCliente.setRazonSocial(rs.getString("RazonSocial"));
+               listaCliente.setDireccion(rs.getString("Direccion"));
+               listaCliente.setTelefono(rs.getString("Telefono"));
+               listaCliente.setEstado(rs.getString("Estado"));
+               listaCliente.setTelefono2(rs.getString("Telefono2"));
+               listaCliente.setCorreo(rs.getString("Correo"));
+               listaCliente.setSexo(rs.getString("Sexo"));
+               listaCliente.setRucDNI(rs.getString("RucDNI"));
+               listaCliente.setTipoId(rs.getString("TipoId"));               
+               listaCliente.setFoto(rs.getString("Foto"));
+               listaCliente.setContacto(rs.getString("Contacto"));
+               listaCliente.setTelefonoCont(rs.getString("TelefonoCont"));
+               listaCliente.setHuellaDactilar(rs.getBytes("HuellaDactilar"));
+              
+          }
+
+      }
+      catch(SQLException ex)
+      {
+          ex.printStackTrace();
+      }
+      finally
+      {
+         try
+         {
+          if(cn != null)cn.close();
+          if(cs != null)cs.close();
+          if(rs != null)rs.close();          
+         }        
+         catch(SQLException ex)
+         {
+             ex.printStackTrace();
+         }
+      }
+      
+      return listaCliente;
+        
+    }
+    
+    public ClienteDTO ListaClienteXRucDni(String RucDNI)
+    {
+      ClienteDTO listaCliente = null;
+      Connection cn = null;
+      CallableStatement cs = null;
+      ResultSet rs = null;
+      
+      try
+      {
+          cn = ConexionBD.obtenerConexion();
+          String sql = "{call sp_lista_ClienteXRucDni(?)}";
+          
+          cs = cn.prepareCall(sql);
+          cs.setString(1,RucDNI);
+          
+          rs = cs.executeQuery();
+
+          if(rs.next())
+          {
+              listaCliente = new ClienteDTO();
+              
+               listaCliente.setCliente_ID(rs.getString("Cliente_ID"));
+               listaCliente.setRazonSocial(rs.getString("RazonSocial"));
+               listaCliente.setDireccion(rs.getString("Direccion"));
+               listaCliente.setTelefono(rs.getString("Telefono"));
+               listaCliente.setEstado(rs.getString("Estado"));
+               listaCliente.setTelefono2(rs.getString("Telefono2"));
+               listaCliente.setCorreo(rs.getString("Correo"));
+               listaCliente.setSexo(rs.getString("Sexo"));
+               listaCliente.setRucDNI(rs.getString("RucDNI"));
+               listaCliente.setTipoId(rs.getString("TipoId"));               
+               listaCliente.setFoto(rs.getString("Foto"));
+               listaCliente.setContacto(rs.getString("Contacto"));
+               listaCliente.setTelefonoCont(rs.getString("TelefonoCont"));
+               listaCliente.setHuellaDactilar(rs.getBytes("HuellaDactilar"));
+              
+          }
+
+      }
+      catch(SQLException ex)
+      {
+          ex.printStackTrace();
+      }
+      finally
+      {
+         try
+         {
+          if(cn != null)cn.close();
+          if(cs != null)cs.close();
+          if(rs != null)rs.close();          
+         }        
+         catch(SQLException ex)
+         {
+             ex.printStackTrace();
+         }
+      }
+      
+      return listaCliente;
+        
+    }
+     
+      public ArrayList<ClienteDTO> ListaClientesXNombre(String RazonSocial) 
+      {
+        ArrayList<ClienteDTO> lista = new ArrayList<>();
+        Connection cn = null;
+        CallableStatement st = null;
+        ResultSet rs = null;
+        try {
+            cn = ConexionBD.obtenerConexion();
+            String sql = "{call sp_Busq_ClienteXnombre(?)}";
+            st = cn.prepareCall(sql);
+            
+            st.setString(1, RazonSocial);
+            rs = st.executeQuery();
+            
+            while (rs.next()) {
+                ClienteDTO cliente = new ClienteDTO();
+                cliente.setCliente_ID(rs.getString("Cliente_ID"));
+                cliente.setRazonSocial(rs.getString("RazonSocial"));
+                cliente.setDireccion(rs.getString("Direccion"));
+                cliente.setTelefono(rs.getString("Telefono"));
+                cliente.setEstado(rs.getString("Estado"));
+                cliente.setTelefono2(rs.getString("Telefono2"));
+                cliente.setCorreo(rs.getString("Correo"));
+                cliente.setSexo(rs.getString("Sexo"));
+                cliente.setRucDNI(rs.getString("RucDNI"));
+                cliente.setTipoId(rs.getString("TipoId"));               
+                cliente.setFoto(rs.getString("Foto"));
+                cliente.setContacto(rs.getString("Contacto"));
+                cliente.setTelefonoCont(rs.getString("TelefonoCont"));
+                cliente.setHuellaDactilar(rs.getBytes("HuellaDactilar"));
+                lista.add(cliente);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (st != null) st.close();
+                if (cn != null) cn.close();
+            } catch (SQLException ex) { ex.printStackTrace(); }
+        }
+        return lista;
+    } 
 }

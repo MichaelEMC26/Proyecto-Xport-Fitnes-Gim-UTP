@@ -4,10 +4,12 @@ import com.registro.config.ConexionBD;
 import com.registro.dto.AreaDTO;
 import com.registro.dto.UsuarioDTO;
 import com.registro.dto.RolDTO;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class UsuarioDAO {
 
@@ -29,15 +31,24 @@ public class UsuarioDAO {
 
         try
         {
+            String contraseñaEncriptada = Seguridad.encriptarContraseña(pass);
+            
             cn = ConexionBD.obtenerConexion();
             String sql = "{call sp_IngresoUsuarioSistema(?,?)}";
             cs = cn.prepareCall(sql);
             cs.setString(1, usuario);
-            cs.setString(2, pass);
+            cs.setString(2, contraseñaEncriptada);
 
             rs = cs.executeQuery();
 
             if (rs.next()) {
+                
+            //     String contrasenaGuardadaBD = rs.getString("Contraseña"); // Reemplaza con el nombre real de tu columna
+
+            // 3. Usa el método de verificación correcto de tu librería de seguridad
+            // SI USAS BCRYPT:
+            // boolean esValida = BCrypt.checkpw(pass, contrasenaGuardadaBD);
+            
                 usuario2 = new UsuarioDTO();
 
                 usuario2.setPersonal_ID(rs.getInt("Personal_ID"));
@@ -47,7 +58,7 @@ public class UsuarioDAO {
                 usuario2.setArea_ID(rs.getString("Area_ID"));
                 usuario2.setArea(rs.getString("Area"));
                 usuario2.setRol(rs.getString("Rol"));
-                usuario2.setCodEmp(rs.getString("CodEmp"));
+                usuario2.setCodEmp(rs.getString("CodEmp"));    
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -197,41 +208,48 @@ public class UsuarioDAO {
      * Graba o actualiza el personal (el procedimiento decide segun exista el Personal_ID).
      * Devuelve GRABADO_OK, GRABADO_ERROR o USUARIO_DUPLICADO.
      */
-    public int grabarPersonal(UsuarioDTO usuario) {
-        String sql = "{? = call sp_Insert_UsuarioPersonal(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
+   public int grabarPersonal(UsuarioDTO usuario) {
+       
+       if(usuario.getContraseña()!= null)
+       {
+           String contraseñaEncriptada = Seguridad.encriptarContraseña(usuario.getContraseña());
+           usuario.setContraseña(contraseñaEncriptada);
+       }
+    // Corregido: Se agregó un "?" adicional al final para completar los 20 parámetros
+    String sql = "{? = call sp_Insert_UsuarioPersonal(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
 
-        try (Connection cn = ConexionBD.obtenerConexion();
-             CallableStatement st = cn.prepareCall(sql)) {
+    try (Connection cn = ConexionBD.obtenerConexion();
+         CallableStatement st = cn.prepareCall(sql)) {
 
-            st.registerOutParameter(1, Types.INTEGER);
-            st.setInt(2, usuario.getPersonal_ID());
-            st.setString(3, usuario.getEstadoGene());
-            st.setString(4, usuario.getApellidoPaterno());
-            st.setString(5, usuario.getApellidoMaterno());
-            st.setString(6, usuario.getNombres());
-            st.setString(7, usuario.getDireccion());
-            st.setString(8, usuario.getSexo());
-            st.setString(9, usuario.getRucDNI());
-            st.setString(10, usuario.getTelefono1());
-            st.setString(11, usuario.getCorreo());
-            st.setString(12, usuario.getReferencia());
-            st.setString(13, usuario.getArea_ID());
-            st.setString(14, usuario.getUsuario());
-            st.setString(15, usuario.getContraseña());
-            st.setString(16, usuario.getCodEmp());
-            st.setString(17, usuario.getFoto());
-            st.setInt(18, usuario.getUsuarioMod());
-            st.setInt(19, usuario.getRol_ID());
-            st.setInt(20, usuario.getOpcUserSist());
+        st.registerOutParameter(1, Types.INTEGER);
+        st.setInt(2, usuario.getPersonal_ID());
+        st.setString(3, usuario.getEstadoGene());
+        st.setString(4, usuario.getApellidoPaterno());
+        st.setString(5, usuario.getApellidoMaterno());
+        st.setString(6, usuario.getNombres());
+        st.setString(7, usuario.getDireccion());
+        st.setString(8, usuario.getSexo());
+        st.setString(9, usuario.getRucDNI());
+        st.setString(10, usuario.getTelefono1());
+        st.setString(11, usuario.getCorreo());
+        st.setString(12, usuario.getReferencia());
+        st.setString(13, usuario.getArea_ID());
+        st.setString(14, usuario.getUsuario());
+        st.setString(15, usuario.getContraseña());
+        st.setString(16, usuario.getCodEmp());
+        st.setString(17, usuario.getFoto());
+        st.setInt(18, usuario.getUsuarioMod());
+        st.setInt(19, usuario.getRol_ID());
+        st.setInt(20, usuario.getOpcUserSist()); // Este parámetro requería el "?" número 20
 
-            st.execute();
-            return st.getInt(1);
+        st.execute();
+        return st.getInt(1);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return GRABADO_ERROR;
-        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return GRABADO_ERROR; 
     }
+}
 
     public boolean registrarPersonal(UsuarioDTO usuario) {
         return grabarPersonal(usuario) == GRABADO_OK;

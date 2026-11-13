@@ -31,4 +31,17 @@ public class ClienteFACADE {
     public boolean EliminarCliente(ClienteDTO Cliente) {
         return dao.EliminaCliente(Cliente);
     }
+    
+    public ClienteDTO ListaClienteXCod(String Cliente_ID)
+    {
+        return dao.ListaClienteXCod(Cliente_ID);
+    }
+    public ClienteDTO ListaClienteXRucDni(String RucDNI)
+    {
+        return dao.ListaClienteXRucDni(RucDNI);
+    }
+    public List<ClienteDTO> ListaClientesXNombre(String RazonSocial)
+    {
+        return dao.ListaClientesXNombre(RazonSocial);
+    }
 }

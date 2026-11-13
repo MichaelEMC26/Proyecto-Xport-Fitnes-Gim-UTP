@@ -8,12 +8,14 @@
     <version>1.0.0</version>
     <packaging>war</packaging>
     <name>AplicacionWebGimnasio_JSF</name>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <jakarta.faces.version>4.0.28</jakarta.faces.version>
         <weld.version>5.1.7.Final</weld.version>
     </properties>
+
     <dependencies>
         <!-- Tomcat 10.1 aporta Servlet 6.0; Mojarra aporta Jakarta Faces 4.0. -->
         <dependency>
@@ -32,16 +34,19 @@
             <artifactId>jakarta.faces</artifactId>
             <version>${jakarta.faces.version}</version>
         </dependency>
+
         <!-- Weld habilita CDI en Tomcat para @Named y @SessionScoped. -->
         <dependency>
             <groupId>org.jboss.weld.servlet</groupId>
             <artifactId>weld-servlet-shaded</artifactId>
             <version>${weld.version}</version>
         </dependency>
+
+        <!-- Microsoft SQL Server Driver (Optimizado para Java 11 a 21) -->
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>12.2.0.jre11</version>
+            <version>12.6.1.jre11</version>
         </dependency>
         
         <!-- Motor de JasperReports -->
@@ -58,21 +63,73 @@
             <version>7.0.8</version>
         </dependency>
 
-        <!-- Compilador Java de JasperReports -->
+        <!-- Compilador Java de JasperReports (Maneja internamente ECJ) -->
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports-jdt</artifactId>
             <version>7.0.8</version>
         </dependency>
-
-        <!-- Compilador Eclipse JDT -->
+        
+        <!-- Google Guava -->
         <dependency>
-            <groupId>org.eclipse.jdt</groupId>
-            <artifactId>ecj</artifactId>
-            <version>3.37.0</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.3.1-jre</version>
+        </dependency>
+
+        <!-- Apache POI: Soporte para formatos clásicos (.xls) y modernos (.xlsx) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+
+        <!-- ========================================== -->
+        <!-- APACHE COMMONS                             -->
+        <!-- ========================================== -->
+        <!-- Utilidades para Strings, Objetos, Concurrencia y Reflexión -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.17.0</version>
+        </dependency>
+        <!-- Manejo avanzado de archivos, streams, lectores y buffers -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        <!-- Colecciones avanzadas, bidi-maps, sets y utilidades de listas -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.4</version>
+        </dependency>
+
+        <!-- ========================================== -->
+        <!-- LOGBACK                                    -->
+        <!-- ========================================== -->
+        <!-- Implementación de logging (incluye logback-core y el enlace slf4j-api) -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.12</version>
         </dependency>
         
+        <!-- Implementación de libreria de Encriptacion-->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
+    
     <build>
         <finalName>AplicacionWebGimnasio</finalName>
         <plugins>
@@ -80,7 +137,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
-                <configuration><release>21</release></configuration>
+                <configuration>
+                    <release>21</release>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -90,6 +149,7 @@
                     <failOnMissingWebXml>true</failOnMissingWebXml>
                 </configuration>
             </plugin>
+            
         </plugins>
     </build>
 </project>
