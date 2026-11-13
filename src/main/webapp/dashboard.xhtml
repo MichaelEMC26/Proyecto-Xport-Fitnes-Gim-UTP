@@ -9,8 +9,44 @@
         <style type="text/css"><![CDATA[
             .dashboard-main{min-width:0;flex:1;padding:24px;background:#eef2f8}
             .dashboard-main .panel{background:#fff;border-radius:12px;padding:24px;box-shadow:0 4px 15px rgba(16,38,83,.08)}
-            .dashboard-main .bloques{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
-            .dashboard-main .bloques a{display:flex;align-items:center;justify-content:center;gap:9px;min-height:42px;border-radius:8px;background:#2864f0;color:#fff;text-decoration:none;font-size:12px;font-weight:700;box-shadow:0 3px 7px rgba(40,100,240,.2)}
+           
+            .dashboard-main .bloques {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 14px;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .dashboard-main .panel .bloques a.btn-registrar,
+            .dashboard-main .panel .bloques a.btn-renovar,
+            .dashboard-main .panel .bloques a.btn-transaccion {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 9px;
+                min-height: 48px;
+                padding: 0 15px;
+                border-radius: 9px;
+                background: #4b8edb !important;
+                color: #ffffff !important;
+                text-decoration: none !important;
+                font-size: 13px;
+                font-weight: 700;
+                border: none;
+                box-shadow: 0 3px 8px rgba(40,100,180,.20);
+                transition: background .2s, transform .2s;
+            }
+
+            .dashboard-main .panel .bloques a:hover {
+                background: #3478c8 !important;
+                color: #ffffff !important;
+                transform: translateY(-1px);
+            }
+
+            .dashboard-main .panel .bloques a i {
+                color: #ffffff !important;
+                font-size: 15px;
+            }
             .dashboard-main .fila-principal{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:16px}
             .dashboard-main .tabla-thead h3{font-size:13px;color:#102653}
             .dashboard-main .tabla{width:100%;border-collapse:collapse;font-size:11px}
@@ -29,6 +65,11 @@
             .dashboard-main .tarjeta-inferior p{font-size:11px;margin:3px 0}
             .dashboard-main .select-estado{border:0;background:transparent;color:#102653;font-size:11px}
             .dashboard-main .punto{display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a}
+            @media (min-width: 1100px) {
+                .dashboard-main .bloques {
+                    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                }
+            }
             @media(max-width:1100px){.dashboard-main .fila-principal{grid-template-columns:1fr}.dashboard-main .tarjetas-laterales{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
             @media(max-width:750px){.dashboard-main{padding:12px}.dashboard-main .bloques,.dashboard-main .tarjetas-inferiores{grid-template-columns:1fr}.dashboard-main .tabla{min-width:700px}.dashboard-main .tarjetas-laterales{grid-template-columns:1fr}}
         ]]></style>
@@ -36,11 +77,40 @@
     <ui:define name="content">
         <main class="dashboard-main">
             <div class="panel">
-                <section class="bloques">
-                    <h:link outcome="/socios.xhtml" styleClass="btn-registrar"><i class="fa-solid fa-user-plus"></i> Inscribir</h:link>
-                    <h:link outcome="/membresias.xhtml" styleClass="btn-renovar"><i class="fa-solid fa-arrows-rotate"></i> Renovar</h:link>
-                    <h:link outcome="/PuntoVenta.xhtml" styleClass="btn-transaccion"><i class="fa-solid fa-right-left"></i> Transacción</h:link>
-                </section>
+               
+            
+            <section class="bloques">
+
+                <!-- INSCRIBIR SOCIO -->
+                <h:link outcome="/socios.xhtml"
+                        styleClass="btn-registrar"
+                        style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;background:#4b8edb !important;color:white !important;text-decoration:none !important;border-radius:9px;font-size:13px;font-weight:700;">
+
+                    <i class="fa-solid fa-user-plus"></i>
+                    INSCRIBIR SOCIO
+                </h:link>
+
+                <!-- SUSCRIBIR / RENOVAR MEMBRESÍA -->
+                <h:link outcome="/membresias.xhtml"
+                        styleClass="btn-suscribir"
+                        style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;background:#4b8edb !important;color:white !important;text-decoration:none !important;border-radius:9px;font-size:13px;font-weight:700;">
+
+                    <i class="fa-solid fa-id-card"></i>
+                    SUSCRIBIR / RENOVAR MEMBRESÍA
+                </h:link>
+
+                <!-- TRANSACCIONES -->
+                <h:link outcome="/PuntoVenta.xhtml"
+                        styleClass="btn-transaccion"
+                        style="display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;background:#4b8edb !important;color:white !important;text-decoration:none !important;border-radius:9px;font-size:13px;font-weight:700;">
+
+                    <i class="fa-solid fa-right-left"></i>
+                    TRANSACCIONES
+                </h:link>
+
+            </section>
+
+
                 <div class="fila-principal">
                     <section class="tabla-thead">
                         <h3>Entradas del día: <span id="fechaActual"></span></h3>
