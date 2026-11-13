@@ -1,27 +1,489 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ui:composition xmlns="http://www.w3.org/1999/xhtml" xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" template="/WEB-INF/templates/principal.xhtml">
+<ui:composition
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="jakarta.faces.facelets"
+    xmlns:h="jakarta.faces.html"
+    template="/WEB-INF/templates/principal.xhtml">
+
     <ui:param name="menuOpcion" value="asistencia" />
     <ui:param name="menuSubmenu" value="" />
-    <ui:define name="title">Asistencia | Xport Fitness Gym</ui:define>
-    <ui:define name="styles"><style type="text/css"><![CDATA[
-        .placeholder-main{flex:1;min-width:0;padding:28px;background:#eef2f8}
-        .placeholder-card{max-width:900px;padding:28px;background:white;border:1px solid #dce5f1;border-radius:14px;box-shadow:0 4px 15px rgba(16,38,83,.07)}
-        .placeholder-icon{display:flex;align-items:center;justify-content:center;width:52px;height:52px;margin-bottom:16px;border-radius:12px;background:#eaf0ff;color:#2864f0;font-size:23px}
-        .placeholder-card h1{margin:0 0 10px;color:#102653;font-size:24px}
-        .placeholder-card p{color:#75829a;font-size:13px;line-height:1.7}
-        .placeholder-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
-        .placeholder-actions a{display:inline-flex;align-items:center;gap:8px;padding:11px 15px;border-radius:8px;background:#2864f0;color:white;text-decoration:none;font-weight:700;font-size:12px}
-        @media(max-width:650px){.placeholder-main{padding:12px}.placeholder-card{padding:18px}}
-    ]]></style></ui:define>
-    <ui:define name="content">
-        <main class="placeholder-main">
-            <section class="placeholder-card">
-                <div class="placeholder-icon"><i class="fa-solid fa-user-check"></i></div>
-                <p class="gastos-eyebrow">XPORT FITNESS GYM</p>
-                <h1>Asistencia</h1>
-                <p>Esta vista ya forma parte de la navegación JSF. El registro real de asistencias deberá conectarse al módulo y tablas de asistencia existentes.</p>
-                <div class="placeholder-actions"><h:link outcome="/ListaClientes.xhtml"><i class="fa-solid fa-users"></i> Consultar socios</h:link></div>
-            </section>
-        </main>
+
+    <ui:define name="title">
+        Asistencia | Xport Fitness Gym
     </ui:define>
+
+    <ui:define name="styles">
+        <style type="text/css">
+
+            .asistencia-main {
+                flex: 1;
+                min-width: 0;
+                padding: 28px;
+                background: #eef2f8;
+            }
+
+            .asistencia-card {
+                width: 100%;
+                max-width: 1450px;
+                margin: auto;
+                padding: 25px;
+                background: white;
+                border-radius: 14px;
+                box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            }
+
+            .asistencia-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+
+            .asistencia-header h1 {
+                color: #102653;
+                font-size: 25px;
+                margin: 0;
+            }
+
+            .asistencia-header p {
+                color: #64748b;
+                margin-top: 7px;
+                font-size: 13px;
+            }
+
+            .asistencia-fecha {
+                background: #eff6ff;
+                color: #275ef5;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .asistencia-resumen {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+
+            .resumen-item {
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 17px;
+                display: flex;
+                align-items: center;
+                gap: 13px;
+                background: white;
+            }
+
+            .resumen-icono {
+                width: 43px;
+                height: 43px;
+                border-radius: 10px;
+                background: #eff6ff;
+                color: #275ef5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 19px;
+                flex-shrink: 0;
+            }
+
+            .resumen-item small {
+                display: block;
+                color: #64748b;
+                font-size: 11px;
+                margin-bottom: 5px;
+            }
+
+            .resumen-item strong {
+                font-size: 22px;
+                color: #102653;
+            }
+
+            .asistencia-toolbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+
+            .asistencia-toolbar h2 {
+                color: #102653;
+                font-size: 17px;
+                margin: 0;
+            }
+
+            .asistencia-busqueda {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .asistencia-busqueda input {
+                padding: 10px 13px;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                width: 240px;
+            }
+
+            .btn-asistencia {
+                border: none;
+                padding: 10px 16px;
+                border-radius: 7px;
+                background: #275ef5;
+                color: white;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .btn-asistencia:hover {
+                background: #1948cf;
+            }
+
+            .asistencia-tabla-contenedor {
+                overflow-x: auto;
+            }
+
+            .tabla-asistencia {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            .tabla-asistencia th {
+                background: #16069e;
+                color: white;
+                text-align: left;
+                padding: 14px 12px;
+            }
+
+            .tabla-asistencia td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #e2e8f0;
+                color: #334155;
+            }
+
+            .tabla-asistencia tbody tr:hover {
+                background: #f8fafc;
+            }
+
+            .socio-info {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .socio-avatar {
+                width: 35px;
+                height: 35px;
+                background: #dbeafe;
+                color: #275ef5;
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-weight: bold;
+            }
+
+            .estado {
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+
+            .estado-presente {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+            .estado-tardanza {
+                background: #fef3c7;
+                color: #b45309;
+            }
+
+            .estado-falta {
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+
+            .acciones {
+                display: flex;
+                gap: 7px;
+            }
+
+            .accion-btn {
+                padding: 7px 9px;
+                border: 1px solid #cbd5e1;
+                background: white;
+                border-radius: 6px;
+                color: #275ef5;
+                cursor: pointer;
+            }
+
+            @media(max-width: 950px) {
+                .asistencia-resumen {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+
+            @media(max-width: 600px) {
+                .asistencia-main {
+                    padding: 12px;
+                }
+
+                .asistencia-card {
+                    padding: 15px;
+                }
+
+                .asistencia-resumen {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+        </style>
+    </ui:define>
+    <ui:define name="content">
+
+        <main class="asistencia-main">
+
+            <section class="asistencia-card">
+
+                <!-- ENCABEZADO -->
+                <div class="asistencia-header">
+
+                    <div>
+                        <h1>Control de Asistencia</h1>
+                        <p>Gestión de ingresos y salidas de socios del gimnasio</p>
+                    </div>
+
+                    <div class="asistencia-fecha">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        13 de noviembre de 2026
+                    </div>
+
+                </div>
+
+                <!-- RESUMEN -->
+                <div class="asistencia-resumen">
+
+                    <div class="resumen-item">
+                        <div class="resumen-icono">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <small>TOTAL DE ASISTENCIAS</small>
+                            <strong>35</strong>
+                        </div>
+                    </div>
+
+                    <div class="resumen-item">
+                        <div class="resumen-icono" style="color:#16a34a;background:#dcfce7;">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div>
+                            <small>PRESENTES</small>
+                            <strong>28</strong>
+                        </div>
+                    </div>
+
+                    <div class="resumen-item">
+                        <div class="resumen-icono" style="color:#d97706;background:#fef3c7;">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <small>TARDANZAS</small>
+                            <strong>5</strong>
+                        </div>
+                    </div>
+
+                    <div class="resumen-item">
+                        <div class="resumen-icono" style="color:#dc2626;background:#fee2e2;">
+                            <i class="fa-solid fa-user-xmark"></i>
+                        </div>
+                        <div>
+                            <small>FALTAS</small>
+                            <strong>2</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- BARRA DE HERRAMIENTAS -->
+                <div class="asistencia-toolbar">
+
+                    <h2>Registro de socios</h2>
+
+                    <div class="asistencia-busqueda">
+
+                        <input type="text"
+                               placeholder="Buscar por nombre o documento..." />
+
+                        <button type="button" class="btn-asistencia">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            Buscar
+                        </button>
+
+                        <button type="button"
+                                class="btn-asistencia"
+                                style="background:#102653;">
+                            <i class="fa-solid fa-file-export"></i>
+                            Exportar
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- TABLA -->
+                <div class="asistencia-tabla-contenedor">
+
+                    <table class="tabla-asistencia">
+
+                        <thead>
+                            <tr>
+                                <th>Socio</th>
+                                <th>Documento</th>
+                                <th>Hora entrada</th>
+                                <th>Hora salida</th>
+                                <th>Estado</th>
+                                <th>Observación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>
+                                    <div class="socio-info">
+                                        <div class="socio-avatar">MC</div>
+                                        <strong>Michael Cueva</strong>
+                                    </div>
+                                </td>
+                                <td>00000001</td>
+                                <td>09:00 AM</td>
+                                <td>--:--</td>
+                                <td>
+                                    <span class="estado estado-presente">
+                                        Presente
+                                    </span>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    <div class="acciones">
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <div class="socio-info">
+                                        <div class="socio-avatar">JP</div>
+                                        <strong>Juan Pérez</strong>
+                                    </div>
+                                </td>
+                                <td>00000002</td>
+                                <td>09:15 AM</td>
+                                <td>11:30 AM</td>
+                                <td>
+                                    <span class="estado estado-presente">
+                                        Presente
+                                    </span>
+                                </td>
+                                <td>-</td>
+                                <td>
+                                    <div class="acciones">
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <div class="socio-info">
+                                        <div class="socio-avatar">CR</div>
+                                        <strong>Carlos Ramírez</strong>
+                                    </div>
+                                </td>
+                                <td>00000003</td>
+                                <td>09:35 AM</td>
+                                <td>--:--</td>
+                                <td>
+                                    <span class="estado estado-tardanza">
+                                        Tardanza
+                                    </span>
+                                </td>
+                                <td>Ingreso retrasado</td>
+                                <td>
+                                    <div class="acciones">
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <div class="socio-info">
+                                        <div class="socio-avatar">AL</div>
+                                        <strong>Andrea López</strong>
+                                    </div>
+                                </td>
+                                <td>00000004</td>
+                                <td>--:--</td>
+                                <td>--:--</td>
+                                <td>
+                                    <span class="estado estado-falta">
+                                        Falta
+                                    </span>
+                                </td>
+                                <td>No asistió</td>
+                                <td>
+                                    <div class="acciones">
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="accion-btn">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </ui:define>
+
 </ui:composition>

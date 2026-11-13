@@ -22,8 +22,37 @@
             <li class="#{cc.attrs.opcion eq 'asistencia' ? 'active' : ''}">
                 <h:link outcome="/asistencia.xhtml"><i class="fa-solid fa-user-check"></i><span>Asistencia</span></h:link>
             </li>
-            <li class="#{cc.attrs.opcion eq 'membresias' ? 'active' : ''}">
-                <h:link outcome="/membresias.xhtml"><i class="fa-solid fa-id-card"></i><span>Membresía</span></h:link>
+            <li class="menu-desplegable #{cc.attrs.submenu eq 'membresias' ? 'abierto' : ''}"
+                id="menuMembresias">
+
+                <a href="#"
+                   class="menu-enlace"
+                   onclick="toggleSubmenu(event, 'submenuMembresias')"
+                   aria-expanded="#{cc.attrs.submenu eq 'membresias'}">
+
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>Membresía</span>
+                    <i class="fa-solid fa-chevron-down flecha-submenu"></i>
+
+                </a>
+
+                <ul class="submenu" id="submenuMembresias">
+
+                    <li class="#{cc.attrs.opcion eq 'listarMembresias' ? 'submenu-activo' : ''}">
+                        <h:link outcome="/ListaPlanesMembresia.xhtml">
+                            <i class="fa-solid fa-list"></i>
+                            <span>Listar Planes Membresía</span>
+                        </h:link>
+                    </li>
+
+                    <li class="#{cc.attrs.opcion eq 'registrarMembresia' ? 'submenu-activo' : ''}">
+                        <h:link outcome="/Registro-plan-membresia.xhtml">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Registrar Plan Membresía</span>
+                        </h:link>
+                    </li>
+
+                </ul>
             </li>
             <li class="menu-desplegable #{cc.attrs.submenu eq 'socios' ? 'abierto' : ''}" id="menuSocios">
                 <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuSocios')" aria-expanded="#{cc.attrs.submenu eq 'socios'}">

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<ui:composition
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="jakarta.faces.facelets"
+    xmlns:h="jakarta.faces.html"
+    template="/WEB-INF/templates/principal.xhtml">
+
+    <ui:param name="menuOpcion" value="registrarMembresia" />
+    <ui:param name="menuSubmenu" value="membresias" />
+
+    <ui:define name="title">
+        Registro de Plan | Xport Fitness Gym
+    </ui:define>
+
+    <!-- ESTILOS -->
+    <ui:define name="styles">
+
+        <link rel="stylesheet"
+              href="#{request.contextPath}/css/diseingreso.css" />
+
+        <link rel="stylesheet"
+              href="#{request.contextPath}/css/gastos.css" />
+
+        <link rel="stylesheet"
+              href="#{request.contextPath}/css/productos-dashboard.css" />
+
+        <link rel="stylesheet"
+              href="#{request.contextPath}/css/catalogo.css" />
+
+        <link rel="stylesheet"
+              href="#{request.contextPath}/css/planes-membresia.css" />
+
+        <style type="text/css">
+
+            .planes-main {
+                flex: 1;
+                min-width: 0;
+                padding: 28px;
+                background: #eef2f8;
+            }
+
+            .planes-main .gastos-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .planes-main .gastos-header h1 {
+                color: #102653;
+                font-size: 25px;
+                margin: 5px 0;
+            }
+
+            .planes-main .gastos-subtitle {
+                color: #64748b;
+                font-size: 13px;
+            }
+
+            .planes-main .catalogo-cancelar {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 15px;
+                background: white;
+                color: #275ef5;
+                border: 1px solid #dce5f1;
+                border-radius: 7px;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .planes-main .catalogo-cancelar:hover {
+                background: #eff6ff;
+            }
+
+            .planes-main .catalogo-tabs {
+                margin-bottom: 20px;
+            }
+
+            .planes-main .catalogo-tab {
+                text-decoration: none;
+            }
+
+            .planes-main .catalogo-contenido {
+                background: white;
+                padding: 25px;
+                border-radius: 12px;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 4px 15px rgba(0,0,0,.04);
+            }
+
+            .planes-main .card-heading {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 25px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .planes-main .card-heading h2 {
+                color: #102653;
+                font-size: 18px;
+                margin: 0 0 6px;
+            }
+
+            .planes-main .card-heading p {
+                color: #64748b;
+                font-size: 12px;
+                margin: 0;
+            }
+
+            .planes-main .heading-icon {
+                font-size: 25px;
+                color: #275ef5;
+            }
+
+            .planes-main .plan-form {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 20px;
+            }
+
+            .planes-main .catalogo-campo {
+                display: flex;
+                flex-direction: column;
+                gap: 9px;
+                min-width: 0;
+            }
+
+            .planes-main .catalogo-campo span {
+                color: #334155;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .planes-main .catalogo-campo span i {
+                color: #275ef5;
+                margin-right: 5px;
+            }
+
+            .planes-main .catalogo-campo b {
+                color: #dc2626;
+            }
+
+            .planes-main .catalogo-campo input,
+            .planes-main .catalogo-campo select {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 11px 12px;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                background: white;
+                color: #334155;
+                font-size: 13px;
+                outline: none;
+            }
+
+            .planes-main .catalogo-campo input:focus,
+            .planes-main .catalogo-campo select:focus {
+                border-color: #275ef5;
+                box-shadow: 0 0 0 2px rgba(39,94,245,.10);
+            }
+
+            .planes-main .catalogo-campo small {
+                color: #64748b;
+                font-size: 11px;
+            }
+
+            .planes-main .duracion-field {
+                grid-column: 1 / -1;
+                border: 1px solid #dce5f1;
+                border-radius: 9px;
+                padding: 18px;
+                margin: 0;
+                min-width: 0;
+            }
+
+            .planes-main .duracion-field legend {
+                padding: 0 8px;
+                color: #102653;
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            .planes-main .duracion-field legend i {
+                color: #275ef5;
+                margin-right: 5px;
+            }
+
+            .planes-main .duracion-grid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 15px;
+            }
+
+            .planes-main .horario-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .planes-main .horario-grid p {
+                grid-column: 1 / -1;
+                color: #64748b;
+                font-size: 12px;
+                margin: 0;
+            }
+
+            .planes-main .catalogo-botones {
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-top: 10px;
+                padding-top: 20px;
+                border-top: 1px solid #e2e8f0;
+            }
+
+            .planes-main .catalogo-botones button {
+                border: none;
+                cursor: pointer;
+            }
+
+            .planes-main .catalogo-botones .productos-nuevo {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 20px;
+                background: #275ef5;
+                color: white;
+                border-radius: 7px;
+                font-weight: 600;
+            }
+
+            .planes-main .catalogo-botones .productos-nuevo:hover {
+                background: #1948cf;
+            }
+
+            .planes-main .catalogo-botones .catalogo-cancelar {
+                justify-content: center;
+                min-width: 90px;
+            }
+
+            @media(max-width: 750px) {
+                .planes-main {
+                    padding: 15px;
+                }
+
+                .planes-main .plan-form {
+                    grid-template-columns: 1fr;
+                }
+
+                .planes-main .duracion-field {
+                    grid-column: 1;
+                }
+
+                .planes-main .duracion-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .planes-main .catalogo-botones {
+                    grid-column: 1;
+                    flex-wrap: wrap;
+                }
+            }
+
+            @media(max-width: 450px) {
+                .planes-main .duracion-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .planes-main .horario-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .planes-main .catalogo-contenido {
+                    padding: 15px;
+                }
+            }
+
+        </style>
+
+    </ui:define>
+
+    <!-- CONTENIDO -->
+    <ui:define name="content">
+
+        <main class="gastos-main catalogo-main planes-main">
+
+            <!-- ENCABEZADO -->
+            <header class="gastos-header">
+
+                <div>
+
+                    <p class="gastos-eyebrow">
+                        MEMBRESÍAS / PLANES
+                    </p>
+
+                    <h1>Registro de Planes de Membresía</h1>
+
+                    <p class="gastos-subtitle">
+                        Define la vigencia, tarifa y condiciones de acceso.
+                    </p>
+
+                </div>
+
+                <h:link outcome="/ListaPlanesMembresia.xhtml"
+                        styleClass="catalogo-cancelar">
+
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Volver a consulta
+
+                </h:link>
+
+            </header>
+
+            <!-- PESTAÑAS -->
+            <nav class="catalogo-tabs"
+                 aria-label="Módulos de membresía">
+
+                <h:link outcome="/membresias.xhtml"
+                        styleClass="catalogo-tab">
+
+                    <i class="fa-solid fa-id-card"></i>
+                    Membresías
+
+                </h:link>
+
+                <h:link outcome="/ListaPlanesMembresia.xhtml"
+                        styleClass="catalogo-tab seleccionado">
+
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    Planes
+
+                </h:link>
+
+            </nav>
+
+            <!-- FORMULARIO VISUAL -->
+            <section class="contenido-card catalogo-contenido">
+
+                <div class="card-heading">
+
+                    <div>
+                        <h2>Datos del plan</h2>
+
+                        <p>
+                            Los campos marcados con * son obligatorios
+                        </p>
+                    </div>
+
+                    <i class="fa-solid fa-clipboard-list heading-icon"></i>
+
+                </div>
+
+                <div class="plan-form">
+
+                    <!-- CÓDIGO -->
+                    <label class="catalogo-campo">
+
+                        <span>
+                            <i class="fa-solid fa-barcode"></i>
+                            Código <b>*</b>
+                        </span>
+
+                        <input type="text"
+                               maxlength="20"
+                               placeholder="Ej. PL-004"
+                               autocomplete="off" />
+
+                    </label>
+
+                    <!-- NOMBRE -->
+                    <label class="catalogo-campo">
+
+                        <span>
+                            <i class="fa-solid fa-tag"></i>
+                            Nombre <b>*</b>
+                        </span>
+
+                        <input type="text"
+                               maxlength="80"
+                               placeholder="Ej. Plan Full" />
+
+                    </label>
+
+                    <!-- ESTADO -->
+                    <label class="catalogo-campo">
+
+                        <span>
+                            <i class="fa-solid fa-circle-check"></i>
+                            Estado
+                        </span>
+
+                        <select>
+                            <option value="ACTIVO">ACTIVO</option>
+                            <option value="INACTIVO">INACTIVO</option>
+                        </select>
+
+                    </label>
+
+                    <!-- FRECUENCIA -->
+                    <label class="catalogo-campo">
+
+                        <span>
+                            <i class="fa-solid fa-repeat"></i>
+                            Frecuencia
+                        </span>
+
+                        <select>
+                            <option value="DIARIA">DIARIA</option>
+                            <option value="SEMANAL">SEMANAL</option>
+                            <option value="MENSUAL">MENSUAL</option>
+                            <option value="ILIMITADA">ILIMITADA</option>
+                        </select>
+
+                    </label>
+
+                    <!-- DURACIÓN -->
+                    <fieldset class="duracion-field">
+
+                        <legend>
+                            <i class="fa-solid fa-hourglass-half"></i>
+                            Duración del plan
+                        </legend>
+
+                        <div class="duracion-grid">
+
+                            <label class="catalogo-campo">
+
+                                <span>Días</span>
+
+                                <input type="number"
+                                       min="0"
+                                       placeholder="0" />
+
+                            </label>
+
+                            <label class="catalogo-campo">
+
+                                <span>Semanas</span>
+
+                                <input type="number"
+                                       min="0"
+                                       placeholder="0" />
+
+                            </label>
+
+                            <label class="catalogo-campo">
+
+                                <span>Meses</span>
+
+                                <input type="number"
+                                       min="0"
+                                       placeholder="0" />
+
+                            </label>
+
+                            <label class="catalogo-campo">
+
+                                <span>Años</span>
+
+                                <input type="number"
+                                       min="0"
+                                       placeholder="0" />
+
+                            </label>
+
+                        </div>
+
+                    </fieldset>
+
+                    <!-- TARIFA -->
+                    <label class="catalogo-campo">
+
+                        <span>
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            Tarifa en soles (S/) <b>*</b>
+                        </span>
+
+                        <input type="number"
+                               min="0"
+                               step="0.01"
+                               placeholder="Ej. 99.00" />
+
+                    </label>
+
+                    <!-- LÍMITE DE INGRESO -->
+                    <label class="catalogo-campo">
+
+                        <span>
+                            <i class="fa-solid fa-calendar-day"></i>
+                            Límite de días de ingreso
+                        </span>
+
+                        <input type="number"
+                               min="0"
+                               placeholder="0" />
+
+                        <small>
+                            0 significa sin límite adicional.
+                        </small>
+
+                    </label>
+
+                    <!-- RESTRICCIÓN DE HORARIO -->
+                    <fieldset class="duracion-field horario-field">
+
+                        <legend>
+                            <i class="fa-solid fa-clock"></i>
+                            Restricción de horario
+                            <small>(opcional)</small>
+                        </legend>
+
+                        <div class="duracion-grid horario-grid">
+
+                            <label class="catalogo-campo">
+
+                                <span>Desde</span>
+
+                                <input type="time" />
+
+                            </label>
+
+                            <label class="catalogo-campo">
+
+                                <span>Hasta</span>
+
+                                <input type="time" />
+
+                            </label>
+
+                            <p>
+                                Deja ambas horas vacías para permitir el
+                                ingreso en cualquier horario.
+                            </p>
+
+                        </div>
+
+                    </fieldset>
+
+                    <!-- BOTONES -->
+                    <div class="catalogo-botones">
+
+                        <button type="button"
+                                class="periodo productos-nuevo">
+
+                            <i class="fa-solid fa-plus"></i>
+
+                            <span>Registrar plan</span>
+
+                        </button>
+
+                        <h:link outcome="/ListaPlanesMembresia.xhtml"
+                                styleClass="catalogo-cancelar">
+
+                            Cancelar
+
+                        </h:link>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </ui:define>
+
+</ui:composition>
