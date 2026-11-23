@@ -2,6 +2,7 @@ package com.registro.facade;
 
 import com.registro.dto.ClienteDTO;
 import com.registro.dao.ClienteDAO;
+import java.sql.Date;
 import java.util.List;
 
 public class ClienteFACADE {
@@ -12,6 +13,11 @@ public class ClienteFACADE {
         return dao.ListaClientes();
     }
     
+    /** Cantidad de socios activos (COUNT, sin descargar la lista). */
+    public int ContarClientesActivos() {
+        return dao.ContarClientesActivos();
+    }
+
     public ClienteDTO buscarCliente(String id) {
         return dao.buscarPorId(id);
     }
@@ -43,5 +49,14 @@ public class ClienteFACADE {
     public List<ClienteDTO> ListaClientesXNombre(String RazonSocial)
     {
         return dao.ListaClientesXNombre(RazonSocial);
+    }
+    
+    public List<ClienteDTO> MuestraFechaCumpleañosActualSocioF(Date FechaActual)
+    {
+        return dao.MuestraFechaCumpleañosActualSocio(FechaActual);
+    }
+    public List<ClienteDTO> MuestraFechasProximasCumpleañosSocioF(Date FechaIni,Date FechaFin)
+    {
+        return dao.MuestraFechasProximasCumpleañosSocio(FechaIni,FechaFin);
     }
 }

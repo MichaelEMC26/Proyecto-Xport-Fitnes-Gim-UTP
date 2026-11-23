@@ -48,7 +48,14 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>12.6.1.jre11</version>
         </dependency>
-        
+
+        <!-- JSON del Punto de Venta (PuntoVentaBean). Misma versión que ya trae JasperReports 7.0.8 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.8</version>
+        </dependency>
+
         <!-- Motor de JasperReports -->
         <dependency>
             <groupId>net.sf.jasperreports</groupId>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-label="Efectivo">
+  <rect x="20" y="30" width="104" height="54" rx="7" fill="#15803d" transform="rotate(-8 72 57)"/>
+  <rect x="30" y="22" width="108" height="56" rx="7" fill="#22a05a" stroke="#0f6b35" stroke-width="2"/>
+  <rect x="38" y="30" width="92" height="40" rx="4" fill="none" stroke="#c9f2d9" stroke-width="2" stroke-dasharray="4 3"/>
+  <circle cx="84" cy="50" r="15" fill="#c9f2d9"/>
+  <text x="84" y="57" text-anchor="middle" font-family="Arial" font-weight="700" font-size="19" fill="#0f6b35">S/</text>
+  <circle cx="48" cy="40" r="4" fill="#c9f2d9"/><circle cx="120" cy="60" r="4" fill="#c9f2d9"/>
+  <g transform="translate(112 62)">
+    <circle r="17" fill="#f4c20d" stroke="#c99a00" stroke-width="2"/>
+    <circle r="11" fill="none" stroke="#c99a00" stroke-width="1.5"/>
+    <text y="5" text-anchor="middle" font-family="Arial" font-weight="700" font-size="13" fill="#8a6500">1</text>
+  </g>
+</svg>

@@ -1,0 +1,102 @@
+/* Estilos de AperturaCaja.xhtml y RegistrarCierreCaja.xhtml (prefijo cj-) */
+
+.cj-main{flex:1;min-width:0;padding:24px;background:#eef2f8;color:#102653}
+
+/* ---- Título ---- */
+.cj-titulo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:14px 20px;margin-bottom:16px;border-radius:12px;background:linear-gradient(135deg,#102653 0%,#19396f 100%);color:#fff;
+    box-shadow:0 4px 14px rgba(16,38,83,.18)}
+.cj-titulo h1{margin:0;font-size:19px;letter-spacing:.4px;text-transform:uppercase}
+.cj-titulo h1 i{color:#83CFEA;margin-right:6px}
+.cj-titulo-ayuda{font-size:12px;color:#BFD0F5}
+
+.cj-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 2px 8px rgba(16,38,83,.05)}
+.cj-card-titulo{margin:0;padding:12px 16px;border-bottom:1px solid #eef1f6;font-size:13px;font-weight:700;color:#263B60;text-transform:uppercase;letter-spacing:.4px}
+.cj-card-cuerpo{padding:16px}
+
+/* ---- Mensajes ---- */
+.cj-mensajes{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px}
+.cj-aviso{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:9px;font-size:14px}
+.cj-aviso-info{background:#E8F8EF;color:#0f5132;border:1px solid #B7E8CB}
+.cj-aviso-warn{background:#FFF7E6;color:#92400e;border:1px solid #FCD9A0}
+.cj-aviso-error{background:#FDECEC;color:#B42318;border:1px solid #F5C2C0}
+
+/* ---- Campos ---- */
+.cj-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.cj-campo{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cj-campo-ancho{grid-column:1/-1}
+.cj-campo label,.cj-etiqueta{font-size:12px;font-weight:700;color:#263B60}
+.cj-campo input[type=text],.cj-campo input[type=date],.cj-campo select,.cj-dato{box-sizing:border-box;width:100%;height:40px;padding:0 12px;
+    border:1px solid #CFD7E2;border-radius:9px;background:#fff;font:15px Arial,Helvetica,sans-serif;color:#102653;outline:none}
+.cj-campo input:focus,.cj-campo select:focus{border-color:#2864F0;box-shadow:0 0 0 4px rgba(40,100,240,.12)}
+.cj-campo input[readonly],.cj-campo input:disabled,.cj-campo select:disabled,.cj-dato{background:#f8fafc;color:#243B60}
+.cj-dato{display:flex;align-items:center}
+.cj-hora{font-size:20px;font-weight:700;letter-spacing:1px}
+.cj-monto-grande{height:50px!important;font-size:22px!important;font-weight:700!important;text-align:right}
+.cj-resp{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px}
+
+/* ---- Apertura ---- */
+.cj-apertura{max-width:640px}
+
+/* ---- Cierre ---- */
+.cj-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;align-items:start}
+.cj-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.cj-cabecera{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 110px;gap:14px 18px;align-items:end}
+.cj-turno{display:flex;flex-direction:column;align-items:center;justify-content:center;height:64px;border-radius:10px;background:#102653;color:#fff}
+.cj-turno span{font-size:10px;letter-spacing:1px;color:#BFD0F5}
+.cj-turno strong{font-size:22px}
+
+.cj-montos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cj-grupo-titulo{margin:0 0 10px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px}
+.cj-fila{display:grid;grid-template-columns:minmax(0,1fr) 150px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed #e5eaf2}
+.cj-fila:last-child{border-bottom:0}
+.cj-check{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#263B60;cursor:pointer}
+.cj-check input{width:17px;height:17px;accent-color:#2864F0;cursor:pointer}
+.cj-check input:disabled{cursor:not-allowed}
+.cj-valor{box-sizing:border-box;height:36px;padding:0 10px;border:1px solid #CFD7E2;border-radius:8px;background:#f8fafc;
+    display:flex;align-items:center;justify-content:flex-end;font:700 15px Arial,Helvetica,sans-serif;color:#102653}
+.cj-valor-resta{color:#B42318}
+
+.cj-totales{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cj-total{padding:14px 16px;border-radius:12px;background:#EFF5FF;border:1px solid #c7d8fb}
+.cj-total span{display:block;font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.6px}
+.cj-total strong{display:block;margin-top:6px;font-size:26px;color:#102653;text-align:right}
+.cj-total-efectivo{background:#E8F8EF;border-color:#B7E8CB}
+.cj-total-efectivo span{color:#167344}
+
+.cj-historial{display:flex;flex-direction:column;gap:8px}
+
+/* ---- Botones ---- */
+.cj-botones{display:flex;flex-direction:column;gap:10px}
+.cj-botones-fila{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.cj-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;box-sizing:border-box;
+    border:0;border-radius:9px;font:700 14px Arial,Helvetica,sans-serif;color:#fff;text-decoration:none;cursor:pointer;
+    transition:background .15s,transform .15s;background:#4b8edb}
+.cj-btn:hover{transform:translateY(-1px);color:#fff}
+.cj-btn:disabled,.cj-btn[disabled],.cj-btn.cj-deshabilitado{opacity:.45;cursor:not-allowed;transform:none;pointer-events:none}
+.cj-btn-primario{background:#2864F0}.cj-btn-primario:hover{background:#1d4fd0}
+.cj-btn-verde{background:#16a34a}.cj-btn-verde:hover{background:#12843c}
+.cj-btn-rojo{background:#dc2626}.cj-btn-rojo:hover{background:#b91c1c}
+.cj-btn-gris{background:#64748b}.cj-btn-gris:hover{background:#475569}
+.cj-btn-claro{background:#e2e8f0;color:#102653}.cj-btn-claro:hover{background:#cbd5e1;color:#102653}
+
+/* ---- Ticket de cierre ---- */
+.cj-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55)}
+.cj-modal-caja{display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto;padding:16px;border-radius:12px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.cj-ticket{width:300px;max-width:100%;margin:0 auto;padding:12px;border:1px dashed #94a3b8;font:12px "Courier New",Courier,monospace;color:#000;background:#fff}
+.cj-ticket h3{margin:0;text-align:center;font-size:14px}
+.cj-ticket p{margin:2px 0;text-align:center}
+.cj-ticket hr{border:0;border-top:1px dashed #000;margin:8px 0}
+.cj-ticket table{width:100%;border-collapse:collapse}
+.cj-ticket td{padding:1px 0}
+.cj-ticket td:last-child{text-align:right}
+.cj-ticket .cj-ticket-total td{font-weight:700;font-size:13px}
+
+@media print{
+    body *{visibility:hidden}
+    .cj-ticket,.cj-ticket *{visibility:visible}
+    .cj-ticket{position:absolute;left:0;top:0;border:0;width:72mm}
+}
+
+@media(max-width:1000px){.cj-grid{grid-template-columns:1fr}.cj-botones{flex-direction:row;flex-wrap:wrap}.cj-botones .cj-btn{flex:1 1 180px}}
+@media(max-width:720px){.cj-main{padding:12px}.cj-campos,.cj-montos,.cj-totales{grid-template-columns:1fr}.cj-cabecera{grid-template-columns:1fr 1fr}}

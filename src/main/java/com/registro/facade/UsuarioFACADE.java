@@ -5,6 +5,7 @@ import com.registro.dto.AreaDTO;
 import com.registro.dto.RolDTO;
 import com.registro.dto.UsuarioDTO;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,5 +83,9 @@ public class UsuarioFACADE {
     public boolean PersonalUsuario_ActualizaClaveF(UsuarioDTO usuario)
     {
         return usuarioDAO.PersonalUsuario_ActualizaClave(usuario);
+    }
+    
+     public List<UsuarioDTO> ListaAuditoria_SistemaDiaF(LocalDateTime FechaRegistro) {
+        return usuarioDAO.ListaAuditoria_SistemaDia(FechaRegistro);
     }
 }

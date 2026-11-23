@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" role="img" aria-label="Crédito / Deuda">
+  <rect x="34" y="14" width="80" height="76" rx="8" fill="#fff" stroke="#64748b" stroke-width="2.5"/>
+  <path d="M34 22 a8 8 0 0 1 8 -8 h64 a8 8 0 0 1 8 8 v12 h-80 z" fill="#be123c"/>
+  <rect x="50" y="8" width="6" height="14" rx="3" fill="#102653"/>
+  <rect x="92" y="8" width="6" height="14" rx="3" fill="#102653"/>
+  <g fill="#e2e8f0">
+    <rect x="44" y="42" width="12" height="10" rx="2"/><rect x="62" y="42" width="12" height="10" rx="2"/>
+    <rect x="80" y="42" width="12" height="10" rx="2"/><rect x="98" y="42" width="10" height="10" rx="2"/>
+    <rect x="44" y="58" width="12" height="10" rx="2"/><rect x="62" y="58" width="12" height="10" rx="2"/>
+    <rect x="98" y="58" width="10" height="10" rx="2"/>
+    <rect x="44" y="74" width="12" height="10" rx="2"/><rect x="62" y="74" width="12" height="10" rx="2"/>
+  </g>
+  <rect x="80" y="58" width="12" height="10" rx="2" fill="#be123c"/>
+  <g transform="translate(118 70)">
+    <circle r="18" fill="#be123c" stroke="#fff" stroke-width="3"/>
+    <path d="M0 -10 v10 l7 5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Control de Asistencia (consulta por día): ConsultaAsistenciaBean →
+    AsistenciaFACADE.ListaDetRegistroAsistenciasXFechaXTurnoF (igual que frm_ConsultaAsistenciaXDia de SisdataGimnasio).
+-->
 <ui:composition
     xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets"
     xmlns:h="jakarta.faces.html"
+    xmlns:f="jakarta.faces.core"
+    xmlns:a="jakarta.faces.passthrough"
     template="/WEB-INF/templates/principal.xhtml">
 
     <ui:param name="menuOpcion" value="verAsistencias" />
     <ui:param name="menuSubmenu" value="asistencia" />
+
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{consultaAsistenciaBean.abrir}" />
+        </f:metadata>
+    </ui:define>
 
     <ui:define name="title">
         Asistencia | Xport Fitness Gym
@@ -215,6 +227,21 @@
                 color: #b91c1c;
             }
 
+            /* Condición ADEUDA: la celda completa en rojo */
+            .tabla-asistencia tbody td.celda-adeuda {
+                background: #dc2626;
+                color: #ffffff;
+            }
+
+            .tabla-asistencia tbody td.celda-adeuda .estado {
+                background: transparent;
+                color: #ffffff;
+                padding-left: 0;
+                padding-right: 0;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
             .acciones {
                 display: flex;
                 gap: 7px;
@@ -249,6 +276,33 @@
                 }
             }
 
+            .asistencia-busqueda select {
+                padding: 10px 13px;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                background: white;
+                font: inherit;
+            }
+
+            .asistencia-busqueda input[type="date"] {
+                width: auto;
+            }
+
+            .asistencia-fecha a,
+            .acciones a.accion-btn {
+                text-decoration: none;
+            }
+
+            .asistencia-mensajes {
+                list-style: none;
+                margin: 0 0 12px;
+                padding: 10px 14px;
+                border-radius: 8px;
+                background: #fee2e2;
+                color: #b91c1c;
+                font-size: 13px;
+            }
+
         </style>
     </ui:define>
     <ui:define name="content">
@@ -267,7 +321,7 @@
 
                     <div class="asistencia-fecha">
                         <i class="fa-solid fa-calendar-days"></i>
-                        13 de noviembre de 2026
+                        #{consultaAsistenciaBean.fechaTexto}
                     </div>
 
                 </div>
@@ -281,7 +335,7 @@
                         </div>
                         <div>
                             <small>TOTAL DE ASISTENCIAS</small>
-                            <strong>35</strong>
+                            <strong>#{consultaAsistenciaBean.total}</strong>
                         </div>
                     </div>
 
@@ -290,18 +344,18 @@
                             <i class="fa-solid fa-user-check"></i>
                         </div>
                         <div>
-                            <small>PRESENTES</small>
-                            <strong>28</strong>
+                            <small>AL DÍA (CANCELADO)</small>
+                            <strong>#{consultaAsistenciaBean.alDia}</strong>
                         </div>
                     </div>
 
                     <div class="resumen-item">
                         <div class="resumen-icono" style="color:#d97706;background:#fef3c7;">
-                            <i class="fa-solid fa-clock"></i>
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
                         </div>
                         <div>
-                            <small>TARDANZAS</small>
-                            <strong>5</strong>
+                            <small>CON DEUDA (ADEUDA)</small>
+                            <strong>#{consultaAsistenciaBean.conDeuda}</strong>
                         </div>
                     </div>
 
@@ -310,51 +364,67 @@
                             <i class="fa-solid fa-user-xmark"></i>
                         </div>
                         <div>
-                            <small>FALTAS</small>
-                            <strong>2</strong>
+                            <small>FALTAS (SOCIOS ACTIVOS SIN INGRESO)</small>
+                            <strong>#{consultaAsistenciaBean.faltas}</strong>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- BARRA DE HERRAMIENTAS -->
+                <h:messages globalOnly="true" layout="list" styleClass="asistencia-mensajes" />
+
+                <!-- BARRA DE HERRAMIENTAS: fecha, turno de caja (cboturnos) y búsqueda -->
                 <div class="asistencia-toolbar">
 
                     <h2>Registro de socios</h2>
 
-                    <div class="asistencia-busqueda">
+                    <h:form id="formAsistencia" prependId="false" styleClass="asistencia-busqueda">
 
-                        <input type="text"
-                               placeholder="Buscar por nombre o documento..." />
+                        <h:inputText id="fechaAsistencia" value="#{consultaAsistenciaBean.fecha}"
+                                     a:type="date" a:aria-label="Fecha de asistencia"
+                                     onchange="document.getElementById('lnkCambiarFecha').click()" />
 
-                        <button type="button" class="btn-asistencia">
+                        <h:selectOneMenu id="turnoAsistencia" value="#{consultaAsistenciaBean.turno}" a:aria-label="Turno"
+                                         onchange="document.getElementById('btnBuscarAsistencia').click()">
+                            <f:selectItem itemValue="" itemLabel="Todos los turnos" />
+                            <f:selectItems value="#{consultaAsistenciaBean.turnos}" var="t"
+                                           itemValue="#{t.turno}" itemLabel="#{t.nombre}" />
+                        </h:selectOneMenu>
+
+                        <h:inputText value="#{consultaAsistenciaBean.filtro}"
+                                     a:type="search" a:placeholder="Buscar por nombre o código..." />
+
+                        <h:commandLink id="btnBuscarAsistencia" action="#{consultaAsistenciaBean.buscar}" styleClass="btn-asistencia">
                             <i class="fa-solid fa-magnifying-glass"></i>
                             Buscar
-                        </button>
+                        </h:commandLink>
+
+                        <h:commandLink id="lnkCambiarFecha" action="#{consultaAsistenciaBean.alCambiarFecha}" style="display:none" />
 
                         <button type="button"
+                                id="btnExportarAsistencia"
                                 class="btn-asistencia"
                                 style="background:#102653;">
                             <i class="fa-solid fa-file-export"></i>
                             Exportar
                         </button>
 
-                    </div>
+                    </h:form>
 
                 </div>
 
                 <!-- TABLA -->
                 <div class="asistencia-tabla-contenedor" data-paginar="asistencias">
 
-                    <table class="tabla-asistencia">
+                    <table class="tabla-asistencia" id="tablaAsistencia">
 
                         <thead>
                             <tr>
                                 <th>Socio</th>
-                                <th>Documento</th>
+                                <th>Código</th>
                                 <th>Hora entrada</th>
-                                <th>Hora salida</th>
-                                <th>Estado</th>
+                                <th>Turno</th>
+                                <th>Condición</th>
                                 <th>Observación</th>
                                 <th>Acciones</th>
                             </tr>
@@ -362,117 +432,46 @@
 
                         <tbody>
 
-                            <tr>
-                                <td>
-                                    <div class="socio-info">
-                                        <div class="socio-avatar">MC</div>
-                                        <strong>Michael Cueva</strong>
-                                    </div>
-                                </td>
-                                <td>00000001</td>
-                                <td>09:00 AM</td>
-                                <td>--:--</td>
-                                <td>
-                                    <span class="estado estado-presente">
-                                        Presente
-                                    </span>
-                                </td>
-                                <td>-</td>
-                                <td>
-                                    <div class="acciones">
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                            <ui:repeat value="#{consultaAsistenciaBean.lista}" var="r">
+                                <tr>
+                                    <td>
+                                        <div class="socio-info">
+                                            <div class="socio-avatar">#{consultaAsistenciaBean.iniciales(r.razonSocial)}</div>
+                                            <strong>#{r.razonSocial}</strong>
+                                        </div>
+                                    </td>
+                                    <td>#{r.cliente_ID}</td>
+                                    <td>#{consultaAsistenciaBean.hora(r.horaIngreso)}</td>
+                                    <td>#{consultaAsistenciaBean.nombreTurno(r.turno)}</td>
+                                    <td class="#{consultaAsistenciaBean.adeuda(r) ? 'celda-adeuda' : ''}">
+                                        <span class="estado #{consultaAsistenciaBean.adeuda(r) ? 'estado-falta' : 'estado-presente'}">
+                                            #{consultaAsistenciaBean.adeuda(r) ? 'Adeuda' : 'Cancelado'}
+                                        </span>
+                                    </td>
+                                    <td>#{empty r.dia ? '-' : 'Asistencia N° '.concat(r.dia).concat(' de la membresía')}</td>
+                                    <td>
+                                        <div class="acciones">
+                                            <h:link outcome="/ListaSuscripcionesMembresia.xhtml" styleClass="accion-btn"
+                                                    title="Ver las membresías del socio">
+                                                <f:param name="socio" value="#{r.cliente_ID}" />
+                                                <i class="fa-solid fa-eye"></i>
+                                            </h:link>
+                                            <h:link outcome="/RegistrarAsistencia.xhtml" styleClass="accion-btn"
+                                                    title="Registrar asistencia">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </h:link>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
 
-                            <tr>
-                                <td>
-                                    <div class="socio-info">
-                                        <div class="socio-avatar">JP</div>
-                                        <strong>Juan Pérez</strong>
-                                    </div>
-                                </td>
-                                <td>00000002</td>
-                                <td>09:15 AM</td>
-                                <td>11:30 AM</td>
-                                <td>
-                                    <span class="estado estado-presente">
-                                        Presente
-                                    </span>
-                                </td>
-                                <td>-</td>
-                                <td>
-                                    <div class="acciones">
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <div class="socio-info">
-                                        <div class="socio-avatar">CR</div>
-                                        <strong>Carlos Ramírez</strong>
-                                    </div>
-                                </td>
-                                <td>00000003</td>
-                                <td>09:35 AM</td>
-                                <td>--:--</td>
-                                <td>
-                                    <span class="estado estado-tardanza">
-                                        Tardanza
-                                    </span>
-                                </td>
-                                <td>Ingreso retrasado</td>
-                                <td>
-                                    <div class="acciones">
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <div class="socio-info">
-                                        <div class="socio-avatar">AL</div>
-                                        <strong>Andrea López</strong>
-                                    </div>
-                                </td>
-                                <td>00000004</td>
-                                <td>--:--</td>
-                                <td>--:--</td>
-                                <td>
-                                    <span class="estado estado-falta">
-                                        Falta
-                                    </span>
-                                </td>
-                                <td>No asistió</td>
-                                <td>
-                                    <div class="acciones">
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="accion-btn">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                            <h:panelGroup rendered="#{empty consultaAsistenciaBean.lista}">
+                                <tr>
+                                    <td colspan="7" style="text-align:center;color:#64748b;padding:24px;">
+                                        No hay asistencias registradas para la fecha y turno seleccionados.
+                                    </td>
+                                </tr>
+                            </h:panelGroup>
 
                         </tbody>
 
@@ -484,6 +483,33 @@
 
         </main>
 
+    </ui:define>
+
+    <ui:define name="scripts">
+        <script>
+            // Exportar: la tabla a CSV (Excel), solo las filas con datos
+            document.addEventListener("click", function (e) {
+                if (!e.target.closest("#btnExportarAsistencia")) return;
+                var tabla = document.getElementById("tablaAsistencia");
+                var celda = function (t) { return '"' + t.replace(/\s+/g, " ").trim().replace(/"/g, '""') + '"'; };
+                var lineas = [];
+                tabla.querySelectorAll("tr").forEach(function (tr) {
+                    var cols = Array.prototype.slice.call(tr.children, 0, 6);
+                    if (cols.length &lt; 6) return;
+                    lineas.push(cols.map(function (c) { return celda(c.innerText); }).join(";"));
+                });
+                if (lineas.length &lt;= 1) { alert("No hay asistencias para exportar."); return; }
+                var fecha = document.getElementById("fechaAsistencia").value || "hoy";
+                var blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8" });
+                var a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "asistencia-" + fecha + ".csv";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(a.href);
+            });
+        </script>
     </ui:define>
 
 </ui:composition>

@@ -202,7 +202,7 @@ public class PersonalBean implements Serializable {
 
     public String cancelar() {
         crearNuevo(false);
-        return "/ListaPersonal.xhtml?faces-redirect=true";
+        return Navegacion.salir("/ListaPersonal.xhtml?faces-redirect=true");
     }
 
     public boolean isEdicion() { return "actualizar".equals(modo); }

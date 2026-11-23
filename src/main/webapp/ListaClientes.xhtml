@@ -8,10 +8,12 @@
         <f:metadata>
             <f:viewParam name="tam" value="#{clienteBean.tamPagina}" />
             <f:viewParam name="pagina" value="#{clienteBean.pagina}" />
+            <f:viewParam name="orden" value="#{clienteBean.orden}" />
+            <f:viewParam name="dir" value="#{clienteBean.dir}" />
         </f:metadata>
     </ui:define>
     <ui:define name="title">Ver Socios | Xport Fitness Gym</ui:define>
-    <ui:define name="styles"><link rel="stylesheet" href="#{request.contextPath}/css/listaclientes.css?v=2" /></ui:define>
+    <ui:define name="styles"><link rel="stylesheet" href="#{request.contextPath}/css/listaclientes.css?v=3" /></ui:define>
     <ui:define name="content">
         <main class="dashboard-main">
             <section class="panel panel-listaclientes">       
@@ -61,14 +63,27 @@
 
                 <div class="clientes-resumen">
                     <div><i class="fa-solid fa-address-book"></i><span>Listado de clientes</span></div>
+                    <form method="get" action="#{request.contextPath}/ListaClientes.xhtml" class="clientes-orden">
+                        <input type="hidden" name="tam" value="#{clienteBean.tamPagina}" />
+                        <label for="ordenCampo"><i class="fa-solid fa-arrow-down-wide-short"></i> Ordenar por</label>
+                        <select id="ordenCampo" name="orden" onchange="this.form.submit()">
+                            <option value="nombre" selected="#{clienteBean.orden eq 'nombre' ? 'selected' : null}">Nombre</option>
+                            <option value="codigo" selected="#{clienteBean.orden eq 'codigo' ? 'selected' : null}">Código</option>
+                        </select>
+                        <select id="ordenDir" name="dir" onchange="this.form.submit()" aria-label="Dirección del orden">
+                            <option value="asc" selected="#{clienteBean.dir eq 'asc' ? 'selected' : null}">Ascendente (A-Z / 0-9)</option>
+                            <option value="desc" selected="#{clienteBean.dir eq 'desc' ? 'selected' : null}">Descendente (Z-A / 9-0)</option>
+                        </select>
+                        <noscript><button type="submit">Aplicar</button></noscript>
+                    </form>
                     <span class="clientes-total">Registros: <strong>#{clienteBean.totalRegistros}</strong></span>
                 </div>
 
                 <div class="clientes-tabla-scroll">
                     <h:dataTable value="#{clienteBean.clientesPagina}" var="cliente" styleClass="tabla-clientes"
                                  rendered="#{not empty clienteBean.listaClientes}">
-                        <h:column><f:facet name="header">ID</f:facet><h:outputText value="#{cliente.cliente_ID}" /></h:column>
-                        <h:column><f:facet name="header">Razón Social</f:facet><span class="cliente-razon"><h:outputText value="#{cliente.razonSocial}" /></span></h:column>
+                        <h:column><f:facet name="header"><a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=codigo&amp;dir=#{clienteBean.orden eq 'codigo' and clienteBean.dir eq 'asc' ? 'desc' : 'asc'}" class="th-orden #{clienteBean.orden eq 'codigo' ? 'th-activo' : ''}" title="Ordenar por código">ID <i class="fa-solid #{clienteBean.orden ne 'codigo' ? 'fa-sort' : (clienteBean.dir eq 'asc' ? 'fa-sort-up' : 'fa-sort-down')}"></i></a></f:facet><h:outputText value="#{cliente.cliente_ID}" /></h:column>
+                        <h:column><f:facet name="header"><a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=nombre&amp;dir=#{clienteBean.orden eq 'nombre' and clienteBean.dir eq 'asc' ? 'desc' : 'asc'}" class="th-orden #{clienteBean.orden eq 'nombre' ? 'th-activo' : ''}" title="Ordenar por nombre">Razón Social <i class="fa-solid #{clienteBean.orden ne 'nombre' ? 'fa-sort' : (clienteBean.dir eq 'asc' ? 'fa-sort-up' : 'fa-sort-down')}"></i></a></f:facet><span class="cliente-razon"><h:outputText value="#{cliente.razonSocial}" /></span></h:column>
                         <h:column><f:facet name="header">RUC / DNI</f:facet><h:outputText value="#{cliente.rucDNI}" /></h:column>
                         <h:column><f:facet name="header">Dirección</f:facet><h:outputText value="#{cliente.direccion}" /></h:column>
                         <h:column><f:facet name="header">Teléfono</f:facet><h:outputText value="#{cliente.telefono}" /></h:column>
@@ -92,16 +107,18 @@
                     <span class="pag-info">Mostrando <strong>#{clienteBean.desde}</strong> a <strong>#{clienteBean.hasta}</strong> de <strong>#{clienteBean.totalRegistros}</strong> socios</span>
 
                     <nav class="pag-botones" aria-label="Paginación de socios">
-                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;pagina=1" class="pag-btn #{clienteBean.pagina eq 1 ? 'pag-deshabilitado' : ''}" title="Primera página"><i class="fa-solid fa-angles-left"></i></a>
-                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;pagina=#{clienteBean.pagina - 1}" class="pag-btn #{clienteBean.pagina eq 1 ? 'pag-deshabilitado' : ''}" title="Anterior"><i class="fa-solid fa-angle-left"></i></a>
+                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=#{clienteBean.orden}&amp;dir=#{clienteBean.dir}&amp;pagina=1" class="pag-btn #{clienteBean.pagina eq 1 ? 'pag-deshabilitado' : ''}" title="Primera página"><i class="fa-solid fa-angles-left"></i></a>
+                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=#{clienteBean.orden}&amp;dir=#{clienteBean.dir}&amp;pagina=#{clienteBean.pagina - 1}" class="pag-btn #{clienteBean.pagina eq 1 ? 'pag-deshabilitado' : ''}" title="Anterior"><i class="fa-solid fa-angle-left"></i></a>
                         <ui:repeat value="#{clienteBean.paginasVisibles}" var="num">
-                            <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;pagina=#{num}" class="pag-btn #{num eq clienteBean.pagina ? 'pag-actual' : ''}">#{num}</a>
+                            <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=#{clienteBean.orden}&amp;dir=#{clienteBean.dir}&amp;pagina=#{num}" class="pag-btn #{num eq clienteBean.pagina ? 'pag-actual' : ''}">#{num}</a>
                         </ui:repeat>
-                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;pagina=#{clienteBean.pagina + 1}" class="pag-btn #{clienteBean.pagina eq clienteBean.totalPaginas ? 'pag-deshabilitado' : ''}" title="Siguiente"><i class="fa-solid fa-angle-right"></i></a>
-                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;pagina=#{clienteBean.totalPaginas}" class="pag-btn #{clienteBean.pagina eq clienteBean.totalPaginas ? 'pag-deshabilitado' : ''}" title="Última página"><i class="fa-solid fa-angles-right"></i></a>
+                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=#{clienteBean.orden}&amp;dir=#{clienteBean.dir}&amp;pagina=#{clienteBean.pagina + 1}" class="pag-btn #{clienteBean.pagina eq clienteBean.totalPaginas ? 'pag-deshabilitado' : ''}" title="Siguiente"><i class="fa-solid fa-angle-right"></i></a>
+                        <a href="#{request.contextPath}/ListaClientes.xhtml?tam=#{clienteBean.tamPagina}&amp;orden=#{clienteBean.orden}&amp;dir=#{clienteBean.dir}&amp;pagina=#{clienteBean.totalPaginas}" class="pag-btn #{clienteBean.pagina eq clienteBean.totalPaginas ? 'pag-deshabilitado' : ''}" title="Última página"><i class="fa-solid fa-angles-right"></i></a>
                     </nav>
 
                     <form method="get" action="#{request.contextPath}/ListaClientes.xhtml" class="pag-tamano">
+                        <input type="hidden" name="orden" value="#{clienteBean.orden}" />
+                        <input type="hidden" name="dir" value="#{clienteBean.dir}" />
                         <label for="tamPagina">Mostrar</label>
                         <select id="tamPagina" name="tam" onchange="this.form.submit()">
                             <ui:repeat value="#{clienteBean.tamanosPagina}" var="t">

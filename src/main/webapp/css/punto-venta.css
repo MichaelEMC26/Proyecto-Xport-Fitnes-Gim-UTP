@@ -1,0 +1,48 @@
+/*
+ * Punto de Venta conectado a la base de datos (PuntoVentaBean):
+ * comprobante, venta en edición, avisos y acciones del historial de ventas del turno.
+ */
+.pv-aviso-servidor {
+    display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 14px; border-radius: 10px;
+    background: #FFF1F2; border: 1px solid #FECDD3; color: #9f1239; font-size: 14px; font-weight: 600;
+}
+.pv-turno { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Comprobante (Nota de venta / Boleta / Factura) */
+.pv-tipodoc { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.pv-tipodoc label { font-size: 12px; font-weight: 700; color: #263B60; text-transform: uppercase; letter-spacing: .4px; }
+.pv-tipodoc select {
+    flex: 1; max-width: 220px; height: 36px; padding: 0 10px; border: 1px solid #CFD7E2; border-radius: 9px;
+    background: #fff; color: #102653; font-weight: 700;
+}
+.pv-tipodoc select:disabled { background: #f1f4f9; color: #55657f; }
+
+/* Venta en edición (Modificar) */
+.pv-edicion {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 9px 12px; border-radius: 10px;
+    background: #FFF7E6; border: 1px solid #FCD9A0; color: #92400e; font-size: 13px;
+}
+.pv-edicion[hidden] { display: none; }
+.pv-edicion span { flex: 1; }
+.pv-edicion button {
+    border: 1px solid #f59e0b; background: #fff; color: #92400e; border-radius: 8px; padding: 5px 10px;
+    font-weight: 700; cursor: pointer;
+}
+.pv-edicion button:hover { background: #fef3c7; }
+
+/* Pagar ocupado mientras se graba */
+#pvPagar[disabled] { opacity: .6; cursor: progress; }
+
+/* Historial: acciones por venta */
+.pv-history-table td.pv-num { text-align: right; white-space: nowrap; }
+.pv-history-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.pv-history-acciones button {
+    border: 1px solid #CFD7E2; background: #fff; color: #102653; border-radius: 7px; padding: 5px 9px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.pv-history-acciones button.pv-btn-modificar:hover:not(:disabled) { background: #eaf1fb; border-color: #2864F0; }
+.pv-history-acciones button.pv-btn-eliminar { color: #b91c1c; border-color: #fca5a5; }
+.pv-history-acciones button.pv-btn-eliminar:hover:not(:disabled) { background: #fee2e2; }
+.pv-history-acciones button:disabled { opacity: .45; cursor: not-allowed; }
+.pv-history-table tr.pv-en-edicion td { background: #FFF7E6; }
+.pv-credito { color: #be123c; font-weight: 700; }

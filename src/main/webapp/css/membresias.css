@@ -96,3 +96,37 @@ html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;backgr
 @media(max-width:900px){.dashboard-container{display:block}.sidebar{width:100%;min-height:auto;padding:15px}.saludo-admin h2{margin-bottom:14px}.sidebar-menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.sidebar-menu li{margin:0}.sidebar-menu2{display:flex;gap:8px;margin-top:12px;padding-top:10px}.main-content{padding:12px}.panel{padding:17px}}
 @media(max-width:900px){.fila-socio{grid-template-columns:minmax(0,1fr) auto auto}.fila-socio>.campo:last-child{grid-column:1/-1}.barra-ayuda{margin-left:0;width:100%}}
 @media(max-width:620px){.fila,.fila-tres,.fila-codigo,.fila-membresia,.fila-socio,.fila-observacion,.resumen-pago{grid-template-columns:1fr}.barra-acciones .btn-buscar{flex:1 1 100%}.btn-buscar{width:100%}.botones-form{grid-template-columns:repeat(2,minmax(0,1fr))}.titulo-modulo h1{font-size:19px}}
+
+/* Mensajes del controlador (h:messages) */
+.mensajes-suscripcion{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:6px}
+.mensajes-suscripcion li{padding:9px 12px;border-radius:8px;font-size:13px}
+.mensajes-suscripcion .mensaje-info{background:#EAF7EE;color:#166534;border:1px solid #BBE5C8}
+.mensajes-suscripcion .mensaje-warn{background:#FFF7E6;color:#92400E;border:1px solid #FCD9A0}
+.mensajes-suscripcion .mensaje-error{background:#FDECEC;color:#B42318;border:1px solid #F5C2C0}
+/* Botones deshabilitados (Enabled = false en el formulario de escritorio) */
+.btn-buscar:disabled,.btn-form:disabled{opacity:.45;cursor:not-allowed;filter:none}
+/* Impresión del cronograma [Pausa]: oculta en pantalla, solo ella al imprimir */
+#impresionCronograma{display:none}
+@media print{
+body *{visibility:hidden}
+#impresionCronograma,#impresionCronograma *{visibility:visible}
+#impresionCronograma{display:block;position:absolute;left:0;top:0;width:100%;font-size:12px;color:#000}
+#impresionCronograma h2{font-size:16px;margin:0 0 10px}
+#impresionCronograma table{width:100%;border-collapse:collapse;margin-bottom:12px}
+#impresionCronograma th,#impresionCronograma td{border:1px solid #999;padding:4px 6px;text-align:left}
+}
+/* Nuevo [F2] en la barra superior */
+.btn-nuevo-barra{background:#16A34A}
+.btn-nuevo-barra:hover{background:#15803D}
+/* Selectores: fila resaltada con el teclado y botón Agregar por fila */
+.tabla-planes tbody tr:focus{outline:2px solid var(--blue);outline-offset:-2px}
+.tabla-planes td:last-child{white-space:nowrap;text-align:center}
+.btn-agregar{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:var(--blue);color:#fff !important;font-size:11px;font-weight:700;text-decoration:none}
+.btn-agregar:hover{background:var(--blue-dark)}
+/* Botón Agregar siempre visible: columna fija a la derecha (planes y socios) */
+.tabla-planes th:last-child,.tabla-planes td:last-child{position:sticky;right:0;z-index:1;background:#fff;box-shadow:-6px 0 6px -6px rgba(16,38,83,.25)}
+.tabla-planes th:last-child{background:#DDEAFF}
+.tabla-planes tbody tr:hover td:last-child{background:#EFF5FF}
+.tabla-planes tbody tr.seleccionado td:last-child{background:#DDEAFF}
+/* Socios: nombre y dirección largos se recortan con "…" (el texto completo aparece al pasar el mouse) */
+#selectorClientes .tabla-planes td.celda-larga{max-width:220px;overflow:hidden;text-overflow:ellipsis}

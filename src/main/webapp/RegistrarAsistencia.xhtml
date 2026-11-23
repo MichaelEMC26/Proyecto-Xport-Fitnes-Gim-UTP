@@ -1,18 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Registrar Asistencia (control de ingreso de socios).
-    Basado en frm_RegistrarAsistencia de SisdataGimnasio.
-    Por ahora es una plantilla (front-end): js/registrar-asistencia.js muestra datos de ejemplo.
-    Pendiente: enlazar con un bean -> AsistenciaFACADE (sp_InsertDetRegistroAsistencias, etc.).
+    Misma funcionalidad que frm_RegistrarAsistencia de SisdataGimnasio.
+    Controlador: AsistenciaBean (asistenciaBean) -> AsistenciaFACADE.RegistrarAsistenciaF.
 -->
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html"
+    xmlns:f="jakarta.faces.core" xmlns:a="jakarta.faces.passthrough"
     template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="registrarAsistencia" />
     <ui:param name="menuSubmenu" value="asistencia" />
+    <!-- Al abrir: socios activos y turno de la caja abierta (frm_ControlAsistencia_Load) -->
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{asistenciaBean.abrir}" />
+        </f:metadata>
+    </ui:define>
     <ui:define name="title">Registrar Asistencia | Xport Fitness Gym</ui:define>
     <ui:define name="styles">
-        <link rel="stylesheet" href="#{request.contextPath}/css/registrar-asistencia.css?v=1" />
+        <link rel="stylesheet" href="#{request.contextPath}/css/registrar-asistencia.css?v=4" />
     </ui:define>
     <ui:define name="content">
         <main class="ra-main">
@@ -22,7 +28,7 @@
                 <span class="ra-titulo-ayuda">F2 Nuevo · Esc Salir</span>
             </header>
 
-            <div class="ra-grid">
+            <h:form id="formAsistencia" prependId="false" styleClass="ra-grid">
                 <!-- ============ COLUMNA PRINCIPAL ============ -->
                 <div class="ra-col-principal">
 
@@ -51,26 +57,42 @@
                                     <div class="ra-campo ra-campo-codigo">
                                         <label for="raCodigo">Código:</label>
                                         <div class="ra-codigo-fila">
-                                            <input type="text" id="raCodigo" autocomplete="off" autofocus="autofocus"
-                                                   placeholder="Código, DNI o QR" />
-                                            <button type="button" class="ra-btn ra-btn-ingresar" id="raIngresar">
+                                            <!-- disabled tras mostrar un resultado; solo Nuevo [F2] lo vuelve a activar -->
+                                            <h:inputText id="raCodigo" value="#{asistenciaBean.codigo}"
+                                                         disabled="#{asistenciaBean.controlesBloqueados}"
+                                                         a:autocomplete="off" a:autofocus="autofocus"
+                                                         a:placeholder="Código, DNI o QR" />
+                                            <button type="button" class="ra-btn ra-btn-ingresar" id="raIngresar"
+                                                    data-bloqueado="#{asistenciaBean.controlesBloqueados}">
                                                 <i class="fa-solid fa-right-to-bracket"></i> Ingresar [Enter]
                                             </button>
                                         </div>
                                     </div>
-                                    <p class="ra-ayuda">Escanee su QR (lector o celular), o digite su código o DNI y presione Enter.</p>
+                                    <p class="ra-ayuda" id="raAyuda" data-bloqueado="#{asistenciaBean.controlesBloqueados}">
+                                        <span class="ra-ayuda-activo">Escanee su QR (lector o celular), o digite su código o DNI y presione Enter.</span>
+                                        <span class="ra-ayuda-bloqueado"><i class="fa-solid fa-lock"></i> Registro mostrado. Presione <strong>Nuevo [F2]</strong> para registrar a otro socio.</span>
+                                    </p>
 
-                                    <div class="ra-bienvenida" id="raBienvenida" hidden="hidden">
-                                        <span>Bienvenido(a):</span>
-                                        <strong id="raNombre"></strong>
-                                    </div>
+                                    <!-- Nombre del socio; "Bienvenido(a)" solo si pudo ingresar -->
+                                    <ui:fragment rendered="#{not empty asistenciaBean.nombreSocio}">
+                                        <div class="ra-bienvenida ra-dato-socio" id="raBienvenida">
+                                            <ui:fragment rendered="#{asistenciaBean.bienvenido}"><span>Bienvenido(a):</span></ui:fragment>
+                                            <strong id="raNombre">#{asistenciaBean.nombreSocio}</strong>
+                                        </div>
+                                    </ui:fragment>
                                 </div>
                             </div>
                         </section>
 
                         <section class="ra-card ra-foto">
                             <div class="ra-foto-titulo">Foto</div>
-                            <div class="ra-foto-marco" id="raFoto"><i class="fa-solid fa-user"></i></div>
+                            <div class="ra-foto-marco" id="raFoto">
+                                <ui:fragment rendered="#{empty asistenciaBean.fotoClienteId}"><i class="fa-solid fa-user"></i></ui:fragment>
+                                <ui:fragment rendered="#{not empty asistenciaBean.fotoClienteId}">
+                                    <img class="ra-dato-socio" alt="Foto del socio"
+                                         src="#{request.contextPath}/reportes/fotoSocio?id=#{asistenciaBean.fotoClienteId}" />
+                                </ui:fragment>
+                            </div>
                         </section>
                     </div>
 
@@ -78,7 +100,34 @@
                     <section class="ra-card ra-avisos">
                         <h2 class="ra-card-titulo">Avisos</h2>
                         <div class="ra-avisos-cuerpo" id="raAvisos">
-                            <p class="ra-aviso-vacio">Registre un ingreso para ver los avisos del socio.</p>
+                            <h:messages globalOnly="true" layout="list" styleClass="ra-mensajes ra-dato-socio"
+                                        infoClass="ra-aviso ra-aviso-info" warnClass="ra-aviso ra-aviso-error"
+                                        errorClass="ra-aviso ra-aviso-deuda" />
+
+                            <ui:fragment rendered="#{asistenciaBean.mostrarAvisos and asistenciaBean.conLimite}">
+                                <div class="ra-aviso ra-aviso-info ra-dato-socio">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    Máximo de asistencias: <strong>#{asistenciaBean.asistenciasPermitidas}</strong> ·
+                                    Total de asistencias: <strong>#{asistenciaBean.asistenciasUsadas}</strong> ·
+                                    Le quedan <strong>#{asistenciaBean.asistenciasRestantes}</strong> asistencias
+                                </div>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{asistenciaBean.mostrarAvisos and asistenciaBean.soloTotal}">
+                                <div class="ra-aviso ra-aviso-info ra-dato-socio">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    Total de asistencias: <strong>#{asistenciaBean.asistenciasUsadas}</strong>
+                                </div>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not empty asistenciaBean.deudaMonto}">
+                                <div class="ra-aviso ra-aviso-deuda ra-dato-socio">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    Usted tiene una deuda de S/ <strong>#{asistenciaBean.deudaMonto}</strong> #{asistenciaBean.deudaTexto}
+                                </div>
+                            </ui:fragment>
+
+                            <ui:fragment rendered="#{not asistenciaBean.mostrarAvisos and empty facesContext.messageList}">
+                                <p class="ra-aviso-vacio">Registre un ingreso para ver los avisos del socio.</p>
+                            </ui:fragment>
                         </div>
                     </section>
 
@@ -89,12 +138,30 @@
                             <table class="ra-tabla">
                                 <thead>
                                     <tr>
-                                        <th>Nro. Registro</th><th>Pedido</th><th>Periodo</th><th>Duración</th>
+                                        <th>Nro. Registro</th><th>Duración</th>
                                         <th>Frecuencia</th><th>Fecha inicio</th><th>Fecha fin</th><th>Condición</th>
                                     </tr>
                                 </thead>
                                 <tbody id="raPeriodo">
-                                    <tr class="ra-fila-vacia"><td colspan="8">Sin datos</td></tr>
+                                    <ui:fragment rendered="#{asistenciaBean.periodo ne null}">
+                                        <tr>
+                                            <td>#{asistenciaBean.periodo.nroSuscripcion_id}</td>
+                                            <td>#{asistenciaBean.periodoTexto}</td>
+                                            <td>#{asistenciaBean.periodo.duracion}</td>
+                                            <td>#{asistenciaBean.periodo.frecuencia}</td>
+                                            <td>
+                                                <h:outputText value="#{asistenciaBean.periodo.fechaInicio}">
+                                                    <f:convertDateTime type="localDate" pattern="dd/MM/yyyy" />
+                                                </h:outputText>
+                                            </td>
+                                            <td>
+                                                <h:outputText value="#{asistenciaBean.periodo.fechaFin}">
+                                                    <f:convertDateTime type="localDateTime" pattern="dd/MM/yyyy" />
+                                                </h:outputText>
+                                            </td>
+                                            <td><span class="ra-condicion">#{asistenciaBean.periodo.condicion}</span></td>
+                                        </tr>
+                                    </ui:fragment>
                                 </tbody>
                             </table>
                         </div>
@@ -109,7 +176,24 @@
                             <table class="ra-tabla ra-tabla-centro">
                                 <thead><tr><th>Día</th><th>Hora</th><th>Fecha</th></tr></thead>
                                 <tbody id="raHistorial">
-                                    <tr class="ra-fila-vacia"><td colspan="3">Sin asistencias</td></tr>
+                                    <ui:fragment rendered="#{empty asistenciaBean.historial}">
+                                        <tr class="ra-fila-vacia"><td colspan="3">Sin asistencias</td></tr>
+                                    </ui:fragment>
+                                    <ui:repeat value="#{asistenciaBean.historial}" var="h">
+                                        <tr>
+                                            <td>#{h.dia}</td>
+                                            <td>
+                                                <h:outputText value="#{h.horaIngreso}">
+                                                    <f:convertDateTime type="localDateTime" pattern="hh:mm:ss a" locale="en_US" />
+                                                </h:outputText>
+                                            </td>
+                                            <td>
+                                                <h:outputText value="#{h.fechaIngreso}">
+                                                    <f:convertDateTime type="localDate" pattern="dd/MM/yyyy" />
+                                                </h:outputText>
+                                            </td>
+                                        </tr>
+                                    </ui:repeat>
                                 </tbody>
                             </table>
                         </div>
@@ -124,10 +208,16 @@
                         </h:link>
                     </div>
                 </aside>
-            </div>
+
+                <!-- Acciones del controlador: los botones de arriba (diseño original) hacen clic en estos enlaces -->
+                <div style="display:none">
+                    <h:commandLink id="lnkIngresar" action="#{asistenciaBean.registrar}" />
+                    <h:commandLink id="lnkNuevo" action="#{asistenciaBean.nuevo}" />
+                </div>
+            </h:form>
         </main>
     </ui:define>
     <ui:define name="scripts">
-        <script src="#{request.contextPath}/js/registrar-asistencia.js?v=1"></script>
+        <script src="#{request.contextPath}/js/registrar-asistencia.js?v=4"></script>
     </ui:define>
 </ui:composition>

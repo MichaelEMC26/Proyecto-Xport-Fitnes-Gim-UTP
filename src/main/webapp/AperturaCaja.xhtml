@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Generar Apertura de Caja.
+    Misma estructura y funcionalidad que frm_GenerarAperturaCaja de SisdataGimnasio.
+    Controlador: AperturaCajaBean (aperturaCajaBean) -> AperturaCierreCajaFACADE
+    (sp_ListaAperturaCierreCajaAbierto, sp_ListaTurnoDia, sp_InsertAperturaCierreCaja).
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html"
+    xmlns:f="jakarta.faces.core" xmlns:a="jakarta.faces.passthrough"
+    template="/WEB-INF/templates/principal.xhtml">
+    <ui:param name="menuOpcion" value="aperturaCaja" />
+    <ui:param name="menuSubmenu" value="caja" />
+    <ui:define name="title">Apertura de Caja | Xport Fitness Gym</ui:define>
+    <ui:define name="styles">
+        <link rel="stylesheet" href="#{request.contextPath}/css/caja.css?v=1" />
+    </ui:define>
+    <ui:define name="content">
+        <main class="cj-main">
+            <header class="cj-titulo">
+                <h1><i class="fa-solid fa-cash-register"></i> Generar apertura de caja</h1>
+                <span class="cj-titulo-ayuda">Enter Generar · Esc Salir</span>
+            </header>
+
+            <h:form id="formApertura" prependId="false">
+                <h:messages globalOnly="true" layout="list" styleClass="cj-mensajes"
+                            infoClass="cj-aviso cj-aviso-info" warnClass="cj-aviso cj-aviso-warn"
+                            errorClass="cj-aviso cj-aviso-error" />
+
+                <section class="cj-card cj-apertura">
+                    <h2 class="cj-card-titulo">Datos de la apertura</h2>
+                    <div class="cj-card-cuerpo">
+                        <div class="cj-campos">
+                            <!-- cboconcepto -->
+                            <div class="cj-campo cj-campo-ancho">
+                                <label for="cjConcepto">Tipo de concepto:</label>
+                                <h:selectOneMenu id="cjConcepto" value="#{aperturaCajaBean.concepto}" disabled="true">
+                                    <f:selectItem itemValue="APERTURA DE CAJA" itemLabel="APERTURA DE CAJA" />
+                                </h:selectOneMenu>
+                            </div>
+
+                            <!-- dateFechaTurno -->
+                            <div class="cj-campo">
+                                <label for="cjFechaTurno">Fecha de turno:</label>
+                                <h:inputText id="cjFechaTurno" value="#{aperturaCajaBean.fechaTurno}" a:type="date"
+                                             disabled="#{aperturaCajaBean.bloqueado}">
+                                    <f:convertDateTime type="localDate" pattern="yyyy-MM-dd" />
+                                </h:inputText>
+                            </div>
+
+                            <!-- txthora (timer1) -->
+                            <div class="cj-campo">
+                                <label>Hora:</label>
+                                <div class="cj-dato cj-hora cj-reloj">--:--:--</div>
+                            </div>
+
+                            <!-- txtmontoInicial -->
+                            <div class="cj-campo cj-campo-ancho">
+                                <label for="cjMontoInicial">Monto inicial (S/):</label>
+                                <h:inputText id="cjMontoInicial" value="#{aperturaCajaBean.montoInicial}"
+                                             styleClass="cj-monto-grande" disabled="#{aperturaCajaBean.bloqueado}"
+                                             a:autocomplete="off" a:inputmode="decimal" />
+                            </div>
+
+                            <!-- lblCodResp / lblnombreResp -->
+                            <div class="cj-campo cj-campo-ancho">
+                                <label>Responsable:</label>
+                                <div class="cj-resp">
+                                    <div class="cj-dato">#{aperturaCajaBean.codResp}</div>
+                                    <div class="cj-dato">#{aperturaCajaBean.nombreResp}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cj-botones-fila">
+                            <h:commandButton id="cjGenerar" value="Generar apertura" action="#{aperturaCajaBean.generar}"
+                                             styleClass="cj-btn cj-btn-primario" disabled="#{aperturaCajaBean.bloqueado}" />
+                            <ui:fragment rendered="#{aperturaCajaBean.bloqueado}">
+                                <h:link outcome="/RegistrarCierreCaja.xhtml" styleClass="cj-btn cj-btn-verde">
+                                    <i class="fa-solid fa-lock"></i> Ir a cierre de caja
+                                </h:link>
+                            </ui:fragment>
+                            <h:link id="cjSalir" outcome="/dashboard.xhtml" styleClass="cj-btn cj-btn-gris">
+                                <i class="fa-solid fa-door-open"></i> Salir [Esc]
+                            </h:link>
+                        </div>
+                    </div>
+                </section>
+            </h:form>
+        </main>
+    </ui:define>
+    <ui:define name="scripts">
+        <script src="#{request.contextPath}/js/caja.js?v=1"></script>
+    </ui:define>
+</ui:composition>

@@ -8,6 +8,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 
 public class UsuarioDAO {
@@ -323,4 +324,55 @@ public class UsuarioDAO {
         return ResultadoExitoso;
     }
     
+    /** sp_ListaAuditoria_SistemaDia: registros de Auditoria_Sistema del día indicado. */
+    public List<UsuarioDTO> ListaAuditoria_SistemaDia(LocalDateTime FechaRegistro)
+    {
+        List<UsuarioDTO> lista = new ArrayList<>();
+        Connection cn = null;
+        CallableStatement cs = null;
+        ResultSet rs = null;
+        
+        try
+        {
+            cn = ConexionBD.obtenerConexion();
+            String sql = "{call sp_ListaAuditoria_SistemaDia(?)}";
+            cs = cn.prepareCall(sql);
+            cs.setTimestamp(1, Timestamp.valueOf(FechaRegistro.toLocalDate().atStartOfDay()));
+            rs = cs.executeQuery();
+            
+            while(rs.next())
+            {
+                UsuarioDTO items = new UsuarioDTO();
+                
+                items.setId_UserSist(rs.getInt("Id_UserSist"));
+                items.setNombres(rs.getString("Nombres"));
+                items.setCadena(rs.getString("Cadena"));
+                items.setaccion(rs.getString("accion"));
+                Time hora = rs.getTime("Hora");
+                items.setHora(hora == null ? null : hora.toLocalTime());
+                Date fecha = rs.getDate("Fecha");   // el SP la devuelve como "Fecha"
+                items.setFechaRegistro(fecha == null ? null : fecha.toLocalDate().atStartOfDay());
+                
+                lista.add(items);
+            }
+        }
+        catch(SQLException ex)
+        {
+            ex.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                if(cn!=null)cn.close();
+                if(cs!=null)cs.close();
+                if(rs!=null)rs.close();
+            }
+            catch(Exception ex)
+            {
+                ex.printStackTrace();
+            }
+        }
+        return lista;
+    }
 }

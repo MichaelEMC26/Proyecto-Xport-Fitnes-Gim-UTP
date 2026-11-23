@@ -8,6 +8,10 @@ gym.db.url=jdbc:sqlserver://SERVIDOR;instanceName=INSTANCIA;databaseName=BDGimna
 gym.db.user=USUARIO
 gym.db.password=CONTRASENA
 
+# Pool de conexiones (opcional): máximo de conexiones abiertas a la vez. Por defecto 20.
+# Con 0 no se usa pool (una conexión nueva en cada consulta, como antes).
+#gym.db.pool.max=20
+
 # Correo para "¿Has olvidado tu clave?" (SMTP). Sin estas claves la opción avisa que no está disponible.
 # Puerto 587 con STARTTLS (gym.mail.ssl=false) o 465 con SSL (gym.mail.ssl=true).
 gym.mail.host=mail.sisdataperu.com
@@ -16,3 +20,12 @@ gym.mail.ssl=true
 gym.mail.user=CUENTA@sisdataperu.com
 gym.mail.password=CONTRASENA_DEL_CORREO
 gym.mail.from=CUENTA@sisdataperu.com
+
+# Búsqueda de DNI (Reniec) y RUC (Sunat) en el registro de socios (API dniruc.apisperu.com).
+# Es el mismo token que usa SisdataGimnasio (frm_ManteClientes2). Sin esta clave la búsqueda avisa que no está configurada.
+gym.apisperu.token=TOKEN_DE_APISPERU
+
+# Carpeta del servidor donde se guardan las fotos de los socios (botón "Cargar foto" en Socios).
+# La ruta completa de cada foto se graba en Cliente.Foto (máx. 100 caracteres): use una ruta corta.
+# Si no se indica: <carpeta de Tomcat>/fotos-socios
+#gym.fotos.dir=D:/XportFitnessGym/fotos

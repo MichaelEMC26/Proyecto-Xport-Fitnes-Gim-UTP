@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.registro.dto;
-
+import java.time.LocalDateTime;
 /**
  *
  * @author Ing
@@ -25,13 +25,16 @@ public class ClienteDTO implements java.io.Serializable {
     private String Contacto;
     private String TelefonoCont;
     private byte[] HuellaDactilar;
+    private LocalDateTime FechaCumpleaños;
+    private LocalDateTime FechaIni;
+    private LocalDateTime FechaFin;
     
     public ClienteDTO()
     {
                 
     }
     
-    public ClienteDTO(String Cliente_ID,String RazonSocial,String Direccion,String Telefono,String Estado,String Telefono2,String Correo,String Sexo,String RucDNI,String TipoId,String Foto,String Contacto,String TelefonoCont,byte[] HuellaDactilar)
+    public ClienteDTO(String Cliente_ID,String RazonSocial,String Direccion,String Telefono,String Estado,String Telefono2,String Correo,String Sexo,String RucDNI,String TipoId,String Foto,String Contacto,String TelefonoCont,byte[] HuellaDactilar, LocalDateTime FechaCumpleaños)
     {
         this.Cliente_ID=Cliente_ID;
         this.RazonSocial=RazonSocial;
@@ -47,7 +50,7 @@ public class ClienteDTO implements java.io.Serializable {
         this.Contacto = Contacto;
         this.TelefonoCont = TelefonoCont;
         this.HuellaDactilar = HuellaDactilar;
-        
+        this.FechaCumpleaños = FechaCumpleaños;
     }
     
     public String getCliente_ID(){ return Cliente_ID;}
@@ -92,5 +95,12 @@ public class ClienteDTO implements java.io.Serializable {
     public byte[] getHuellaDactilar() {return HuellaDactilar;}
     public void setHuellaDactilar(byte[] HuellaDactilar){this.HuellaDactilar = HuellaDactilar;}
     
+    public LocalDateTime getFechaCumpleaños(){return FechaCumpleaños;}
+    public void setFechaCumpleaños(LocalDateTime FechaCumpleaños){this.FechaCumpleaños = FechaCumpleaños;}
     
+    public LocalDateTime getFechaIni(){return FechaIni;}
+    public void setFechaIni(LocalDateTime FechaIni){this.FechaIni = FechaIni;}
+    
+    public LocalDateTime getFechaFin(){return FechaFin;}
+    public void setFechaFin(LocalDateTime FechaFin){this.FechaFin = FechaFin;}
 }

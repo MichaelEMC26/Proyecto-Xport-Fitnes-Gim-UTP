@@ -1,0 +1,91 @@
+/* Estilos de ManteTarjetasPago.xhtml (prefijo tp-). Mismo lenguaje visual que caja.css */
+
+.tp-main{flex:1;min-width:0;padding:24px;background:#eef2f8;color:#102653}
+
+/* ---- Título ---- */
+.tp-titulo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:14px 20px;margin-bottom:16px;border-radius:12px;background:linear-gradient(135deg,#102653 0%,#19396f 100%);color:#fff;
+    box-shadow:0 4px 14px rgba(16,38,83,.18)}
+.tp-titulo h1{margin:0;font-size:19px;letter-spacing:.4px;text-transform:uppercase}
+.tp-titulo h1 i{color:#83CFEA;margin-right:6px}
+.tp-titulo-ayuda{font-size:12px;color:#BFD0F5}
+
+/* ---- Mensajes ---- */
+.tp-mensajes{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px;max-width:860px}
+.tp-aviso{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:9px;font-size:14px}
+.tp-aviso-info{background:#E8F8EF;color:#0f5132;border:1px solid #B7E8CB}
+.tp-aviso-warn{background:#FFF7E6;color:#92400e;border:1px solid #FCD9A0}
+.tp-aviso-error{background:#FDECEC;color:#B42318;border:1px solid #F5C2C0}
+
+/* ---- Botones ---- */
+.tp-botones{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;max-width:860px}
+.tp-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 16px;border-radius:9px;
+    font:600 14px Arial,Helvetica,sans-serif;text-decoration:none;color:#fff;cursor:pointer;border:0;white-space:nowrap}
+.tp-btn-nuevo{background:#2864F0}
+.tp-btn-nuevo:hover{background:#1f50c4}
+.tp-btn-grabar{background:#15803d}
+.tp-btn-grabar:hover{background:#116a32}
+.tp-btn-modificar{background:#d97706}
+.tp-btn-modificar:hover{background:#b46205}
+.tp-btn-eliminar{background:#dc2626}
+.tp-btn-eliminar:hover{background:#b91c1c}
+.tp-btn-gris{background:#64748b}
+.tp-btn-gris:hover{background:#4b5768}
+.tp-btn-salir{background:#102653;margin-left:auto}
+.tp-btn-salir:hover{background:#19396f}
+/* h:commandLink deshabilitado se dibuja como <span> */
+span.tp-btn{opacity:.45;cursor:not-allowed}
+
+/* ---- Tarjetas ---- */
+.tp-card{max-width:860px;margin-bottom:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 2px 8px rgba(16,38,83,.05)}
+.tp-card-titulo{display:flex;align-items:center;gap:10px;margin:0;padding:12px 16px;border-bottom:1px solid #eef1f6;
+    font-size:13px;font-weight:700;color:#263B60;text-transform:uppercase;letter-spacing:.4px}
+.tp-modo{padding:3px 10px;border-radius:20px;font-size:11px;letter-spacing:.3px}
+.tp-modo-nuevo{background:#DBEAFE;color:#1d4ed8}
+.tp-modo-modificar{background:#FEF3C7;color:#b45309}
+.tp-total{margin-left:auto;font-size:12px;font-weight:600;color:#75829a;text-transform:none;letter-spacing:0}
+.tp-total strong{color:#2864f0;font-size:14px}
+
+/* ---- Campos ---- */
+.tp-campos{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px 18px;padding:16px}
+.tp-campo{display:flex;flex-direction:column;gap:5px;min-width:0}
+.tp-campo-ancho{grid-column:2/-1}
+.tp-campo label{font-size:12px;font-weight:700;color:#263B60}
+.tp-campo input,.tp-campo select{box-sizing:border-box;width:100%;height:40px;padding:0 12px;border:1px solid #CFD7E2;border-radius:9px;
+    background:#fff;font:15px Arial,Helvetica,sans-serif;color:#102653;outline:none}
+.tp-campo input:focus,.tp-campo select:focus{border-color:#2864F0;box-shadow:0 0 0 4px rgba(40,100,240,.12)}
+.tp-campo input:disabled,.tp-campo select:disabled{background:#f1f4f9;color:#55657f;cursor:not-allowed}
+.tp-campo input.tp-solo-lectura{background:#f1f4f9;color:#102653;font-weight:700;cursor:default}
+.tp-campo input.tp-solo-lectura:focus{border-color:#CFD7E2;box-shadow:none}
+.tp-porcentaje{display:flex;align-items:center;gap:6px}
+.tp-porcentaje input{text-align:right}
+.tp-porcentaje span{font-weight:700;color:#263B60}
+
+/* ---- Lista ---- */
+.tp-ayuda{margin:0;padding:10px 16px 0;font-size:12px;color:#64748b}
+.tp-tabla-scroll{max-height:420px;overflow:auto;padding:10px 16px 16px}
+.tp-tabla{width:100%;border-collapse:collapse;font-size:14px}
+.tp-tabla thead th{position:sticky;top:0;background:#102653;color:#fff;font-size:12px;text-align:left;padding:10px 12px;letter-spacing:.3px}
+.tp-tabla tbody td{padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#334155}
+.tp-col-codigo{width:90px}
+.tp-col-num{width:110px;text-align:right!important}
+.tp-col-estado{width:110px}
+.tp-fila{cursor:pointer}
+.tp-fila:hover td{background:#f1f5ff}
+.tp-fila-activa td{background:#DBEAFE!important;font-weight:600}
+.tp-tabla-bloqueada .tp-fila{cursor:default}
+.tp-tabla-bloqueada .tp-fila:hover td{background:transparent}
+.tp-link-fila{color:#2864F0;font-weight:700;text-decoration:none}
+span.tp-link-fila{color:#334155}
+.tp-fila-vacia td{text-align:center;color:#94a3b8;padding:24px}
+.tp-estado{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.tp-estado-activo{background:#dcfce7;color:#15803d}
+.tp-estado-inactivo{background:#fee2e2;color:#b91c1c}
+
+@media (max-width:640px){
+    .tp-main{padding:16px}
+    .tp-campos{grid-template-columns:1fr}
+    .tp-campo-ancho{grid-column:auto}
+    .tp-btn{flex:1 1 calc(50% - 10px)}
+    .tp-btn-salir{margin-left:0}
+}

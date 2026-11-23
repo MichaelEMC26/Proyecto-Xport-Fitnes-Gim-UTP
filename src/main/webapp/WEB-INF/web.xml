@@ -17,6 +17,13 @@
         <servlet-name>Faces Servlet</servlet-name>
         <servlet-class>jakarta.faces.webapp.FacesServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
+        <!-- Subida de la foto del socio (socios.xhtml, h:inputFile). El tope de 2 MB lo valida AlmacenFotos
+             con un mensaje; aquí se deja más amplio para que la petición no falle con página de error. -->
+        <multipart-config>
+            <max-file-size>10485760</max-file-size>
+            <max-request-size>12582912</max-request-size>
+            <file-size-threshold>0</file-size-threshold>
+        </multipart-config>
     </servlet>
     <servlet-mapping>
         <servlet-name>Faces Servlet</servlet-name>

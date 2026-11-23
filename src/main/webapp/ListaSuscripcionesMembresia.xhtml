@@ -1,16 +1,24 @@
 <!DOCTYPE html>
 <!--
-    Ver Suscripciones de Membresía.
-    Estructura visual (datos de ejemplo); se conectará a SuscripcionMembresiaBean / MembresiaFACADE.
+    Ver Suscripciones de Membresía: ConsultaSuscripcionesBean → MembresiaFACADE.Listasuscripciones_MembresiaF
+    (igual que frm_ConsultaMembresias de SisdataGimnasio).
 -->
 <ui:composition
     xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets"
     xmlns:h="jakarta.faces.html"
+    xmlns:f="jakarta.faces.core"
+    xmlns:a="jakarta.faces.passthrough"
     template="/WEB-INF/templates/principal.xhtml">
 
     <ui:param name="menuOpcion" value="listarSuscripciones" />
     <ui:param name="menuSubmenu" value="membresias" />
+
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{consultaSuscripcionesBean.abrir}" />
+        </f:metadata>
+    </ui:define>
 
     <ui:define name="title">
         Suscripciones de Membresía | Xport Fitness Gym
@@ -241,6 +249,57 @@
                 font-size: 11px;
                 margin-top: 3px;
             }
+            .planes-main tr.fila-terminada td { background: #fff1f2; }
+
+            /* Anchos de columnas: N° registro angosta (gastos.css le daba min-width 220px a la 1ª), Socio más ancha */
+            .planes-main .planes-tabla th:nth-child(1),
+            .planes-main .planes-tabla td:nth-child(1) {
+                min-width: 0;
+                width: 90px;
+            }
+            .planes-main .planes-tabla th:nth-child(2),
+            .planes-main .planes-tabla td:nth-child(2) {
+                min-width: 260px;
+            }
+            .planes-main .planes-tabla td:nth-child(2) strong {
+                white-space: normal;
+            }
+
+            /* 4 tarjetas de resumen (la 4ª: monto de pago pendiente) */
+            .planes-main .resumen-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            @media (max-width: 1100px) { .planes-main .resumen-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+            @media (max-width: 600px) { .planes-main .resumen-grid { grid-template-columns: minmax(0, 1fr); } }
+            .planes-main .resumen-icon-pendiente { background: #fee2e2; color: #dc2626; }
+            .planes-main .monto-pendiente { color: #dc2626; }
+
+            .planes-main .estado-pendiente,
+            .planes-main .estado-susc {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 700;
+            }
+            .planes-main .estado-pendiente { background: #dc2626; color: #fff; }
+            .planes-main .estado-susc { background: #e0e7ff; color: #1e3a8a; }
+
+            .planes-main .busqueda-fecha select {
+                border: 0;
+                background: transparent;
+                font: inherit;
+                color: #0f172a;
+                outline: none;
+            }
+
+            .planes-main .consulta-mensajes {
+                list-style: none;
+                margin: 0 0 12px;
+                padding: 10px 14px;
+                border-radius: 8px;
+                background: #eff6ff;
+                color: #1e3a8a;
+                font-size: 13px;
+            }
         </style>
 
     </ui:define>
@@ -295,8 +354,8 @@
                         <i class="fa-solid fa-address-book"></i>
                     </div>
                     <p class="resumen-label">Suscripciones</p>
-                    <p class="resumen-value">4</p>
-                    <span class="resumen-foot">En el periodo consultado</span>
+                    <p class="resumen-value">#{consultaSuscripcionesBean.cantidad}</p>
+                    <span class="resumen-foot">#{consultaSuscripcionesBean.periodoTexto}</span>
                 </article>
 
                 <article class="resumen-card">
@@ -304,7 +363,7 @@
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <p class="resumen-label">Vigentes</p>
-                    <p class="resumen-value">3</p>
+                    <p class="resumen-value">#{consultaSuscripcionesBean.vigentes}</p>
                     <span class="resumen-foot">Con acceso al gimnasio</span>
                 </article>
 
@@ -312,9 +371,18 @@
                     <div class="resumen-icon catalogo-icon-purple">
                         <i class="fa-solid fa-sack-dollar"></i>
                     </div>
-                    <p class="resumen-label">Total cobrado</p>
-                    <p class="resumen-value catalogo-value-label">S/ 1,396.00</p>
-                    <span class="resumen-foot">Suma de suscripciones</span>
+                    <p class="resumen-label">Monto total</p>
+                    <p class="resumen-value catalogo-value-label">#{consultaSuscripcionesBean.totalCobradoTexto}</p>
+                    <span class="resumen-foot">Suma de suscripciones (sin anuladas)</span>
+                </article>
+
+                <article class="resumen-card">
+                    <div class="resumen-icon resumen-icon-pendiente">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <p class="resumen-label">Monto de pago pendiente</p>
+                    <p class="resumen-value catalogo-value-label monto-pendiente">#{consultaSuscripcionesBean.montoPendienteTexto}</p>
+                    <span class="resumen-foot">#{consultaSuscripcionesBean.cantidadPendientes} suscripción(es) en estado Pendiente</span>
                 </article>
 
             </section>
@@ -327,33 +395,47 @@
                         <h2>Consulta de suscripciones</h2>
                         <p>Socio, plan, vigencia, total y condición</p>
                     </div>
-                    <span class="movimientos-count">4 resultados</span>
+                    <span class="movimientos-count">#{consultaSuscripcionesBean.cantidad} resultados</span>
                 </div>
 
-                <!-- BUSCADOR -->
-                <div class="productos-toolbar">
+                <h:messages globalOnly="true" layout="list" styleClass="consulta-mensajes" />
+
+                <!-- BUSCADOR: activas / terminadas (rdactivas), rango de fechas de inicio y texto -->
+                <h:form id="formConsulta" prependId="false" styleClass="productos-toolbar">
+
+                    <label class="busqueda-fecha">
+                        <i class="fa-solid fa-filter"></i> Ver
+                        <h:selectOneMenu value="#{consultaSuscripcionesBean.opcion}" a:aria-label="Activas o terminadas"
+                                         onchange="document.getElementById('btnBuscarSusc').click()">
+                            <f:selectItem itemValue="1" itemLabel="Activas" />
+                            <f:selectItem itemValue="2" itemLabel="Terminadas" />
+                        </h:selectOneMenu>
+                    </label>
 
                     <label class="busqueda-fecha">
                         <i class="fa-solid fa-calendar"></i> Desde
-                        <input type="date" aria-label="Desde" />
+                        <h:inputText value="#{consultaSuscripcionesBean.desde}" a:type="date" a:aria-label="Desde" />
                     </label>
 
                     <label class="busqueda-fecha">
                         <i class="fa-solid fa-calendar-check"></i> Hasta
-                        <input type="date" aria-label="Hasta" />
+                        <h:inputText value="#{consultaSuscripcionesBean.hasta}" a:type="date" a:aria-label="Hasta" />
                     </label>
 
                     <label class="busqueda-productos">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="search"
-                               placeholder="Buscar por N° registro, socio o membresía..."
-                               aria-label="Buscar suscripciones" />
+                        <h:inputText value="#{consultaSuscripcionesBean.filtro}"
+                                     a:type="search"
+                                     a:placeholder="Buscar por N° registro, socio o membresía..."
+                                     a:aria-label="Buscar suscripciones" />
                     </label>
 
-                    <button type="button" class="catalogo-buscar">Buscar</button>
-                    <button type="button" class="catalogo-limpiar">Limpiar</button>
+                    <h:commandButton id="btnBuscarSusc" action="#{consultaSuscripcionesBean.buscar}"
+                                     value="Buscar" styleClass="catalogo-buscar" />
+                    <h:commandButton action="#{consultaSuscripcionesBean.limpiar}"
+                                     value="Limpiar" styleClass="catalogo-limpiar" />
 
-                </div>
+                </h:form>
 
                 <!-- TABLA -->
                 <div class="tabla-scroll" data-paginar="suscripciones">
@@ -370,107 +452,54 @@
                                 <th>Vigente</th>
                                 <th>Total</th>
                                 <th>Condición</th>
+                                <th>Estado</th>
                                 <th>Vendedor</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            <tr>
-                                <td><strong class="plan-codigo">00000116</strong></td>
-                                <td>
-                                    <strong>JUAN PÉREZ RAMOS</strong>
-                                    <small class="socio-doc">70012717</small>
-                                </td>
-                                <td>PLAN BÁSICO</td>
-                                <td>13/11/2026</td>
-                                <td>12/12/2026</td>
-                                <td><span class="vigente-si">SI</span></td>
-                                <td><strong>S/ 99.00</strong></td>
-                                <td>ACTIVA</td>
-                                <td>ADMIN SISTEMA</td>
-                                <td class="acciones">
-                                    <h:link outcome="/membresias.xhtml" styleClass="accion-btn editar-btn" title="Ver / modificar">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </h:link>
-                                    <button type="button" class="accion-btn eliminar-btn" title="Eliminar"
-                                            onclick="return confirm('¿Eliminar esta suscripción?');">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            <ui:repeat value="#{consultaSuscripcionesBean.lista}" var="s">
+                                <tr class="#{consultaSuscripcionesBean.terminada(s) ? 'fila-terminada' : ''}">
+                                    <td><strong class="plan-codigo">#{s.registro}</strong></td>
+                                    <td>
+                                        <strong>#{s.socio}</strong>
+                                        <small class="socio-doc">#{s.cliente}</small>
+                                    </td>
+                                    <td>
+                                        #{s.membresia}
+                                        <small class="socio-doc">#{s.frecuencia}</small>
+                                    </td>
+                                    <td>#{consultaSuscripcionesBean.fechaTexto(s.fechaInicio)}</td>
+                                    <td>#{consultaSuscripcionesBean.fechaTexto(s.fechaFin)}</td>
+                                    <td><span class="#{s.vigente eq 'SI' ? 'vigente-si' : 'vigente-no'}">#{s.vigente}</span></td>
+                                    <td><strong>#{consultaSuscripcionesBean.soles(s.total)}</strong></td>
+                                    <td>#{s.condicion}</td>
+                                    <td><span class="#{consultaSuscripcionesBean.pendiente(s) ? 'estado-pendiente' : 'estado-susc'}" title="#{consultaSuscripcionesBean.pendiente(s) ? 'Pendiente de pago' : ''}">#{empty s.estadoSusc ? '-' : s.estadoSusc}</span></td>
+                                    <td>#{s.vendedor}</td>
+                                    <td class="acciones">
+                                        <h:link outcome="/membresias.xhtml" styleClass="accion-btn editar-btn" title="Ver / modificar">
+                                            <f:param name="nro" value="#{s.registro}" />
+                                            <i class="fa-solid fa-pen"></i>
+                                        </h:link>
+                                        <h:form prependId="false" styleClass="catalogo-eliminar-form">
+                                            <h:commandLink action="#{consultaSuscripcionesBean.anular(s.registro)}"
+                                                           styleClass="accion-btn eliminar-btn" title="Anular"
+                                                           onclick="return confirm('¿Desea anular la suscripción #{s.registro}? Ya no va a volver a recuperar los datos.');">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </h:commandLink>
+                                        </h:form>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
 
-                            <tr>
-                                <td><strong class="plan-codigo">00000115</strong></td>
-                                <td>
-                                    <strong>MARÍA LÓPEZ DÍAZ</strong>
-                                    <small class="socio-doc">45879632</small>
-                                </td>
-                                <td>PLAN TRIMESTRAL</td>
-                                <td>01/11/2026</td>
-                                <td>31/01/2027</td>
-                                <td><span class="vigente-si">SI</span></td>
-                                <td><strong>S/ 249.00</strong></td>
-                                <td>ACTIVA</td>
-                                <td>ADMIN SISTEMA</td>
-                                <td class="acciones">
-                                    <h:link outcome="/membresias.xhtml" styleClass="accion-btn editar-btn" title="Ver / modificar">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </h:link>
-                                    <button type="button" class="accion-btn eliminar-btn" title="Eliminar"
-                                            onclick="return confirm('¿Eliminar esta suscripción?');">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td><strong class="plan-codigo">00000114</strong></td>
-                                <td>
-                                    <strong>CARLOS TORRES VEGA</strong>
-                                    <small class="socio-doc">41236587</small>
-                                </td>
-                                <td>PLAN ANUAL</td>
-                                <td>15/10/2026</td>
-                                <td>14/10/2027</td>
-                                <td><span class="vigente-si">SI</span></td>
-                                <td><strong>S/ 799.00</strong></td>
-                                <td>ACTIVA</td>
-                                <td>INDIRA</td>
-                                <td class="acciones">
-                                    <h:link outcome="/membresias.xhtml" styleClass="accion-btn editar-btn" title="Ver / modificar">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </h:link>
-                                    <button type="button" class="accion-btn eliminar-btn" title="Eliminar"
-                                            onclick="return confirm('¿Eliminar esta suscripción?');">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td><strong class="plan-codigo">00000113</strong></td>
-                                <td>
-                                    <strong>ANA SALAZAR QUISPE</strong>
-                                    <small class="socio-doc">70011223</small>
-                                </td>
-                                <td>PLAN TRIMESTRAL</td>
-                                <td>01/06/2026</td>
-                                <td>31/08/2026</td>
-                                <td><span class="vigente-no">NO</span></td>
-                                <td><strong>S/ 249.00</strong></td>
-                                <td>VENCIDA</td>
-                                <td>ALBERTO</td>
-                                <td class="acciones">
-                                    <h:link outcome="/membresias.xhtml" styleClass="accion-btn editar-btn" title="Ver / modificar">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </h:link>
-                                    <button type="button" class="accion-btn eliminar-btn" title="Eliminar"
-                                            onclick="return confirm('¿Eliminar esta suscripción?');">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            <h:panelGroup rendered="#{empty consultaSuscripcionesBean.lista}">
+                                <tr>
+                                    <td colspan="11" style="text-align:center;color:#64748b;padding:24px;">
+                                        No se encontraron suscripciones.
+                                    </td>
+                                </tr>
+                            </h:panelGroup>
                         </tbody>
 
                     </table>

@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
+    xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core" xmlns:a="jakarta.faces.passthrough"
     template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="registrarSocio" />
     <ui:param name="menuSubmenu" value="socios" />
+    <!-- ?origen=suscripcion: abierto con "Nuevo socio [F7]" de la Suscripción; código autogenerado y al grabar regresa -->
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{clienteBean.nuevoDesdeSuscripcion}" if="#{param.origen eq 'suscripcion'}" />
+        </f:metadata>
+    </ui:define>
     <ui:define name="title">#{clienteBean.modo eq 'actualizar' ? 'Editar socio' : 'Registrar socio'} | Xport Fitness Gym</ui:define>
-    <ui:define name="styles"><link rel="stylesheet" href="#{request.contextPath}/css/socios.css" /></ui:define>
+    <ui:define name="styles"><link rel="stylesheet" href="#{request.contextPath}/css/socios.css?v=2" /></ui:define>
     <ui:define name="content">
         <main class="main-content">
             <section class="panel">
@@ -14,8 +20,11 @@
                     <h1><h:outputText value="#{clienteBean.modo eq 'actualizar' ? 'Edición de Socios' : 'Registro de Socios'}" /></h1>
                 </div>
                 <p class="subtitulo-modulo">Registra y administra la información de los socios del gimnasio.</p>
-                <h:messages globalOnly="true" layout="list" styleClass="mensaje-formulario" />
-                <h:form id="formSocios" prependId="false" styleClass="form-socios">
+                <ui:fragment rendered="#{clienteBean.origenSuscripcion}">
+                    <p class="aviso-origen"><i class="fa-solid fa-circle-info"></i> Nuevo socio para la Suscripción de Membresía: al grabar regresará a la suscripción con el socio cargado.</p>
+                </ui:fragment>
+                <h:messages id="mensajesSocio" globalOnly="true" layout="list" styleClass="mensaje-formulario" />
+                <h:form id="formSocios" prependId="false" styleClass="form-socios" enctype="multipart/form-data">
                     <div class="contenido-form">
                         <div class="campos-socio">
                             <div class="fila fila-tres">
@@ -33,7 +42,25 @@
                                 </div>
                                 <div class="campo">
                                     <h:outputLabel for="numeroDocumento"><i class="fa-solid fa-address-card"></i> Número de documento</h:outputLabel>
-                                    <h:inputText id="numeroDocumento" value="#{clienteBean.socio.rucDNI}" maxlength="11" />
+                                    <div class="doc-busqueda">
+                                        <h:inputText id="numeroDocumento" value="#{clienteBean.socio.rucDNI}" maxlength="11"
+                                                     a:placeholder="DNI (8) o RUC (11)" a:autocomplete="off" a:inputmode="numeric" />
+                                        <h:commandButton id="btnBuscarDocumento" value="Buscar" action="#{clienteBean.buscarDocumento}"
+                                                         styleClass="btn-doc" title="Buscar en Reniec (DNI) o Sunat (RUC) [Enter]">
+                                            <f:ajax execute="tipoDocumento numeroDocumento"
+                                                    render="tipoDocumento nombre direccion datosDocumento :mensajesSocio" />
+                                        </h:commandButton>
+                                    </div>
+                                    <h:panelGroup id="datosDocumento" layout="block">
+                                        <ui:fragment rendered="#{not empty clienteBean.datosDocumentoTitulo}">
+                                            <span class="doc-origen #{clienteBean.datosDocumentoTitulo eq 'Datos de la Sunat' ? 'doc-sunat' : 'doc-reniec'}">
+                                                <i class="fa-solid fa-circle-check"></i> #{clienteBean.datosDocumentoTitulo}
+                                            </span>
+                                            <ui:fragment rendered="#{not empty clienteBean.datosDocumentoDetalle}">
+                                                <small class="doc-detalle #{clienteBean.contribuyenteObservado ? 'doc-observado' : ''}">#{clienteBean.datosDocumentoDetalle}</small>
+                                            </ui:fragment>
+                                        </ui:fragment>
+                                    </h:panelGroup>
                                 </div>
                             </div>
                             <div class="campo campo-full">
@@ -55,13 +82,36 @@
                                 <div class="campo"><h:outputLabel for="estado"><i class="fa-solid fa-circle-check"></i> Estado</h:outputLabel><h:selectOneMenu id="estado" value="#{clienteBean.socio.estado}"><f:selectItem itemLabel="Activo" itemValue="Activo"/><f:selectItem itemLabel="Inactivo" itemValue="Inactivo"/></h:selectOneMenu></div>
                                 <div class="campo"><h:outputLabel for="contacto"><i class="fa-solid fa-user-shield"></i> Contacto</h:outputLabel><h:inputText id="contacto" value="#{clienteBean.socio.contacto}" maxlength="100" /></div>
                             </div>
-                            <div class="campo"><h:outputLabel for="telefonoCont"><i class="fa-solid fa-phone"></i> Teléfono de contacto</h:outputLabel><h:inputText id="telefonoCont" value="#{clienteBean.socio.telefonoCont}" maxlength="25" /></div>
-                            <div class="campo campo-full"><h:outputLabel for="fotoUrl"><i class="fa-solid fa-image"></i> URL de foto (opcional)</h:outputLabel><h:inputText id="fotoUrl" value="#{clienteBean.socio.foto}" maxlength="500" /></div>
+                            <div class="fila fila-tres">
+                                <div class="campo"><h:outputLabel for="telefonoCont"><i class="fa-solid fa-phone"></i> Teléfono de contacto</h:outputLabel><h:inputText id="telefonoCont" value="#{clienteBean.socio.telefonoCont}" maxlength="25" /></div>
+                                <div class="campo">
+                                    <h:outputLabel for="fechaCumpleanos"><i class="fa-solid fa-cake-candles"></i> Fecha de cumpleaños</h:outputLabel>
+                                    <h:inputText id="fechaCumpleanos" value="#{clienteBean.fechaCumpleanos}" a:type="date"                                                 converterMessage="Ingrese una fecha de cumpleaños válida.">
+                                        <f:convertDateTime type="localDate" pattern="yyyy-MM-dd" />
+                                    </h:inputText>
+                                    <h:message for="fechaCumpleanos" styleClass="campo-error" />
+                                </div>
+                            </div>
                         </div>
                         <aside class="foto-card">
                             <div class="foto-titulo">FOTO DEL SOCIO</div>
-                            <div class="foto-avatar" id="fotoAvatar"><i class="fa-solid fa-circle-user"></i></div>
-                            <p class="foto-ayuda">Puedes almacenar una URL de imagen. La carga física del archivo se integrará en una etapa posterior.</p>
+                            <div class="foto-avatar" id="fotoAvatar">
+                                <ui:fragment rendered="#{clienteBean.tieneFotoGuardada}">
+                                    <img alt="Foto del socio"
+                                         src="#{request.contextPath}/reportes/fotoSocio?id=#{clienteBean.socio.cliente_ID.trim()}&amp;v=#{clienteBean.versionFoto}" />
+                                </ui:fragment>
+                                <ui:fragment rendered="#{not clienteBean.tieneFotoGuardada}"><i class="fa-solid fa-circle-user"></i></ui:fragment>
+                            </div>
+                            <!-- Ruta grabada en Cliente.Foto ("Quitar" la deja vacía) -->
+                            <h:inputHidden id="fotoRuta" value="#{clienteBean.socio.foto}" />
+                            <h:inputFile id="archivoFoto" value="#{clienteBean.archivoFoto}" style="display:none"
+                                         a:accept="image/jpeg,image/png,image/gif,image/bmp" />
+                            <div class="foto-botones">
+                                <button type="button" class="btn-foto" id="btnCargarFoto"><i class="fa-solid fa-upload"></i> Cargar foto</button>
+                                <button type="button" class="btn-foto btn-foto-quitar" id="btnQuitarFoto" title="Quitar foto"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                            <p class="foto-nombre" id="fotoNombre">#{empty clienteBean.socio.foto ? 'Sin foto' : 'Foto guardada'}</p>
+                            <p class="foto-ayuda">JPG, PNG, GIF o BMP de hasta 2 MB. Se guarda al presionar #{clienteBean.modo eq 'actualizar' ? 'Actualizar' : 'Grabar'}.</p>
                             <div class="huella-titulo">HUELLA DACTILAR</div>
                             <div class="huella-box"><i class="fa-solid fa-fingerprint"></i></div>
                             <p class="foto-ayuda">La captura de huella requiere un lector compatible.</p>
@@ -75,5 +125,72 @@
                 </h:form>
             </section>
         </main>
+    </ui:define>
+    <ui:define name="scripts">
+        <script>
+            // Fecha de cumpleaños: no se puede elegir una fecha posterior a hoy
+            (function () {
+                var f = document.getElementById("fechaCumpleanos");
+                if (!f) return;
+                var d = new Date(), dos = function (n) { return (n &lt; 10 ? "0" : "") + n; };
+                f.max = d.getFullYear() + "-" + dos(d.getMonth() + 1) + "-" + dos(d.getDate());
+            }());
+
+            // Foto del socio: "Cargar foto" abre el selector, la muestra al instante y se sube al Grabar
+            (function () {
+                var archivo = document.getElementById("archivoFoto");
+                var ruta = document.getElementById("fotoRuta");
+                var avatar = document.getElementById("fotoAvatar");
+                var nombre = document.getElementById("fotoNombre");
+                var cargar = document.getElementById("btnCargarFoto");
+                var quitar = document.getElementById("btnQuitarFoto");
+                if (!archivo || !avatar) return;
+                var MAX = 2 * 1024 * 1024;
+                var icono = '<i class="fa-solid fa-circle-user"></i>';
+
+                cargar.addEventListener("click", function () { archivo.click(); });
+
+                archivo.addEventListener("change", function () {
+                    var f = archivo.files &amp;&amp; archivo.files[0];
+                    if (!f) return;
+                    if (!/^image\/(jpeg|png|gif|bmp)$/.test(f.type)) {
+                        alert("Seleccione una imagen JPG, PNG, GIF o BMP.");
+                        archivo.value = "";
+                        return;
+                    }
+                    if (f.size > MAX) {
+                        alert("La foto no debe pesar más de 2 MB.");
+                        archivo.value = "";
+                        return;
+                    }
+                    var lector = new FileReader();
+                    lector.onload = function (e) {
+                        avatar.innerHTML = "";
+                        var img = document.createElement("img");
+                        img.alt = "Vista previa de la foto del socio";
+                        img.src = e.target.result;
+                        avatar.appendChild(img);
+                    };
+                    lector.readAsDataURL(f);
+                    nombre.textContent = f.name + " (pendiente de grabar)";
+                });
+
+                quitar.addEventListener("click", function () {
+                    archivo.value = "";
+                    if (ruta) ruta.value = "";
+                    avatar.innerHTML = icono;
+                    nombre.textContent = "Sin foto";
+                });
+            }());
+
+            // Enter en el número de documento = Buscar (Reniec / Sunat), como txtRucDni_KeyPress
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Enter" &amp;&amp; e.target &amp;&amp; e.target.id === "numeroDocumento") {
+                    e.preventDefault();
+                    var b = document.getElementById("btnBuscarDocumento");
+                    if (b) b.click();
+                }
+            });
+        </script>
     </ui:define>
 </ui:composition>

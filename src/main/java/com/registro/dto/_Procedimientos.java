@@ -1511,5 +1511,38 @@ BEGIN
 END;
 
 GO
+* 
+* CREATE proc sp_MuestraFechaCumpleañosActualSocio
+@FechaActual DATE
+as
+
+select [Cliente_ID],[RazonSocial],[Telefono],[Telefono2],[Correo],[Contacto],[TelefonoCont],FechaCumpleaños
+from [dbo].[Cliente]
+WHERE  FechaCumpleaños = @FechaActual
+
+GO
+
+CREATE proc sp_MuestraFechasProximasCumpleañosSocio
+@FechaIni DATE,
+@FechaFin DATE
+as
+
+select [Cliente_ID],[RazonSocial],[Telefono],[Telefono2],[Correo],[Contacto],[TelefonoCont],FechaCumpleaños
+from [dbo].[Cliente]
+WHERE  FechaCumpleaños BETWEEN @FechaIni AND @FechaFin
+
+GO
+* 
+* CREATE proc sp_ListaAuditoria_SistemaDia
+@FechaRegistro DATETIME
+as
+
+select [Id_UserSist],[Nombres],[Cadena],[accion],Hora=cast([FechaRegistro]as TIME),Fecha =cast([FechaRegistro] aS DATE)
+FROM [dbo].[Auditoria_Sistema]AU
+INNER JOIN [dbo].[Usuario]U ON AU.[Id_UserSist]=U.[usuario_id]
+INNER JOIN [dbo].[Personal]P ON U.[Personal_ID]=P.[Personal_ID]
+WHERE cast([FechaRegistro] aS DATE)=@FechaRegistro
+
+GO
  */
 

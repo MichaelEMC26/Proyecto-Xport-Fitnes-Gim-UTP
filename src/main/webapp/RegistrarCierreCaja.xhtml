@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Registrar Cierre de Caja.
+    Misma estructura y funcionalidad que frm_RegistrarCierreCaja de SisdataGimnasio.
+    Controlador: CierreCajaBean (cierreCajaBean) -> AperturaCierreCajaFACADE
+    (sp_ListaAperturaCierreCajaAbierto, sp_lista_Monto_VentaDia*XTurno, sp_ListaGastosDiaXTurno,
+     sp_ListaCobrosDiaXTurno, sp_UpdateAperturaCierreCaja, sp_Reporte_TicketCierreCaja).
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html"
+    xmlns:f="jakarta.faces.core" xmlns:a="jakarta.faces.passthrough"
+    template="/WEB-INF/templates/principal.xhtml">
+    <ui:param name="menuOpcion" value="cierreCaja" />
+    <ui:param name="menuSubmenu" value="caja" />
+    <ui:define name="title">Cierre de Caja | Xport Fitness Gym</ui:define>
+    <ui:define name="styles">
+        <link rel="stylesheet" href="#{request.contextPath}/css/caja.css?v=1" />
+    </ui:define>
+    <ui:define name="content">
+        <main class="cj-main">
+            <header class="cj-titulo">
+                <h1><i class="fa-solid fa-lock"></i> Registrar cierre de caja</h1>
+                <span class="cj-titulo-ayuda">Esc Salir</span>
+            </header>
+
+            <h:form id="formCierre" prependId="false">
+
+                <h:messages globalOnly="true" layout="list" styleClass="cj-mensajes"
+                            infoClass="cj-aviso cj-aviso-info" warnClass="cj-aviso cj-aviso-warn"
+                            errorClass="cj-aviso cj-aviso-error" />
+
+                <div class="cj-grid">
+                    <!-- ============ COLUMNA PRINCIPAL ============ -->
+                    <div class="cj-col">
+                        <!-- Cabecera: fecha, hora, responsable, caja inicial, turno -->
+                        <section class="cj-card">
+                            <h2 class="cj-card-titulo">Turno de caja<ui:fragment rendered="#{cierreCajaBean.hayCaja}"> · N° #{cierreCajaBean.idAperturaCierre}</ui:fragment></h2>
+                            <div class="cj-card-cuerpo">
+                                <div class="cj-cabecera">
+                                    <div class="cj-campo">
+                                        <label>Fecha de turno:</label>
+                                        <div class="cj-dato">
+                                            <h:outputText value="#{cierreCajaBean.fechaTurno}">
+                                                <f:convertDateTime type="localDate" pattern="dd/MM/yyyy" />
+                                            </h:outputText>
+                                        </div>
+                                    </div>
+                                    <div class="cj-campo">
+                                        <label>Hora:</label>
+                                        <div class="cj-dato cj-hora cj-reloj">--:--:--</div>
+                                    </div>
+                                    <div class="cj-campo">
+                                        <label>Caja inicial (S/):</label>
+                                        <div class="cj-dato" style="justify-content:flex-end;font-weight:700">
+                                            <h:outputText value="#{cierreCajaBean.cajaInicial}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText>
+                                        </div>
+                                    </div>
+                                    <div class="cj-turno"><span>TURNO</span><strong>#{cierreCajaBean.turnoTexto}</strong></div>
+
+                                    <div class="cj-campo" style="grid-column:1/-1">
+                                        <label>Responsable:</label>
+                                        <div class="cj-resp">
+                                            <div class="cj-dato">#{cierreCajaBean.codResp}</div>
+                                            <div class="cj-dato">#{cierreCajaBean.nombreResp}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Montos del turno -->
+                        <div class="cj-montos">
+                            <section class="cj-card">
+                                <div class="cj-card-cuerpo">
+                                    <p class="cj-grupo-titulo">Condición de venta</p>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkVentaDia}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioVentaDia}" render="@form" />
+                                            </h:selectBooleanCheckbox> Total venta x turno
+                                        </label>
+                                        <div class="cj-valor"><h:outputText value="#{cierreCajaBean.ventaDia}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkContado}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioContado}" render="@form" />
+                                            </h:selectBooleanCheckbox> Contado
+                                        </label>
+                                        <div class="cj-valor"><h:outputText value="#{cierreCajaBean.ventaContado}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkCredito}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioCredito}" render="@form" />
+                                            </h:selectBooleanCheckbox> Crédito
+                                        </label>
+                                        <div class="cj-valor cj-valor-resta"><h:outputText value="#{cierreCajaBean.ventaCredito}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="cj-card">
+                                <div class="cj-card-cuerpo">
+                                    <p class="cj-grupo-titulo">Forma de pago</p>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkEfectivo}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioEfectivo}" render="@form" />
+                                            </h:selectBooleanCheckbox> Efectivo
+                                        </label>
+                                        <div class="cj-valor"><h:outputText value="#{cierreCajaBean.ventaEfectivo}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkDeposito}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioDeposito}" render="@form" />
+                                            </h:selectBooleanCheckbox> Depósito
+                                        </label>
+                                        <div class="cj-valor cj-valor-resta"><h:outputText value="#{cierreCajaBean.ventaDeposito}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="cj-card">
+                                <div class="cj-card-cuerpo">
+                                    <p class="cj-grupo-titulo">Movimientos de caja</p>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkGastos}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioGastos}" render="@form" />
+                                            </h:selectBooleanCheckbox> Total gastos
+                                        </label>
+                                        <div class="cj-valor cj-valor-resta"><h:outputText value="#{cierreCajaBean.gastos}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                    <div class="cj-fila">
+                                        <label class="cj-check">
+                                            <h:selectBooleanCheckbox value="#{cierreCajaBean.chkCobros}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:ajax listener="#{cierreCajaBean.cambioCobros}" render="@form" />
+                                            </h:selectBooleanCheckbox> Total cobranza
+                                        </label>
+                                        <div class="cj-valor"><h:outputText value="#{cierreCajaBean.cobros}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- checkCierres / dateFechaReg2 -->
+                            <section class="cj-card">
+                                <div class="cj-card-cuerpo cj-historial">
+                                    <p class="cj-grupo-titulo">Historial de cierres</p>
+                                    <label class="cj-check">
+                                        <h:selectBooleanCheckbox value="#{cierreCajaBean.historialCierres}" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                            <f:ajax listener="#{cierreCajaBean.refrescar}" render="@form" />
+                                        </h:selectBooleanCheckbox> Usar otra fecha de turno
+                                    </label>
+                                    <ui:fragment rendered="#{cierreCajaBean.historialCierres}">
+                                        <div class="cj-campo">
+                                            <h:inputText id="cjFechaTurno2" value="#{cierreCajaBean.fechaTurno2}" a:type="date" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                                                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd" />
+                                                <f:ajax event="change" listener="#{cierreCajaBean.refrescar}" render="@form" />
+                                            </h:inputText>
+                                        </div>
+                                    </ui:fragment>
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Resultado del cálculo -->
+                        <div class="cj-totales">
+                            <div class="cj-total">
+                                <span>Caja parcial</span>
+                                <strong>S/ <h:outputText value="#{cierreCajaBean.cajaParcial}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></strong>
+                            </div>
+                            <div class="cj-total cj-total-efectivo">
+                                <span>Efectivo actual</span>
+                                <strong>S/ <h:outputText value="#{cierreCajaBean.efectivoActual}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ BOTONES ============ -->
+                    <aside class="cj-card cj-card-cuerpo cj-botones">
+                        <h:commandButton value="Activar todos" action="#{cierreCajaBean.activarTodos}" styleClass="cj-btn cj-btn-claro" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                            <f:ajax execute="@form" render="@form" />
+                        </h:commandButton>
+                        <h:commandButton value="Desactivar todos" action="#{cierreCajaBean.desactivarTodos}" styleClass="cj-btn cj-btn-claro" disabled="#{not cierreCajaBean.hayCaja or cierreCajaBean.cerrado}">
+                            <f:ajax execute="@form" render="@form" />
+                        </h:commandButton>
+                        <h:commandButton value="CALCULAR" action="#{cierreCajaBean.calcular}" styleClass="cj-btn cj-btn-primario" disabled="#{not cierreCajaBean.puedeCalcular}">
+                            <f:ajax execute="@form" render="@form" />
+                        </h:commandButton>
+                        <h:commandButton value="Cerrar turno o caja" action="#{cierreCajaBean.cerrarCaja}" styleClass="cj-btn cj-btn-rojo"
+                                         disabled="#{not cierreCajaBean.calculado or cierreCajaBean.cerrado}"
+                                         onclick="return confirm('¿Desea cerrar caja y turno del día?');">
+                            <f:ajax execute="@form" render="@form" />
+                        </h:commandButton>
+                        <h:commandButton value="Reporte" action="#{cierreCajaBean.reporte}" styleClass="cj-btn cj-btn-verde" disabled="#{not cierreCajaBean.puedeReporte}">
+                            <f:ajax execute="@this" render="@form" />
+                        </h:commandButton>
+                        <h:link id="cjSalir" outcome="/dashboard.xhtml" styleClass="cj-btn cj-btn-gris">
+                            <i class="fa-solid fa-door-open"></i> Salir [Esc]
+                        </h:link>
+                        <ui:fragment rendered="#{not cierreCajaBean.hayCaja}">
+                            <h:link outcome="/AperturaCaja.xhtml" styleClass="cj-btn cj-btn-primario">
+                                <i class="fa-solid fa-cash-register"></i> Abrir caja
+                            </h:link>
+                        </ui:fragment>
+                    </aside>
+                </div>
+
+                <!-- ============ TICKET DE CIERRE (frm_TicketVenta.MostrarCierreCaja) ============ -->
+                <ui:fragment rendered="#{cierreCajaBean.ticket ne null}">
+                    <div class="cj-modal">
+                        <div class="cj-modal-caja">
+                            <div class="cj-ticket">
+                                <h3>#{empty cierreCajaBean.ticket.empresaComercial ? cierreCajaBean.ticket.razonSocial : cierreCajaBean.ticket.empresaComercial}</h3>
+                                <p>#{cierreCajaBean.ticket.razonSocial}</p>
+                                <p>RUC: #{cierreCajaBean.ticket.empresaRuc}</p>
+                                <p>#{cierreCajaBean.ticket.empresaDireccion}</p>
+                                <ui:fragment rendered="#{not empty cierreCajaBean.ticket.empresaTelefono}"><p>Tel.: #{cierreCajaBean.ticket.empresaTelefono}</p></ui:fragment>
+                                <hr />
+                                <h3>CIERRE DE CAJA N° #{cierreCajaBean.ticket.idAperturaCierre}</h3>
+                                <hr />
+                                <table>
+                                    <tr><td>Turno:</td><td>#{cierreCajaBean.ticketTurno}</td></tr>
+                                    <tr><td>Fecha turno:</td><td><h:outputText value="#{cierreCajaBean.ticket.fechaTurno}"><f:convertDateTime type="localDateTime" pattern="dd/MM/yyyy" /></h:outputText></td></tr>
+                                    <tr><td>Fecha caja:</td><td><h:outputText value="#{cierreCajaBean.ticket.fechaCaja}"><f:convertDateTime type="localDateTime" pattern="dd/MM/yyyy" /></h:outputText></td></tr>
+                                    <tr><td>Hora apertura:</td><td>#{cierreCajaBean.ticket.horaIni}</td></tr>
+                                    <tr><td>Hora cierre:</td><td>#{cierreCajaBean.ticket.horaCierre}</td></tr>
+                                    <tr><td>Estado:</td><td>#{cierreCajaBean.ticket.estadoCaja}</td></tr>
+                                    <tr><td>Responsable:</td><td>#{cierreCajaBean.ticket.nombres}</td></tr>
+                                    <tr><td>Cajero:</td><td>#{cierreCajaBean.ticket.cajero}</td></tr>
+                                </table>
+                                <hr />
+                                <table>
+                                    <tr><td>Caja inicial</td><td><h:outputText value="#{cierreCajaBean.ticket.montoInicial}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>Venta del turno</td><td><h:outputText value="#{cierreCajaBean.ticket.ventaDia}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>&#160;&#160;Contado</td><td><h:outputText value="#{cierreCajaBean.ticket.ventaContado}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>&#160;&#160;Crédito</td><td><h:outputText value="#{cierreCajaBean.ticket.ventaCredito}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>&#160;&#160;Efectivo</td><td><h:outputText value="#{cierreCajaBean.ticket.ventaEfectivo}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>&#160;&#160;Depósito</td><td><h:outputText value="#{cierreCajaBean.ticket.ventaDeposito}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>Cobranza</td><td><h:outputText value="#{cierreCajaBean.ticket.totalPagos}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr><td>Gastos</td><td><h:outputText value="#{cierreCajaBean.ticket.totalGastos}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                </table>
+                                <hr />
+                                <table>
+                                    <tr class="cj-ticket-total"><td>CAJA PARCIAL</td><td><h:outputText value="#{cierreCajaBean.ticket.totalIngEfectivo}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                    <tr class="cj-ticket-total"><td>EFECTIVO ACTUAL</td><td><h:outputText value="#{cierreCajaBean.ticket.efectivoActual}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></td></tr>
+                                </table>
+                                <hr />
+                                <p>Xport Fitness Gym</p>
+                            </div>
+                            <div class="cj-botones-fila" style="margin-top:0;justify-content:center">
+                                <button type="button" class="cj-btn cj-btn-primario" onclick="cjImprimirTicket()">
+                                    <i class="fa-solid fa-print"></i> Imprimir
+                                </button>
+                                <h:commandButton id="cjCerrarTicket" value="Cerrar" action="#{cierreCajaBean.cerrarTicket}" styleClass="cj-btn cj-btn-gris">
+                                    <f:ajax execute="@this" render="@form" />
+                                </h:commandButton>
+                            </div>
+                        </div>
+                    </div>
+                </ui:fragment>
+            </h:form>
+        </main>
+    </ui:define>
+    <ui:define name="scripts">
+        <script src="#{request.contextPath}/js/caja.js?v=1"></script>
+    </ui:define>
+</ui:composition>

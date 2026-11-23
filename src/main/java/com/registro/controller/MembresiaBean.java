@@ -197,7 +197,7 @@ public class MembresiaBean implements Serializable {
     public String cancelar() {
         plan = null;
         modo = "grabar";
-        return VISTA_LISTA;
+        return Navegacion.salir(VISTA_LISTA);
     }
 
     // ---------------------------------------------------------

@@ -39,6 +39,7 @@ public class MembresiaDTO {
     private double total;
     private String condicion;
     private String vendedor;
+    private String socio;      // SocioCliente (nombre del socio) en sp_Listasuscripciones_Membresia
     
     // ---------------------------------------------------------
     // VARIABLES DE FILTRO DE BUSQUEDA
@@ -160,6 +161,9 @@ public class MembresiaDTO {
 
     public String getVendedor() { return vendedor; }
     public void setVendedor(String vendedor) { this.vendedor = vendedor; }
+
+    public String getSocio() { return socio; }
+    public void setSocio(String socio) { this.socio = socio; }
 
     public String getCodEmp(){return CodEmp;}
     public void setCodEmp(String CodEmp){this.CodEmp = CodEmp;}

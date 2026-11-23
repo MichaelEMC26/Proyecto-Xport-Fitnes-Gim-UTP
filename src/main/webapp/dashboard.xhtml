@@ -10,7 +10,7 @@
             .dashboard-main{min-width:0;flex:1;padding:24px;background:#eef2f8}
             .dashboard-main .panel{background:#fff;border-radius:12px;padding:24px;box-shadow:0 4px 15px rgba(16,38,83,.08)}
            
-            .dashboard-main .bloques{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;width:100%;margin-bottom:20px}
+            .dashboard-main .bloques{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:100%;margin-bottom:20px}
             .dashboard-main .bloques a.btn-atajo{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:8px 14px;
                 box-sizing:border-box;border-radius:9px;background:#4b8edb;color:#fff;text-decoration:none;text-align:center;
                 font-size:13px;font-weight:700;line-height:1.25;box-shadow:0 3px 8px rgba(40,100,180,.20);transition:background .2s,transform .2s}
@@ -34,6 +34,18 @@
             .dashboard-main .tarjeta-inferior p{font-size:11px;margin:3px 0}
             .dashboard-main .select-estado{border:0;background:transparent;color:#102653;font-size:11px}
             .dashboard-main .punto{display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a}
+            .dashboard-main .aviso-dashboard{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:9px;background:#FFF7E6;border:1px solid #FCD9A0;color:#92400e;font-size:13px}
+            .dashboard-main .aviso-dashboard>i{font-size:20px}
+            .dashboard-main .aviso-dashboard>div{flex:1;min-width:200px}
+            .dashboard-main .aviso-dashboard-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:#4b8edb;color:#fff;text-decoration:none;font-weight:700;font-size:12px}
+            .dashboard-main .aviso-dashboard-btn:hover{background:#3478c8;color:#fff}
+            .dashboard-main .tabla-scroll{max-height:360px;overflow:auto}
+            .dashboard-main .tabla-vacia{text-align:center;color:#94a3b8}
+            .dashboard-main .accion-auditoria{display:inline-block;padding:2px 8px;border-radius:10px;background:#e8efff;color:#1e40af;font-weight:700;font-size:10px}
+            .dashboard-main .sin-acceso{display:flex;align-items:center;gap:8px;padding:18px;border:1px dashed #cbd5e1;border-radius:9px;background:#f8fafc;color:#64748b;font-size:12px}
+            .dashboard-main .lista-cumpleanos{list-style:none;margin:6px 0 0;padding:0;max-height:90px;overflow:auto;font-size:11px}
+            .dashboard-main .lista-cumpleanos li{margin:2px 0}
+            .dashboard-main .lista-cumpleanos i{color:#db2777;margin-right:4px}
             @media(max-width:1100px){.dashboard-main .bloques{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-main .fila-principal{grid-template-columns:1fr}.dashboard-main .tarjetas-laterales{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
             @media(max-width:750px){.dashboard-main{padding:12px}.dashboard-main .bloques,.dashboard-main .tarjetas-inferiores{grid-template-columns:1fr}.dashboard-main .tabla{min-width:700px}.dashboard-main .tarjetas-laterales{grid-template-columns:1fr}}
         </style>
@@ -43,41 +55,106 @@
             <div class="panel">
                
             
+            <ui:fragment rendered="#{param.aviso eq 'sin-suscripciones'}">
+                <div class="aviso-dashboard" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>No se puede abrir Registrar Asistencia.</strong>
+                        Aún no hay suscripciones de membresía registradas en el sistema. Registre primero una suscripción.
+                    </div>
+                    <h:link outcome="/membresias.xhtml" styleClass="aviso-dashboard-btn">
+                        <f:param name="desde" value="dashboard" />
+                        <i class="fa-solid fa-id-card"></i> Suscribir membresía
+                    </h:link>
+                </div>
+            </ui:fragment>
+
             <section class="bloques">
                 <h:link outcome="/RegistrarAsistencia.xhtml" styleClass="btn-atajo">
+                    <f:param name="desde" value="dashboard" />
                     <i class="fa-solid fa-user-check"></i> Registrar Asistencia
                 </h:link>
                 <h:link outcome="/socios.xhtml" styleClass="btn-atajo">
+                    <f:param name="desde" value="dashboard" />
                     <i class="fa-solid fa-user-plus"></i> Registrar Socio
                 </h:link>
                 <h:link outcome="/membresias.xhtml" styleClass="btn-atajo">
+                    <f:param name="desde" value="dashboard" />
                     <i class="fa-solid fa-id-card"></i> Suscribir / Renovar Membresía
                 </h:link>
                 <h:link outcome="/PuntoVenta.xhtml" styleClass="btn-atajo">
+                    <f:param name="desde" value="dashboard" />
                     <i class="fa-solid fa-cash-register"></i> Punto de Venta
+                </h:link>
+                <h:link outcome="/AperturaCaja.xhtml" styleClass="btn-atajo">
+                    <f:param name="desde" value="dashboard" />
+                    <i class="fa-solid fa-lock-open"></i> Apertura de Caja
+                </h:link>
+                <h:link outcome="/RegistrarCierreCaja.xhtml" styleClass="btn-atajo">
+                    <f:param name="desde" value="dashboard" />
+                    <i class="fa-solid fa-lock"></i> Cierre de Caja
                 </h:link>
             </section>
 
 
                 <div class="fila-principal">
+                    <!-- Registros del sistema del día (sp_ListaAuditoria_SistemaDia): solo Administración y Sistemas -->
                     <section class="tabla-thead">
-                        <h3>Entradas del día: <span id="fechaActual"></span></h3>
-                        <div class="tabla-scroll">
-                            <table class="tabla">
-                                <thead><tr><th>Nombre</th><th>Documento</th><th>Hora</th><th>Estado</th><th>Expiración</th><th>Intento</th><th>Acciones</th></tr></thead>
-                                <tbody><tr>
-                                    <td>Michael Cueva</td><td>00000001</td><td>09:00 AM</td>
-                                    <td><span class="punto" id="puntoEstado"></span> <select class="select-estado" id="estadoEntrada"><option value="verde">Presente</option><option value="rojo">Ausente</option></select></td>
-                                    <td>2026-10-13</td><td>1</td>
-                                    <td><button type="button" title="Configurar"><i class="fa-solid fa-gear"></i></button> <button type="button" title="Renovar"><i class="fa-solid fa-rotate"></i></button></td>
-                                </tr></tbody>
-                            </table>
-                        </div>
+                        <h3>Registros del sistema del día: <span id="fechaActual"></span></h3>
+                        <ui:fragment rendered="#{dashboardBean.areaAdministrativa}">
+                            <div class="tabla-scroll">
+                                <table class="tabla">
+                                    <thead><tr><th>Usuario</th><th>Acción</th><th>Detalle</th><th>Hora</th></tr></thead>
+                                    <tbody>
+                                        <ui:fragment rendered="#{empty dashboardBean.registrosDia}">
+                                            <tr><td colspan="4" class="tabla-vacia">No hay registros en el sistema el día de hoy.</td></tr>
+                                        </ui:fragment>
+                                        <ui:repeat value="#{dashboardBean.registrosDia}" var="r">
+                                            <tr>
+                                                <td>#{r.nombres}</td>
+                                                <td><span class="accion-auditoria">#{r.accion}</span></td>
+                                                <td>#{r.cadena}</td>
+                                                <td>
+                                                    <h:outputText value="#{r.hora}">
+                                                        <f:convertDateTime type="localTime" pattern="hh:mm:ss a" locale="en_US" />
+                                                    </h:outputText>
+                                                </td>
+                                            </tr>
+                                        </ui:repeat>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </ui:fragment>
+                        <ui:fragment rendered="#{not dashboardBean.areaAdministrativa}">
+                            <p class="sin-acceso"><i class="fa-solid fa-lock"></i> Solo el personal de las áreas de Administración y Sistemas puede ver los registros del sistema.</p>
+                        </ui:fragment>
                     </section>
                     <aside class="tarjetas-laterales">
-                        <article class="tarjeta-info"><div><p class="titulo-tarjeta">GANANCIAS DEL DÍA</p><p class="valor-tarjeta">S/ 1,285.50</p></div><i class="fa-solid fa-money-bill-wave icono-tarjeta"></i></article>
-                        <article class="tarjeta-info"><div><p class="titulo-tarjeta">CLIENTES ACTIVOS</p><p class="valor-tarjeta">248</p></div><i class="fa-solid fa-users icono-tarjeta"></i></article>
-                        <article class="tarjeta-info"><div><p class="titulo-tarjeta">CLIENTES POR VENCER</p><p class="valor-tarjeta">12</p></div><i class="fa-solid fa-clock icono-tarjeta"></i></article>
+                        <article class="tarjeta-info">
+                            <div>
+                                <p class="titulo-tarjeta">VENTAS DEL DÍA</p>
+                                <ui:fragment rendered="#{dashboardBean.areaAdministrativa}">
+                                    <p class="valor-tarjeta">S/ <h:outputText value="#{dashboardBean.ventasDia}"><f:convertNumber pattern="#,##0.00" locale="en_US" /></h:outputText></p>
+                                </ui:fragment>
+                                <ui:fragment rendered="#{not dashboardBean.areaAdministrativa}">
+                                    <p class="valor-tarjeta">S/ ****</p>
+                                    <p class="detalle-tarjeta">Solo Administración y Sistemas</p>
+                                </ui:fragment>
+                            </div>
+                            <i class="fa-solid fa-money-bill-wave icono-tarjeta"></i>
+                        </article>
+                        <article class="tarjeta-info">
+                            <div><p class="titulo-tarjeta">CLIENTES ACTIVOS</p><p class="valor-tarjeta">#{dashboardBean.clientesActivos}</p></div>
+                            <i class="fa-solid fa-users icono-tarjeta"></i>
+                        </article>
+                        <article class="tarjeta-info">
+                            <div>
+                                <p class="titulo-tarjeta">CLIENTES POR VENCER</p>
+                                <p class="valor-tarjeta">#{dashboardBean.clientesPorVencer}</p>
+                                <p class="detalle-tarjeta">en los próximos #{dashboardBean.diasPorVencer} días</p>
+                            </div>
+                            <i class="fa-solid fa-clock icono-tarjeta"></i>
+                        </article>
                         <ui:fragment rendered="#{sessionScope.esAdmin}">
                             <h:link outcome="/ListaPersonal.xhtml" styleClass="tarjeta-info tarjeta-link" title="Ir al módulo de Personal">
                                 <div><p class="titulo-tarjeta">PERSONAL ACTIVO</p><p class="valor-tarjeta">#{dashboardBean.personalActivo}</p><p class="detalle-tarjeta">#{dashboardBean.personalConAcceso} con acceso al sistema</p></div>
@@ -89,7 +166,24 @@
                 <section class="tarjetas-inferiores">
                     <article class="tarjeta-inferior"><i class="fa-solid fa-coins"></i><div><p class="titulo-inferior">TASAS DE CAMBIO DEL DÍA</p><p><strong>USD Compra:</strong> S/ 3.42</p><p><strong>USD Venta:</strong> S/ 3.45</p></div></article>
                     <article class="tarjeta-inferior"><i class="fa-solid fa-chart-column"></i><div><p class="titulo-inferior">ENTRADAS POR USUARIOS</p><p><strong>35 entradas</strong> registradas</p></div></article>
-                    <article class="tarjeta-inferior"><i class="fa-solid fa-cake-candles"></i><div><p class="titulo-inferior">CUMPLEAÑOS DEL DÍA</p><p><strong>3 socios</strong> cumplen años hoy</p></div></article>
+                    <!-- Cumpleaños del día (sp_MuestraFechaCumpleañosActualSocio) -->
+                    <article class="tarjeta-inferior">
+                        <i class="fa-solid fa-cake-candles"></i>
+                        <div class="cumpleanos">
+                            <p class="titulo-inferior">CUMPLEAÑOS DEL DÍA</p>
+                            <ui:fragment rendered="#{empty dashboardBean.cumpleanos}">
+                                <p>Ningún socio cumple años hoy</p>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not empty dashboardBean.cumpleanos}">
+                                <p><strong>#{dashboardBean.cumpleanos.size()} #{dashboardBean.cumpleanos.size() eq 1 ? 'socio cumple' : 'socios cumplen'}</strong> años hoy</p>
+                                <ul class="lista-cumpleanos">
+                                    <ui:repeat value="#{dashboardBean.cumpleanos}" var="c">
+                                        <li><i class="fa-solid fa-gift"></i> #{c.razonSocial}<ui:fragment rendered="#{not empty c.telefono}"> · #{c.telefono}</ui:fragment></li>
+                                    </ui:repeat>
+                                </ul>
+                            </ui:fragment>
+                        </div>
+                    </article>
                 </section>
             </div>
         </main>
@@ -104,23 +198,6 @@
                         new Date().toLocaleDateString("en-CA");
                 }
 
-                var estado =
-                    document.getElementById("estadoEntrada");
-
-                var punto =
-                    document.getElementById("puntoEstado");
-            
-                if (estado) {
-                    if (punto) {
-                        estado.addEventListener("change", function () {
-                            if (estado.value === "verde") {
-                                punto.style.background = "#16a34a";
-                            } else {
-                                punto.style.background = "#dc2626";
-                            }
-                        });
-                    }
-                }
             }());
         </script>
     </ui:define>

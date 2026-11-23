@@ -24,12 +24,18 @@ import java.util.Properties;
  *
  * Cada valor se busca por separado, así que se pueden combinar (por ejemplo la URL en el archivo
  * y la contraseña en una variable de entorno).
+ *
+ * Rendimiento: las conexiones se reutilizan con un pool (PoolConexiones). close() devuelve la conexión al
+ * pool en lugar de cerrarla. Tamaño máximo: GYM_DB_POOL_MAX / -Dgym.db.pool.max / gym.db.pool.max
+ * (por defecto 20). Con gym.db.pool.max=0 se vuelve al comportamiento anterior (una conexión nueva cada vez).
  */
 public final class ConexionBD {
 
     private static final String NOMBRE_ARCHIVO = "gimnasio-bd.properties";
 
     private static volatile Properties archivo;   // se lee una sola vez
+    private static final int POOL_POR_DEFECTO = 20;
+    private static PoolConexiones pool;           // se crea con la primera conexión
 
     private ConexionBD() {
     }
@@ -55,10 +61,45 @@ public final class ConexionBD {
 
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            return DriverManager.getConnection(url, usuario, clave);
         } catch (ClassNotFoundException e) {
             throw new SQLException("No se encontró el driver JDBC de SQL Server.", e);
         }
+
+        int maximo = tamanoPool();
+        if (maximo <= 0) return DriverManager.getConnection(url, usuario, clave);   // sin pool
+        return pool(url, usuario, clave, maximo).obtener();
+    }
+
+    /** Pool de la configuración actual (si cambian la URL, el usuario o la clave, se crea uno nuevo). */
+    private static synchronized PoolConexiones pool(String url, String usuario, String clave, int maximo) {
+        if (pool == null || !pool.mismosDatos(url, usuario, clave)) {
+            if (pool != null) pool.cerrar();
+            pool = new PoolConexiones(url, usuario, clave, maximo);
+        }
+        return pool;
+    }
+
+    private static int tamanoPool() {
+        String v = valor("GYM_DB_POOL_MAX", "gym.db.pool.max");
+        if (v == null) return POOL_POR_DEFECTO;
+        try {
+            return Integer.parseInt(v);
+        } catch (NumberFormatException ex) {
+            return POOL_POR_DEFECTO;
+        }
+    }
+
+    /** Cierra las conexiones del pool (al detener o volver a desplegar la aplicación). */
+    public static synchronized void cerrarPool() {
+        if (pool != null) {
+            pool.cerrar();
+            pool = null;
+        }
+    }
+
+    /** Estado del pool para diagnóstico: "libres / en uso". */
+    public static synchronized String estadoPool() {
+        return pool == null ? "sin pool" : pool.libres() + " libres / " + pool.enUso() + " en uso";
     }
 
     /**

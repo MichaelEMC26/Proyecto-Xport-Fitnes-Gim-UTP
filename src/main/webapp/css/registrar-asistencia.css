@@ -98,3 +98,13 @@
     .ra-fecha-hora{grid-template-columns:1fr}
     .ra-codigo-fila{flex-direction:column}
 }
+
+/* Mensajes del controlador (h:messages) dentro de Avisos */
+.ra-mensajes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ra-foto-marco img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Controles bloqueados tras mostrar el resultado (se activan con Nuevo [F2]) */
+.ra-codigo-fila input:disabled{background:#EEF1F6;color:#8A96AA;cursor:not-allowed}
+.ra-ayuda .ra-ayuda-bloqueado{display:none;color:#B45309}
+.ra-ayuda[data-bloqueado="true"] .ra-ayuda-activo{display:none}
+.ra-ayuda[data-bloqueado="true"] .ra-ayuda-bloqueado{display:inline}

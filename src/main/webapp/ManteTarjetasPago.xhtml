@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Mantenimiento de Tarjetas de Pago.
+    Misma estructura y funcionalidad que frm_ManteTarjetasPago de SisdataGimnasio.
+    Controlador: TarjetaPagoBean (tarjetaPagoBean) -> ConfiguracionesFACADE -> ConfiguracionesDAO
+    (sp_ListaTarjetasPago, sp_ListaTarjetasPagoXCod, sp_InsertTarjetasPago, sp_UpdateTarjetasPago, sp_DeleteTarjetasPago).
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html"
+    xmlns:f="jakarta.faces.core" xmlns:a="jakarta.faces.passthrough"
+    template="/WEB-INF/templates/principal.xhtml">
+    <ui:param name="menuOpcion" value="tarjetasPago" />
+    <ui:param name="menuSubmenu" value="configuracion" />
+    <ui:define name="title">Tarjetas de Pago | Xport Fitness Gym</ui:define>
+    <ui:define name="styles">
+        <link rel="stylesheet" href="#{request.contextPath}/css/tarjetas-pago.css?v=2" />
+    </ui:define>
+    <ui:define name="content">
+        <main class="tp-main">
+            <header class="tp-titulo">
+                <h1><i class="fa-solid fa-credit-card"></i> Tarjetas de pago</h1>
+                <span class="tp-titulo-ayuda">F2 Nuevo · F3 Grabar · F4 Modificar · F6 Eliminar · Esc Salir</span>
+            </header>
+
+            <h:form id="formTarjetas" prependId="false">
+                <h:messages globalOnly="true" layout="list" styleClass="tp-mensajes"
+                            infoClass="tp-aviso tp-aviso-info" warnClass="tp-aviso tp-aviso-warn"
+                            errorClass="tp-aviso tp-aviso-error" />
+
+                <!-- BOTONES (btnnuevo, btngrabar, btnmodificar, btneliminar, btnsalir) -->
+                <div class="tp-botones" data-modo="#{tarjetaPagoBean.modo}">
+                    <h:commandLink id="tpNuevo" action="#{tarjetaPagoBean.nuevo}" styleClass="tp-btn tp-btn-nuevo"
+                                   rendered="#{tarjetaPagoBean.modo ne 'nuevo'}"
+                                   disabled="#{tarjetaPagoBean.modo eq 'modificar'}">
+                        <i class="fa-solid fa-file-circle-plus"></i> Nuevo [F2]
+                    </h:commandLink>
+                    <h:commandLink id="tpGrabar" action="#{tarjetaPagoBean.grabar}" styleClass="tp-btn tp-btn-grabar"
+                                   rendered="#{tarjetaPagoBean.editando}">
+                        <i class="fa-solid fa-floppy-disk"></i> Grabar [F3]
+                    </h:commandLink>
+                    <h:commandLink id="tpModificar" action="#{tarjetaPagoBean.modificar}" styleClass="tp-btn tp-btn-modificar"
+                                   rendered="#{tarjetaPagoBean.modo ne 'modificar'}"
+                                   disabled="#{tarjetaPagoBean.modo eq 'nuevo' or not tarjetaPagoBean.haySeleccion}">
+                        <i class="fa-solid fa-pen-to-square"></i> Modificar [F4]
+                    </h:commandLink>
+                    <h:commandLink id="tpEliminar" action="#{tarjetaPagoBean.eliminar}" styleClass="tp-btn tp-btn-eliminar"
+                                   disabled="#{tarjetaPagoBean.editando or not tarjetaPagoBean.haySeleccion}"
+                                   onclick="return tpConfirmarEliminar();">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar [F6]
+                    </h:commandLink>
+                    <h:commandLink id="tpCancelar" action="#{tarjetaPagoBean.cancelar}" styleClass="tp-btn tp-btn-gris"
+                                   rendered="#{tarjetaPagoBean.editando}" immediate="true">
+                        <i class="fa-solid fa-xmark"></i> Cancelar
+                    </h:commandLink>
+                    <h:link id="tpSalir" outcome="/dashboard.xhtml" styleClass="tp-btn tp-btn-salir">
+                        <i class="fa-solid fa-door-open"></i> Salir [Esc]
+                    </h:link>
+                </div>
+
+                <!-- DATOS DE LA TARJETA (txtcodigo, txtdescripcion, numIncremento, cboestado) -->
+                <section class="tp-card">
+                    <h2 class="tp-card-titulo">
+                        Datos de la tarjeta
+                        <ui:fragment rendered="#{tarjetaPagoBean.modo eq 'nuevo'}"><span class="tp-modo tp-modo-nuevo">Nuevo registro</span></ui:fragment>
+                        <ui:fragment rendered="#{tarjetaPagoBean.modo eq 'modificar'}"><span class="tp-modo tp-modo-modificar">Modificando</span></ui:fragment>
+                    </h2>
+                    <div class="tp-campos">
+                        <div class="tp-campo">
+                            <label for="tpCodigo">Código:</label>
+                            <!-- Solo lectura: el código lo genera sp_GeneraCodigoTarjeta al presionar Nuevo -->
+                            <h:inputText id="tpCodigo" value="#{tarjetaPagoBean.codigo}" maxlength="3"
+                                         readonly="true" disabled="#{not tarjetaPagoBean.codigoHabilitado}"
+                                         styleClass="tp-solo-lectura" tabindex="-1"
+                                         a:autocomplete="off" a:title="Código generado automáticamente" />
+                        </div>
+                        <div class="tp-campo tp-campo-ancho">
+                            <label for="tpDescripcion">Descripción:</label>
+                            <h:inputText id="tpDescripcion" value="#{tarjetaPagoBean.descripcion}" maxlength="100"
+                                         disabled="#{not tarjetaPagoBean.editando}"
+                                         a:autocomplete="off" a:placeholder="Ej. VISA, MASTERCARD" />
+                        </div>
+                        <div class="tp-campo">
+                            <label for="tpPorCom">Monto (%):</label>
+                            <div class="tp-porcentaje">
+                                <h:inputText id="tpPorCom" value="#{tarjetaPagoBean.porCom}"
+                                             disabled="#{not tarjetaPagoBean.editando}"
+                                             a:type="number" a:step="0.01" a:min="0" a:max="100" a:inputmode="decimal" />
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="tp-campo">
+                            <label for="tpEstado">Estado:</label>
+                            <h:selectOneMenu id="tpEstado" value="#{tarjetaPagoBean.estado}" disabled="#{not tarjetaPagoBean.editando}">
+                                <f:selectItem itemValue="ACTIVO" itemLabel="ACTIVO" />
+                                <f:selectItem itemValue="INACTIVO" itemLabel="INACTIVO" />
+                            </h:selectOneMenu>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- LISTA (dataGridView1) -->
+                <section class="tp-card">
+                    <h2 class="tp-card-titulo">
+                        Lista de tarjetas
+                        <span class="tp-total">Registros: <strong>#{tarjetaPagoBean.total}</strong></span>
+                    </h2>
+                    <p class="tp-ayuda">
+                        <ui:fragment rendered="#{not tarjetaPagoBean.editando}">Haga clic en una fila para ver sus datos; luego puede Modificar o Eliminar.</ui:fragment>
+                        <ui:fragment rendered="#{tarjetaPagoBean.editando}">Termine con Grabar o Cancelar para elegir otra tarjeta.</ui:fragment>
+                    </p>
+                    <div class="tp-tabla-scroll">
+                        <table class="tp-tabla #{tarjetaPagoBean.editando ? 'tp-tabla-bloqueada' : ''}">
+                            <thead>
+                                <tr><th class="tp-col-codigo">Código</th><th>Descripción</th><th class="tp-col-num">Monto (%)</th><th class="tp-col-estado">Estado</th></tr>
+                            </thead>
+                            <tbody>
+                                <ui:fragment rendered="#{empty tarjetaPagoBean.lista}">
+                                    <tr class="tp-fila-vacia"><td colspan="4">No hay tarjetas de pago registradas.</td></tr>
+                                </ui:fragment>
+                                <ui:repeat value="#{tarjetaPagoBean.lista}" var="t">
+                                    <tr class="tp-fila #{tarjetaPagoBean.esSeleccionada(t) ? 'tp-fila-activa' : ''}">
+                                        <td class="tp-col-codigo">
+                                            <h:commandLink action="#{tarjetaPagoBean.seleccionar(t.IDTarjeta)}" styleClass="tp-link-fila"
+                                                           disabled="#{tarjetaPagoBean.editando}">#{t.IDTarjeta}</h:commandLink>
+                                        </td>
+                                        <td>#{t.nombreTarjetaPago}</td>
+                                        <td class="tp-col-num">
+                                            <h:outputText value="#{t.porCom}">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="2" locale="en_US" />
+                                            </h:outputText>
+                                        </td>
+                                        <td class="tp-col-estado">
+                                            <span class="tp-estado #{t.estado eq 'INACTIVO' ? 'tp-estado-inactivo' : 'tp-estado-activo'}">#{t.estado}</span>
+                                        </td>
+                                    </tr>
+                                </ui:repeat>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </h:form>
+        </main>
+    </ui:define>
+    <ui:define name="scripts">
+        <script src="#{request.contextPath}/js/tarjetas-pago.js?v=2"></script>
+    </ui:define>
+</ui:composition>

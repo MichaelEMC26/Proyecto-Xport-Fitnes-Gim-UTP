@@ -5,6 +5,8 @@
 package com.registro.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 /**
  *
  * @author Administrator
@@ -40,6 +42,12 @@ public class UsuarioDTO implements java.io.Serializable {
     private int OpcUserSist;
     private int Rol_ID;
 
+    private int Id_UserSist;
+    private String accion;
+    private LocalTime Hora;
+    private LocalDateTime FechaRegistro;
+    private String Cadena;
+    
 
     
     public UsuarioDTO()
@@ -139,7 +147,20 @@ public class UsuarioDTO implements java.io.Serializable {
                 + (ApellidoMaterno == null ? "" : ApellidoMaterno)).trim();
     }
     
-
+    public int getId_UserSist() {return Id_UserSist;}
+    public void setId_UserSist(int Id_UserSist){this.Id_UserSist=Id_UserSist;}
+    
+    public String getaccion() {return accion;}
+    public void setaccion(String accion){this.accion=accion;}
+    
+    public LocalTime getHora() {return Hora;}
+    public void setHora(LocalTime Hora){this.Hora=Hora;}
+    
+    public LocalDateTime getFechaRegistro() {return FechaRegistro;}
+    public void setFechaRegistro(LocalDateTime FechaRegistro){this.FechaRegistro=FechaRegistro;}
+    
+    public String getCadena() {return Cadena;}
+    public void setCadena(String Cadena){this.Cadena=Cadena;}
 }
 
 

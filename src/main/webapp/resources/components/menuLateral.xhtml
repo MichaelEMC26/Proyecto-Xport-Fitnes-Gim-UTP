@@ -84,18 +84,35 @@
                 </ul>
             </li>
             <nav:menuPersonal opcion="#{cc.attrs.opcion}"/>
+            <li class="menu-desplegable #{cc.attrs.submenu eq 'caja' ? 'abierto' : ''}" id="menuCaja">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuCaja')" aria-expanded="#{cc.attrs.submenu eq 'caja'}">
+                    <i class="fa-solid fa-cash-register"></i><span>Caja</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu" id="submenuCaja">
+                    <li class="#{cc.attrs.opcion eq 'aperturaCaja' ? 'submenu-activo' : ''}"><h:link outcome="/AperturaCaja.xhtml"><i class="fa-solid fa-lock-open"></i><span>Apertura de Caja</span></h:link></li>
+                    <li class="#{cc.attrs.opcion eq 'cierreCaja' ? 'submenu-activo' : ''}"><h:link outcome="/RegistrarCierreCaja.xhtml"><i class="fa-solid fa-lock"></i><span>Cierre de Caja</span></h:link></li>
+                </ul>
+            </li>
             <li class="#{cc.attrs.opcion eq 'ventas' ? 'active' : ''}"><h:link outcome="/Ventas.xhtml"><i class="fa-solid fa-chart-line"></i><span>Ventas</span></h:link></li>
             <li class="#{cc.attrs.opcion eq 'puntoVenta' ? 'active' : ''}"><h:link outcome="/PuntoVenta.xhtml"
         style="pointer-events: none; opacity: 0.5; cursor: not-allowed;"><i class="fa-solid fa-cash-register"></i><span>Punto de Venta</span></h:link></li>
             <nav:menuCatalogo opcion="#{cc.attrs.opcion}"/>
             <li class="#{cc.attrs.opcion eq 'gastos' ? 'active' : ''}"><h:link outcome="/gastos.xhtml"><i class="fa-solid fa-money-bill"></i><span>Gastos</span></h:link></li>
             <li class="#{cc.attrs.opcion eq 'almacen' ? 'active' : ''}"><h:link outcome="/Almacen.xhtml"><i class="fa-solid fa-warehouse"></i><span>Almacén</span></h:link></li>
+            <!-- Configuraciones: último del menú, justo antes de Cambiar contraseña -->
+            <li class="menu-desplegable #{cc.attrs.submenu eq 'configuracion' ? 'abierto' : ''}" id="menuConfiguracion">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuConfiguracion')" aria-expanded="#{cc.attrs.submenu eq 'configuracion'}">
+                    <i class="fa-solid fa-sliders"></i><span>Configuraciones</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu" id="submenuConfiguracion">
+                    <li class="#{cc.attrs.opcion eq 'tarjetasPago' ? 'submenu-activo' : ''}"><h:link outcome="/ManteTarjetasPago.xhtml"><i class="fa-solid fa-credit-card"></i><span>Tarjetas de Pago</span></h:link></li>
+                </ul>
+            </li>
         </ul>
         <ul class="sidebar-menu2">
             <li class="#{cc.attrs.opcion eq 'cambiarClave' ? 'active' : ''}">
                 <h:link outcome="/CambiarClave.xhtml"><i class="fa-solid fa-key"></i><span>Cambiar contraseña</span></h:link>
             </li>
-            <li><h:link outcome="/configurar.xhtml"><i class="fa-solid fa-gear"></i><span>Configurar</span></h:link></li>
             <li>
                 <h:form id="formCerrarSesion" styleClass="menu-logout-form">
                     <h:commandLink action="#{loginBean.cerrarSesion}" immediate="true">

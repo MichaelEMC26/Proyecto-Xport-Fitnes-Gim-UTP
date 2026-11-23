@@ -93,6 +93,7 @@ public class AsistenciaDTO {
     private double EfectivoActual;
 
     private int CANT;
+    private String CondicionCredito;
     
     public AsistenciaDTO()
     {
@@ -279,5 +280,19 @@ public class AsistenciaDTO {
     
    public  int getCANT(){return CANT;}
    public void setCANT(int CANT){this.CANT = CANT;}
-    
+
+    /**
+    * Columnas opcionales del periodo de clases (frm_RegistrarAsistencia: Pedido_ID, Periodo)
+    */
+   private String Pedido_ID;
+   private String Periodo;
+
+   public  String getPedido_ID(){return Pedido_ID;}
+   public void setPedido_ID(String Pedido_ID){this.Pedido_ID = Pedido_ID;}
+
+   public  String getPeriodo(){return Periodo;}
+   public void setPeriodo(String Periodo){this.Periodo = Periodo;}
+
+   public String getCondicionCredito(){return CondicionCredito;}
+   public void setCondicionCredito(String CondicionCredito){this.CondicionCredito= CondicionCredito;}
 }

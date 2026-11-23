@@ -233,7 +233,7 @@ public class ProductoBean implements Serializable {
     }
 
     public String salir() {
-        return "/Productos.xhtml?faces-redirect=true";
+        return Navegacion.salir("/Productos.xhtml?faces-redirect=true");
     }
 
     // ------------------------------------------------------------------ apoyo

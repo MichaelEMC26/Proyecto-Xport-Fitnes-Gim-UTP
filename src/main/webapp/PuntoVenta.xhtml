@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="#{request.contextPath}/css/gastos.css" />
     <link rel="stylesheet" href="#{request.contextPath}/css/productos-dashboard.css" />
     <link rel="stylesheet" href="#{request.contextPath}/css/catalogo.css" />
+    <link rel="stylesheet" href="#{request.contextPath}/css/formas-pago.css?v=20261122-3" />
+    <link rel="stylesheet" href="#{request.contextPath}/css/punto-venta.css?v=20261123-1" />
     
     
 
@@ -1030,17 +1032,31 @@
     <ui:define name="content">
 <main class="gastos-main pv-main">
 
+        <!-- Datos del servidor (PuntoVentaBean): productos activos de la BD y estado de la caja -->
+        <div id="pvDatosServidor" hidden="hidden"
+             data-productos="#{puntoVentaBean.productosJson}"
+             data-error-productos="#{puntoVentaBean.errorProductos}"
+             data-error-caja="#{puntoVentaBean.errorCaja}"></div>
+        <ui:fragment rendered="#{not empty puntoVentaBean.errorCaja}">
+            <div class="pv-aviso-servidor"><i class="fa-solid fa-triangle-exclamation"></i> #{puntoVentaBean.errorCaja}</div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty puntoVentaBean.errorProductos}">
+            <div class="pv-aviso-servidor"><i class="fa-solid fa-triangle-exclamation"></i> #{puntoVentaBean.errorProductos}</div>
+        </ui:fragment>
+
         <header class="pv-topbar">
             <div class="pv-topbar-left">
                 <span class="pv-store">
                     <i class="fa-solid fa-store"></i>
-                    <strong>Tienda:</strong> PLAN BEACH
+                    <strong>Tienda:</strong> SEDE 1
                 </span>
 
                 <span><strong>Caja registradora:</strong> Caja1</span>
 
+                <span class="pv-turno"><i class="fa-solid fa-clock"></i> #{puntoVentaBean.turnoTexto}</span>
+
                 <button type="button" id="btnHistorialVentas">
-                    <i class="fa-solid fa-receipt"></i> Ventas
+                    <i class="fa-solid fa-receipt"></i> Ventas del turno
                 </button>
             </div>
 
@@ -1059,7 +1075,7 @@
             <section class="pv-products-pane">
 
                 <div class="pv-search-row">
-                    <label class="pv-pos-label" for="pvBuscar">POINT OF SALE</label>
+                    <label class="pv-pos-label" for="pvBuscar">Busqueda de Articulos</label>
 
                     <input type="search"
                            id="pvBuscar"
@@ -1130,7 +1146,8 @@
                 <div class="pv-tab-content" id="pvPanelCliente" role="tabpanel">
                     <div class="pv-form-pane">
                         <h2>Datos del cliente</h2>
-                        <p>Información opcional para asociar esta venta a un cliente.</p>
+                        <p>Opcional. Sin documento la venta va a CLIENTE general (código 01).
+                           El documento es obligatorio para emitir factura o vender al crédito.</p>
 
                         <div class="pv-form-grid">
                             <div class="pv-field full">
@@ -1140,9 +1157,9 @@
                             </div>
 
                             <div class="pv-field">
-                                <label for="pvClienteDocumento">Documento</label>
-                                <input id="pvClienteDocumento" type="text" maxlength="20"
-                                       placeholder="DNI / CE / RUC" />
+                                <label for="pvClienteDocumento">DNI / Código (máx. 8)</label>
+                                <input id="pvClienteDocumento" type="text" maxlength="8"
+                                       placeholder="DNI" />
                             </div>
 
                             <div class="pv-field">
@@ -1196,6 +1213,23 @@
                 <!-- TOTALES Y ACCIONES -->
                 <footer class="pv-checkout">
                     <div id="pvFeedback" class="pv-feedback" role="status" aria-live="polite"></div>
+
+                    <!-- Venta cargada desde "Ventas del turno" para modificarla -->
+                    <div class="pv-edicion" id="pvEdicion" hidden="hidden">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Modificando la venta <b id="pvEdicionNro"></b></span>
+                        <button type="button" id="pvCancelarEdicion">Cancelar</button>
+                    </div>
+
+                    <!-- Tipo de comprobante: FacturacionFACADE.Lista_TiposDocF (sp_Lista_TiposDoc) -->
+                    <div class="pv-tipodoc">
+                        <label for="pvTipoDoc">Comprobante</label>
+                        <select id="pvTipoDoc">
+                            <ui:repeat value="#{puntoVentaBean.tiposDoc}" var="t">
+                                <option value="#{t.documento_ID}">#{t.descripcion}</option>
+                            </ui:repeat>
+                        </select>
+                    </div>
 
                     <div class="pv-subtotal-row">
                         <span>SUBTOTAL (INCL. IMPUESTO)</span>
@@ -1322,8 +1356,8 @@
      aria-modal="true"
      aria-labelledby="pvTituloVentas">
     <div class="pv-modal" style="width:min(100%,800px)">
-        <h2 id="pvTituloVentas">Historial de ventas de demostración</h2>
-        <p>Las ventas de esta pantalla se almacenan solamente en el navegador.</p>
+        <h2 id="pvTituloVentas">Ventas del turno</h2>
+        <p id="pvHistorialTurno">Ventas grabadas en la base de datos en el turno de caja abierto.</p>
         <div id="pvHistorialContenido"></div>
         <div class="pv-modal-actions">
             <button type="button" class="pv-modal-cancel" data-cerrar="pvModalVentas">
@@ -1332,15 +1366,272 @@
         </div>
     </div>
     </div>
+
+<!-- ===== Ventana FORMAS DE PAGO (plantilla formas_de_pago.html; lógica en js/formas-pago.js) ===== -->
+<div id="fpOverlay">
+    <div class="fp-ventana" role="dialog" aria-modal="true" aria-label="Formas de pago">
+        <div class="fp-titulo">
+            <span><i class="fa-solid fa-wallet"></i> Forma de Pago</span>
+            <button type="button" class="fp-x" id="fpCerrarX" title="Cerrar [Esc]">✕</button>
+        </div>
+        <div class="fp-cuerpo">
+            <div class="fp-cabecera">
+                <!-- Imagen alusiva a la forma de pago elegida (cambia en formas-pago.js) -->
+                <div class="fp-ilustracion" id="fpIlustracion" data-m="efectivo">
+                    <img id="fpImagen" src="#{request.contextPath}/images/formas-pago/efectivo.svg" alt="Efectivo"
+                         data-base="#{request.contextPath}/images/formas-pago/" />
+                    <div class="fp-ilustracion-texto">
+                        <small>FORMA DE PAGO</small>
+                        <b id="fpImagenTitulo">Efectivo</b>
+                        <span id="fpImagenAyuda">Pago en billetes y monedas</span>
+                    </div>
+                </div>
+                <div class="fp-totalbox">
+                    <small>TOTAL</small>
+                    <strong id="fpTotal">0.00</strong>
+                    <span class="fp-desglose" id="fpDesglose"></span>
+                </div>
+            </div>
+
+            <div class="fp-principal">
+                <!-- Formas de pago ACTIVAS: FormasPagoVentaBean -> FacturacionFACADE.ListaFormasPagoActivoF (sp_ListaFormasPagoActivo)
+                     data-m = clave única, data-tipo = panel que se muestra, data-id = IDFormaPago -->
+                <div class="fp-menu" id="fpMenu">
+                    <ui:repeat value="#{formasPagoVentaBean.activas}" var="f" varStatus="st">
+                        <button type="button" class="#{st.first ? 'activo' : ''}" data-m="#{f.clave}" data-tipo="#{f.tipo}"
+                                data-id="#{f.id}" data-nombre="#{f.nombre}">#{f.nombre} <span class="fp-menu-monto"></span></button>
+                    </ui:repeat>
+                </div>
+
+                <div class="fp-detalle">
+                    <ui:fragment rendered="#{not empty formasPagoVentaBean.error}">
+                        <div class="fp-aviso-fp"><i class="fa-solid fa-circle-info"></i> #{formasPagoVentaBean.error}</div>
+                    </ui:fragment>
+
+                    <div class="fp-panel activo" id="fp-efectivo">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" data-m="efectivo" type="number" step="0.01" min="0" value="0.00" />
+                        <div class="fp-extra">
+                            <label>Recibido del cliente<input id="fpRecibido" type="number" step="0.01" min="0" placeholder="0.00" /></label>
+                        </div>
+                    </div>
+
+                    <div class="fp-panel" id="fp-virtual">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" data-m="virtual" type="number" step="0.01" min="0" value="0.00" />
+                        <div class="fp-extra">
+                            <label>Medio virtual
+                                <div class="fp-chips">
+                                    <label><input type="radio" name="fpVirtual" value="Yape" checked="checked" /><span>Yape</span></label>
+                                    <label><input type="radio" name="fpVirtual" value="Plin" /><span>Plin</span></label>
+                                    <label><input type="radio" name="fpVirtual" value="Agora" /><span>Agora</span></label>
+                                    <label><input type="radio" name="fpVirtual" value="PagoEfectivo (CIP)" /><span>PagoEfectivo (CIP)</span></label>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="fp-extra">
+                            <label>N° de operación / CIP<input id="fpOpVirtual" placeholder="Ej. 00123456" /></label>
+                        </div>
+                    </div>
+
+                    <div class="fp-panel" id="fp-tarjeta">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" data-m="tarjeta" type="number" step="0.01" min="0" value="0.00" />
+                        <!-- Tarjetas de la tabla TarjetasPago (solo ACTIVO): TarjetasVentaBean -> ConfiguracionesFACADE.ListaTarjetasPagoActivoF -->
+                        <div class="fp-extra">
+                            <label>Tipo de tarjeta
+                                <div class="fp-chips" id="fpTarjetas">
+                                    <ui:repeat value="#{tarjetasVentaBean.activas}" var="t" varStatus="st">
+                                        <label><input type="radio" name="fpTarjeta" value="#{t.IDTarjeta}"
+                                                      data-nombre="#{t.nombreTarjetaPago}" data-porcom="#{t.porCom}"
+                                                      checked="#{st.first ? 'checked' : null}" /><span>#{t.nombreTarjetaPago}</span></label>
+                                    </ui:repeat>
+                                </div>
+                                <ui:fragment rendered="#{empty tarjetasVentaBean.activas}">
+                                    <span class="fp-sin-tarjetas">#{empty tarjetasVentaBean.error ? 'No hay tarjetas activas. Regístrelas en Configuración → Tarjetas de Pago.' : tarjetasVentaBean.error}</span>
+                                </ui:fragment>
+                            </label>
+                        </div>
+                        <!-- Porcentaje de comisión de la tarjeta elegida (PorCom) -->
+                        <div class="fp-comision-info" id="fpComisionInfo" hidden="hidden">
+                            <i class="fa-solid fa-percent"></i>
+                            <span id="fpComisionTexto"></span>
+                        </div>
+                        <div class="fp-extra">
+                            <label>Modalidad
+                                <div class="fp-chips">
+                                    <label><input type="radio" name="fpModo" value="Débito" checked="checked" /><span>Débito</span></label>
+                                    <label><input type="radio" name="fpModo" value="Crédito" /><span>Crédito</span></label>
+                                </div>
+                            </label>
+                            <label>N° de voucher<input id="fpVoucher" placeholder="Ej. 004512" /></label>
+                        </div>
+                    </div>
+
+                    <div class="fp-panel" id="fp-deposito">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" data-m="deposito" type="number" step="0.01" min="0" value="0.00" />
+                        <div class="fp-extra">
+                            <label>Banco
+                                <div class="fp-chips">
+                                    <label><input type="radio" name="fpBanco" value="BCP" checked="checked" /><span>BCP</span></label>
+                                    <label><input type="radio" name="fpBanco" value="BBVA" /><span>BBVA</span></label>
+                                    <label><input type="radio" name="fpBanco" value="Interbank" /><span>Interbank</span></label>
+                                    <label><input type="radio" name="fpBanco" value="Scotiabank" /><span>Scotiabank</span></label>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="fp-extra">
+                            <label>Tipo
+                                <div class="fp-chips">
+                                    <label><input type="radio" name="fpDep" value="Depósito" checked="checked" /><span>Depósito</span></label>
+                                    <label><input type="radio" name="fpDep" value="Transferencia" /><span>Transferencia</span></label>
+                                </div>
+                            </label>
+                            <label>N° de operación<input id="fpOpDeposito" placeholder="Ej. 9876543" /></label>
+                        </div>
+                    </div>
+
+                    <div class="fp-panel" id="fp-nota">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" data-m="nota" type="number" step="0.01" min="0" value="0.00" />
+                        <div class="fp-extra">
+                            <label>Serie-Número de la nota de crédito<input id="fpNotaCredito" placeholder="FC01-000123" /></label>
+                        </div>
+                    </div>
+
+                    <!-- Crédito / Deuda (IDFormaPago "06"): fecha de vencimiento y CondPago = "Credito" -->
+                    <div class="fp-panel" id="fp-credito">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" data-m="credito" type="number" step="0.01" min="0" value="0.00" />
+                        <div class="fp-extra fp-credito-fecha">
+                            <label for="fpFechaVenc">Fecha de vencimiento del crédito
+                                <input id="fpFechaVenc" type="date" />
+                            </label>
+                        </div>
+                        <div class="fp-credito-info">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <span>Condición de pago: <b>Crédito</b>. <span id="fpCreditoTexto">El saldo se cobra hasta la fecha de vencimiento.</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Otra forma de pago de la tabla (sin panel propio): solo el monto -->
+                    <div class="fp-panel" id="fp-otro">
+                        <label>MONTO :</label>
+                        <input class="fp-monto" id="fpMontoOtro" data-m="" type="number" step="0.01" min="0" value="0.00" />
+                        <div class="fp-extra">
+                            <label>N° de operación / referencia<input id="fpOpOtro" placeholder="Opcional" /></label>
+                        </div>
+                    </div>
+
+                    <div class="fp-resumen">
+                        <div class="fp-imp"><small>IMPORTE A PAGAR</small><span id="fpImporte">0.00</span></div>
+                        <span>MONTO:</span><b id="fpMontoSel">0.00</b>
+                        <span>COMISION:</span><b id="fpComision">0.00</b>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fp-pie">
+                <div style="display:flex;gap:16px;align-items:flex-end">
+                    <div class="fp-campo"><label for="fpPagado">PAGADO :</label><input id="fpPagado" readonly="readonly" value="0.00" /></div>
+                    <button type="button" id="fpBtnCalc" title="Calculadora">🧮</button>
+                </div>
+                <div class="fp-campo fp-saldo" style="min-width:250px">
+                    <label for="fpSaldo">SALDO (VUELTO):</label><input id="fpSaldo" readonly="readonly" value="0.00" />
+                </div>
+            </div>
+
+            <div class="fp-acciones">
+                <button type="button" class="fp-btn" id="fpAceptar">Aceptar</button>
+                <button type="button" class="fp-btn gris" id="fpCancelar">Cancelar</button>
+                <span id="fpMsg"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Puente con el servidor (PuntoVentaBean): la página envía JSON en pvDatos y lee la respuesta en pvResultado -->
+<h:form id="pvServidor" prependId="false" style="display:none">
+    <h:inputHidden id="pvDatos" value="#{puntoVentaBean.datos}" />
+    <h:commandButton id="pvBtnGrabar" action="#{puntoVentaBean.grabar}" tabindex="-1">
+        <f:ajax execute="pvDatos" render="pvResultado" onevent="PVServidor.evento" onerror="PVServidor.error" />
+    </h:commandButton>
+    <h:commandButton id="pvBtnCargar" action="#{puntoVentaBean.cargarVenta}" tabindex="-1">
+        <f:ajax execute="pvDatos" render="pvResultado" onevent="PVServidor.evento" onerror="PVServidor.error" />
+    </h:commandButton>
+    <h:commandButton id="pvBtnEliminar" action="#{puntoVentaBean.eliminar}" tabindex="-1">
+        <f:ajax execute="pvDatos" render="pvResultado" onevent="PVServidor.evento" onerror="PVServidor.error" />
+    </h:commandButton>
+    <h:commandButton id="pvBtnListar" action="#{puntoVentaBean.listarVentas}" tabindex="-1">
+        <f:ajax execute="pvDatos" render="pvResultado" onevent="PVServidor.evento" onerror="PVServidor.error" />
+    </h:commandButton>
+    <h:outputText id="pvResultado" value="#{puntoVentaBean.resultado}" />
+</h:form>
+
+<!-- Calculadora de la ventana Formas de pago -->
+<div id="fpCalc">
+    <input id="fpCalcPantalla" readonly="readonly" value="0" />
+    <div class="fp-teclas" id="fpCalcTeclas"></div>
+    <button type="button" class="fp-cerrar" id="fpCalcCerrar">Cerrar</button>
+</div>
     </ui:define>
     <ui:define name="scripts">
+<script type="text/javascript" src="#{request.contextPath}/js/formas-pago.js?v=20261122-3"></script>
 <script type="text/javascript">
+/*
+ * Puente con PuntoVentaBean (ajax de Jakarta Faces): llamar("Grabar" | "Cargar" | "Eliminar" | "Listar", datos)
+ * devuelve una promesa con la respuesta JSON del servidor ({ ok, mensaje, ... }).
+ */
+window.PVServidor = (function () {
+    "use strict";
+    let pendiente = null;
+
+    function llamar(accion, datos) {
+        return new Promise(function (resolver, rechazar) {
+            if (pendiente) {
+                rechazar(new Error("Espere a que termine la operación anterior."));
+                return;
+            }
+            const boton = document.getElementById("pvBtn" + accion);
+            if (!boton) {
+                rechazar(new Error("Acción no disponible: " + accion));
+                return;
+            }
+            document.getElementById("pvDatos").value = JSON.stringify(datos || {});
+            pendiente = { resolver: resolver, rechazar: rechazar };
+            boton.click();
+        });
+    }
+
+    function evento(data) {
+        if (data.status !== "success" || !pendiente) return;
+        const p = pendiente;
+        pendiente = null;
+        let r;
+        try {
+            r = JSON.parse(document.getElementById("pvResultado").textContent || "{}");
+        } catch (e) {
+            p.rechazar(new Error("Respuesta no válida del servidor."));
+            return;
+        }
+        p.resolver(r);
+    }
+
+    function error(data) {
+        if (!pendiente) return;
+        const p = pendiente;
+        pendiente = null;
+        p.rechazar(new Error("No se pudo comunicar con el servidor (" + (data.errorName || data.status || "error") + ")."));
+    }
+
+    return { llamar: llamar, evento: evento, error: error };
+})();
+
 document.addEventListener("DOMContentLoaded", function () {
     "use strict";
 
     const contexto = '#{request.contextPath}';
-    const KEY_PRODUCTS = "pv_productos_demo";
-    const KEY_SALES = "pv_ventas_demo";
     const KEY_SUSPENDED = "pv_carritos_suspendidos";
 
     let filtroActual = "Todo";
@@ -1374,37 +1665,38 @@ document.addEventListener("DOMContentLoaded", function () {
         return false;
     }
 
-    function productosIniciales() {
-        const nombres = [
-            ["ENDLESS SUM PT J BDSH KVJ7", 50.00, false, true, "7750000000001", "Ropa deportiva"],
-            ["FIFTY50 LB", 50.00, true, false, "7750000000002", "Ropa deportiva"],
-            ["SUNDAYS STRETCH LB", 55.00, true, false, "7750000000003", "Ropa deportiva"],
-            ["EVDAYVL15 M JAMV KVJ0", 30.00, false, true, "7750000000004", "Ropa deportiva"],
-            ["EVDAYVL15 M JAMV GPHH", 30.00, false, false, "7750000000005", "Ropa deportiva"],
-            ["EVDAYVL15 M JAMV BSMH", 30.00, false, false, "7750000000006", "Ropa deportiva"],
-            ["EVDAYVL15 M JAMV CPHH", 30.00, false, false, "7750000000007", "Ropa deportiva"],
-            ["ISLANDPVL15 M JAMV BPZ6", 46.00, false, false, "7750000000008", "Ropa deportiva"],
-            ["SUNFADVL17 M JAMV KTA6", 46.00, true, false, "7750000000009", "Ropa deportiva"]
-        ];
+    /** Productos activos de la base de datos (PuntoVentaBean.productosJson). */
+    const datosServidor = document.getElementById("pvDatosServidor");
+    let productos = leerProductosServidor();
 
-        return nombres.map(function (d, i) {
-            return {
-                id: "pv-" + (i + 1),
-                nombre: d[0],
-                precio: d[1],
-                destacado: d[2],
-                descuento: d[3],
-                codigo: d[4],
-                categoria: d[5],
-                marca: "PLAN BEACH",
-                tallas: {
-                    "S": 10,
-                    "M": 10,
-                    "L": 10,
-                    "XL": 10
-                }
-            };
-        });
+    /** Venta cargada para modificar: { pedido, documento, reservado: { productoId: cantidad } } o null. */
+    let ventaEnEdicion = null;
+
+    function leerProductosServidor() {
+        try {
+            const lista = JSON.parse(datosServidor ? datosServidor.dataset.productos || "[]" : "[]");
+            return Array.isArray(lista) ? lista : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    /** Reemplaza los productos con los que devuelve el servidor (stock actualizado). */
+    function aplicarProductos(lista) {
+        if (!Array.isArray(lista)) return;
+        productos = lista;
+        // La venta en edición sigue "reservando" sus cantidades (al grabar vuelven al stock)
+        if (ventaEnEdicion) {
+            Object.keys(ventaEnEdicion.reservado).forEach(function (id) {
+                const p = obtenerProductoPorId(id);
+                if (p) p.stock = (Number(p.stock) || 0) + ventaEnEdicion.reservado[id];
+            });
+        }
+    }
+
+    /** Precio de la línea del carrito: el de la venta original (al modificar) o el del producto. */
+    function precioItem(item, p) {
+        return item.precio !== undefined ? Number(item.precio) : (p ? Number(p.precio) : 0);
     }
 
     function leerJSON(clave, predeterminado) {
@@ -1417,18 +1709,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function obtenerProductos() {
-        let lista = leerJSON(KEY_PRODUCTS, null);
-
-        if (!Array.isArray(lista)) {
-            lista = productosIniciales();
-            guardarProductos(lista);
-        }
-
-        return lista;
+        return productos;
     }
 
     function guardarProductos(lista) {
-        localStorage.setItem(KEY_PRODUCTS, JSON.stringify(lista));
+        productos = lista;
     }
 
     function stockTotal(producto) {
@@ -1519,18 +1804,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const q = inputBuscar.value.trim().toLocaleLowerCase("es");
 
         grid.replaceChildren();
-
-        const agregar = document.createElement("button");
-        agregar.type = "button";
-        agregar.className = "pv-product-card pv-add-card";
-        agregar.title = "Añadir producto de demostración";
-
-        const plus = document.createElement("span");
-        plus.textContent = "+";
-
-        agregar.appendChild(plus);
-        agregar.addEventListener("click", abrirNuevoProducto);
-        grid.appendChild(agregar);
 
         const filtrados = lista.filter(function (p) {
             const texto = [
@@ -1791,7 +2064,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return carrito.reduce(function (s, item) {
             const p = obtenerProductoPorId(item.productoId);
 
-            return s + (p ? Number(p.precio) * item.cantidad : 0);
+            return s + (p ? precioItem(item, p) * item.cantidad : 0);
         }, 0);
     }
 
@@ -1872,7 +2145,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const precio = document.createElement("strong");
             precio.className = "pv-item-price";
             precio.textContent = formatoDinero(
-                Number(p.precio) * item.cantidad
+                precioItem(item, p) * item.cantidad
             );
 
             fila.appendChild(precio);
@@ -2048,10 +2321,11 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("pvNuevoNombre").focus();
     }
 
+    // Los productos vienen de la base de datos: se registran en Catálogo → Productos
     const botonNuevoProducto = document.getElementById("pvNuevoProducto");
 
     if (botonNuevoProducto) {
-        botonNuevoProducto.addEventListener("click", abrirNuevoProducto);
+        botonNuevoProducto.hidden = true;
     }
 
     const formularioProducto = document.getElementById("pvFormProducto");
@@ -2298,32 +2572,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const metodo = prompt(
-                "Total a pagar: " + formatoDinero(calcularTotal())
-                + "\nEscribe el método: Efectivo, Tarjeta o Transferencia",
-                "Efectivo"
-            );
-
-            if (metodo === null) {
-                return;
-            }
-
-            const metodoLimpio = metodo.trim();
-            const metodosValidos = [
-                "efectivo",
-                "tarjeta",
-                "transferencia"
-            ];
-
-            if (!metodosValidos.includes(
-                metodoLimpio.toLocaleLowerCase("es")
-            )) {
-                alert(
-                    "Método no válido. Usa Efectivo, Tarjeta o Transferencia."
-                );
-                return;
-            }
-
             const lista = obtenerProductos();
 
             for (let i = 0; carrito.length > i; i++) {
@@ -2352,127 +2600,299 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            carrito.forEach(function (item) {
-                const p = lista.find(function (x) {
-                    return String(x.id) === String(item.productoId);
-                });
-
-                if (todosVerdaderos(p, item.talla, p.tallas)) {
-                    p.tallas[item.talla] = Math.max(
-                        0,
-                        (Number(p.tallas[item.talla]) || 0) - item.cantidad
-                    );
-                }
+            // Ventana FORMAS DE PAGO: la venta se registra solo al presionar Aceptar
+            FormasPago.abrir(calcularTotal(), function (pago) {
+                registrarVenta(lista, pago);
             });
-
-            guardarProductos(lista);
-
-            const ventas = leerJSON(KEY_SALES, []);
-
-            ventas.unshift({
-                id: "V-" + Date.now(),
-                fecha: new Date().toLocaleString("es-PE"),
-                cliente: document.getElementById("pvClienteNombre").value.trim()
-                    || "Público general",
-                metodo: metodoLimpio,
-                subtotal: subtotal(),
-                descuento: descuentoManual + descuentoCupon,
-                envio: envio,
-                total: calcularTotal(),
-                articulos: carrito.reduce(function (s, i) {
-                    return s + i.cantidad;
-                }, 0),
-                nota: notaVenta
-            });
-
-            localStorage.setItem(KEY_SALES, JSON.stringify(ventas));
-
-            const totalPagado = calcularTotal();
-
-            carrito = [];
-            descuentoManual = 0;
-            descuentoCupon = 0;
-            envio = 0;
-            notaVenta = "";
-
-            renderizarCarrito();
-            renderizarProductos();
-
-            mostrarFeedback(
-                "Venta de demostración registrada: "
-                + formatoDinero(totalPagado)
-                + " · " + metodoLimpio
-                + ". No se guardó en el servidor."
-            );
-
-            cambiarPestana("carrito");
-
-            document.getElementById("pvClienteNombre").value = "";
-            document.getElementById("pvClienteDocumento").value = "";
-            document.getElementById("pvClienteTelefono").value = "";
-            document.getElementById("pvClienteEmail").value = "";
-            document.getElementById("pvDireccion").value = "";
-            document.getElementById("pvCiudad").value = "";
-            document.getElementById("pvCodigoPostal").value = "";
-            document.getElementById("pvReferencia").value = "";
         });
     }
 
+    const selTipoDoc = document.getElementById("pvTipoDoc");
+    const avisoEdicion = document.getElementById("pvEdicion");
+
+    function redondear2(n) {
+        return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    }
+
+    function valor(id) {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : "";
+    }
+
+    /** Limpia el carrito y los datos del cliente después de grabar, eliminar o cancelar. */
+    function limpiarVenta() {
+        carrito = [];
+        descuentoManual = 0;
+        descuentoCupon = 0;
+        envio = 0;
+        notaVenta = "";
+        ["pvClienteNombre", "pvClienteDocumento", "pvClienteTelefono", "pvClienteEmail",
+         "pvDireccion", "pvCiudad", "pvCodigoPostal", "pvReferencia"].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+        });
+        renderizarCarrito();
+        renderizarProductos();
+    }
+
+    function mostrarEdicion() {
+        const editando = ventaEnEdicion !== null;
+        if (avisoEdicion) {
+            avisoEdicion.hidden = !editando;
+            document.getElementById("pvEdicionNro").textContent = editando
+                ? "N° " + ventaEnEdicion.pedido + " (" + ventaEnEdicion.documento + ")" : "";
+        }
+        if (selTipoDoc) selTipoDoc.disabled = editando;       // el tipo de comprobante no cambia al modificar
+        if (botonPagar) botonPagar.textContent = editando ? "PAGAR Y GUARDAR CAMBIOS" : "PAGAR";
+    }
+
+    /** Sale del modo edición; si restaurar = true, quita del stock local lo que la venta tenía reservado. */
+    function salirEdicion(restaurar) {
+        if (!ventaEnEdicion) return;
+        if (restaurar) {
+            Object.keys(ventaEnEdicion.reservado).forEach(function (id) {
+                const p = obtenerProductoPorId(id);
+                if (p) p.stock = Math.max(0, (Number(p.stock) || 0) - ventaEnEdicion.reservado[id]);
+            });
+        }
+        ventaEnEdicion = null;
+        mostrarEdicion();
+    }
+
+    /**
+     * Graba la venta en la base de datos (PuntoVentaBean.grabar -> FacturacionFACADE):
+     * nueva -> RegistrarVentaF; en edición -> ModificarVentaF.
+     */
+    function registrarVenta(lista, pago) {
+        const modificar = ventaEnEdicion !== null;
+        const venta = {
+            pedidoId: modificar ? ventaEnEdicion.pedido : "",
+            tipoDoc: selTipoDoc ? selTipoDoc.value : "01",
+            cliente: {
+                documento: valor("pvClienteDocumento"),
+                nombre: valor("pvClienteNombre"),
+                telefono: valor("pvClienteTelefono"),
+                email: valor("pvClienteEmail"),
+                direccion: [valor("pvDireccion"), valor("pvCiudad")].filter(Boolean).join(" - ")
+            },
+            items: carrito.map(function (item) {
+                const p = obtenerProductoPorId(item.productoId);
+                return {
+                    productoId: item.productoId,
+                    cantidad: item.cantidad,
+                    precio: precioItem(item, p),
+                    costo: p ? Number(p.costo) || 0 : 0,
+                    descripcion: p ? p.nombre : ""
+                };
+            }),
+            total: redondear2(calcularTotal()),
+            pago: {
+                condPago: pago.condPago,
+                fechaVencimiento: pago.fechaVencimiento || "",
+                vuelto: pago.vuelto,
+                detalle: pago.detalle.map(function (d) {
+                    return {
+                        idFormaPago: d.idFormaPago, tipo: d.tipo, metodo: d.metodo, monto: d.monto,
+                        info: d.info, idTarjeta: d.idTarjeta || "", porCom: d.porCom || 0, comision: d.comision || 0
+                    };
+                })
+            }
+        };
+
+        botonPagar.disabled = true;
+        mostrarFeedback(modificar ? "Guardando los cambios de la venta..." : "Grabando la venta...");
+
+        PVServidor.llamar("Grabar", venta).then(function (r) {
+            botonPagar.disabled = false;
+            if (!r.ok) {
+                mostrarFeedback("La venta no se grabó: " + r.mensaje);
+                alert(r.mensaje);
+                return;
+            }
+            salirEdicion(false);
+            aplicarProductos(r.productos);       // stock actualizado desde la base de datos
+            limpiarVenta();
+            cambiarPestana("carrito");
+            mostrarFeedback(r.mensaje
+                + (pago.condPago === "Credito" ? " · Crédito, vence " + pago.fechaVencimiento : "")
+                + (pago.vuelto > 0 ? " · Vuelto " + formatoDinero(pago.vuelto) : ""));
+        }).catch(function (e) {
+            botonPagar.disabled = false;
+            mostrarFeedback(e.message);
+            alert(e.message);
+        });
+    }
+
+    /** Carga una venta del turno en el carrito para modificarla. */
+    function cargarVentaParaModificar(pedido) {
+        const otraVenta = ventaEnEdicion === null || ventaEnEdicion.pedido !== pedido;
+        if (todosVerdaderos(carrito.length, otraVenta)
+                ? !confirm("Se reemplazará el carrito actual por la venta N° " + pedido + ". ¿Continuar?")
+                : false) {
+            return;
+        }
+        PVServidor.llamar("Cargar", { pedidoId: pedido }).then(function (r) {
+            if (!r.ok) {
+                alert(r.mensaje);
+                return;
+            }
+            salirEdicion(true);
+            const v = r.venta;
+            const reservado = {};
+            carrito = [];
+            let suma = 0;
+            v.items.forEach(function (it) {
+                let p = obtenerProductoPorId(it.productoId);
+                if (!p) {                      // producto que ya no está activo: se muestra con sus datos de la venta
+                    p = { id: it.productoId, nombre: it.descripcion, codigo: "", precio: it.precio,
+                          costo: it.costo, stock: 0, categoria: "", marca: "" };
+                    productos.push(p);
+                }
+                p.stock = (Number(p.stock) || 0) + Number(it.cantidad);
+                reservado[p.id] = (reservado[p.id] || 0) + Number(it.cantidad);
+                carrito.push({ productoId: p.id, talla: "", cantidad: Number(it.cantidad), precio: Number(it.precio) });
+                suma += Number(it.precio) * Number(it.cantidad);
+            });
+            // Si la venta tuvo descuento, el total grabado es menor que la suma de productos
+            descuentoManual = redondear2(suma - Number(v.total));
+            descuentoCupon = 0;
+            envio = 0;
+            document.getElementById("pvClienteDocumento").value = v.clienteId || "";
+            document.getElementById("pvClienteNombre").value = v.clienteNombre || "";
+            if (selTipoDoc) selTipoDoc.value = v.tipoDoc;
+            ventaEnEdicion = { pedido: v.pedido, documento: v.documento, reservado: reservado };
+            mostrarEdicion();
+            cerrarModal("pvModalVentas");
+            cambiarPestana("carrito");
+            renderizarCarrito();
+            renderizarProductos();
+            mostrarFeedback(r.mensaje + " Cambie los productos y pulse PAGAR Y GUARDAR CAMBIOS.");
+        }).catch(function (e) {
+            alert(e.message);
+        });
+    }
+
+    /** Elimina una venta del turno (devuelve el stock). */
+    function eliminarVenta(pedido, documento) {
+        if (!confirm("¿Desea eliminar la venta N° " + pedido + " (" + documento + ")?\n"
+                + "Se devolverá el stock de sus productos.")) {
+            return;
+        }
+        PVServidor.llamar("Eliminar", { pedidoId: pedido }).then(function (r) {
+            if (!r.ok) {
+                alert(r.mensaje);
+                return;
+            }
+            const eraLaEditada = todosVerdaderos(ventaEnEdicion, ventaEnEdicion ? ventaEnEdicion.pedido === pedido : false);
+            if (eraLaEditada) salirEdicion(false);
+            aplicarProductos(r.productos);
+            if (eraLaEditada) limpiarVenta(); else renderizarProductos();
+            mostrarFeedback(r.mensaje);
+            mostrarHistorial();
+        }).catch(function (e) {
+            alert(e.message);
+        });
+    }
+
+    /** Ventas del turno abierto, con Modificar y Eliminar. */
     function mostrarHistorial() {
-        const ventas = leerJSON(KEY_SALES, []);
         const contenedor = document.getElementById("pvHistorialContenido");
-
         contenedor.replaceChildren();
+        const cargando = document.createElement("p");
+        cargando.textContent = "Cargando las ventas del turno...";
+        contenedor.appendChild(cargando);
+        abrirModal("pvModalVentas");
 
-        if (!ventas.length) {
-            const p = document.createElement("p");
-            p.textContent =
-                "Todavía no hay ventas registradas en esta demostración.";
+        PVServidor.llamar("Listar", {}).then(function (r) {
+            contenedor.replaceChildren();
+            if (!r.ok) {
+                const p = document.createElement("p");
+                p.textContent = r.mensaje;
+                contenedor.appendChild(p);
+                return;
+            }
+            if (r.turno) {
+                document.getElementById("pvHistorialTurno").textContent =
+                    "Ventas grabadas en la base de datos en el " + r.turno + ".";
+            }
+            if (!r.ventas.length) {
+                const p = document.createElement("p");
+                p.textContent = "Todavía no hay ventas en este turno.";
+                contenedor.appendChild(p);
+                return;
+            }
 
-            contenedor.appendChild(p);
-        } else {
             const table = document.createElement("table");
             table.className = "pv-history-table";
-
             const thead = document.createElement("thead");
             const trh = document.createElement("tr");
-
-            ["N.º", "Fecha", "Cliente", "Método", "Artículos", "Total"]
-                .forEach(function (t) {
-                    const th = document.createElement("th");
-                    th.textContent = t;
-                    trh.appendChild(th);
-                });
-
+            ["N.º pedido", "Hora", "Comprobante", "Cliente", "Condición", "Total", ""].forEach(function (t) {
+                const th = document.createElement("th");
+                th.textContent = t;
+                trh.appendChild(th);
+            });
             thead.appendChild(trh);
             table.appendChild(thead);
 
             const tbody = document.createElement("tbody");
-
-            ventas.forEach(function (v) {
+            r.ventas.forEach(function (v) {
                 const tr = document.createElement("tr");
-
-                [
-                    v.id,
-                    v.fecha,
-                    v.cliente,
-                    v.metodo,
-                    String(v.articulos),
-                    formatoDinero(v.total)
-                ].forEach(function (t) {
+                if (ventaEnEdicion ? ventaEnEdicion.pedido === v.pedido : false) tr.className = "pv-en-edicion";
+                [v.pedido, v.hora, v.documento, v.cliente].forEach(function (t) {
                     const td = document.createElement("td");
                     td.textContent = t;
                     tr.appendChild(td);
                 });
+                const cond = document.createElement("td");
+                cond.textContent = v.condPago;
+                if (String(v.condPago).toUpperCase() === "CREDITO") cond.className = "pv-credito";
+                tr.appendChild(cond);
+                const total = document.createElement("td");
+                total.className = "pv-num";
+                total.textContent = formatoDinero(v.total);
+                tr.appendChild(total);
 
+                const acciones = document.createElement("td");
+                const caja = document.createElement("div");
+                caja.className = "pv-history-acciones";
+                const bMod = crearBoton("Modificar", "pv-btn-modificar", function () { cargarVentaParaModificar(v.pedido); });
+                const bEli = crearBoton("Eliminar", "pv-btn-eliminar", function () { eliminarVenta(v.pedido, v.documento); });
+                if (v.impreso) {
+                    bMod.disabled = true;
+                    bEli.disabled = true;
+                    bMod.title = bEli.title = "El comprobante ya se imprimió";
+                }
+                caja.appendChild(bMod);
+                caja.appendChild(bEli);
+                acciones.appendChild(caja);
+                tr.appendChild(acciones);
                 tbody.appendChild(tr);
             });
-
             table.appendChild(tbody);
             contenedor.appendChild(table);
-        }
+        }).catch(function (e) {
+            contenedor.replaceChildren();
+            const p = document.createElement("p");
+            p.textContent = e.message;
+            contenedor.appendChild(p);
+        });
+    }
 
-        abrirModal("pvModalVentas");
+    const botonCancelarEdicion = document.getElementById("pvCancelarEdicion");
+
+    if (botonCancelarEdicion) {
+        botonCancelarEdicion.addEventListener("click", function () {
+            if (!confirm("¿Cancelar la modificación? La venta queda como estaba.")) return;
+            salirEdicion(true);
+            limpiarVenta();
+            mostrarFeedback("Modificación cancelada.");
+        });
+    }
+
+    // Caja cerrada o productos sin cargar: se avisa y no se deja pagar
+    if (datosServidor ? datosServidor.dataset.errorCaja : false) {
+        if (botonPagar) botonPagar.disabled = true;
+        mostrarFeedback(datosServidor.dataset.errorCaja);
     }
 
     const botonHistorial = document.getElementById("btnHistorialVentas");

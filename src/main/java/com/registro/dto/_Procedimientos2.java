@@ -1595,16 +1595,16 @@ GO
 
   
 CREATE proc sp_ListaNroSuscripciones_MembresiaXAlumno--'01','70012717'    
-@CodEmp varchar(2),          
-@Cliente_ID char(8)          
-as          
-          
-select NroSuscripcion_id from dbo.suscripciones_Membresia        
-WHERE CodEmp=@CodEmp          
-  and Cliente_ID=@Cliente_ID       
-  and Estado<>'Anulada'         
-  and Condicion='ACTIVA'          
+@CodEmp varchar(2),            
+@Cliente_ID char(8)            
+as            
             
+select NroSuscripcion_id,[Estado],[Condicion],[Observacion] from dbo.suscripciones_Membresia          
+WHERE CodEmp=@CodEmp            
+  and Cliente_ID=@Cliente_ID         
+  and Estado<>'Anulada'           
+  and Condicion='ACTIVA'            
+              
 GO
 
 ALTER PROC [dbo].[sp_Listasuscripciones_MembresiaXAlumnoXRegistro] -- '01','40424340','00000004'
@@ -1709,6 +1709,43 @@ where cxc.CodEmp=@CodEmp
   and cli.Cliente_ID=@Cliente_ID   
   and NroRegistro=@NroPedido  
     
+GO
+* 
+CREATE proc sp_ListaDetRegistroAsistenciasXFechaXTurno--'00000001','40424341'        
+ @CodEmp varchar(2),    
+ @FechaIngreso datetime,    
+ @Turno varchar(2)      
+      
+as      
+      
+SELECT Dia=(IDSecuencia),drpc.Cliente_ID,RazonSocial,CAST(HoraIngreso AS time),      
+       FechaIngreso=CAST(FechaIngreso AS DATE),CondicionCredito   
+  
+FROM dbo.DetRegistroAsistencias drpc  
+INNER JOIN dbo.suscripciones_Membresia rpc ON drpc.NroSuscripcion_id=rpc.NroSuscripcion_id  
+INNER JOIN dbo.Cliente cli ON drpc.Cliente_ID=cli.Cliente_ID   
+INNER JOIN dbo.CtasXCobrar cxc ON drpc.Cliente_ID=cxc.Cliente_ID  
+        
+    
+WHERE cxc.CodEmp=@CodEmp   
+  and FechaIngreso=@FechaIngreso      
+  and Turno=@Turno    
+     
+UNION  
+  
+SELECT Dia=(IDSecuencia),drpc.Cliente_ID,RazonSocial,CAST(HoraIngreso AS time),      
+       FechaIngreso=CAST(FechaIngreso AS DATE),CondicionCredito='CANCELADO'   
+  
+FROM dbo.DetRegistroAsistencias drpc  
+INNER JOIN dbo.suscripciones_Membresia rpc ON drpc.NroSuscripcion_id=rpc.NroSuscripcion_id 
+INNER JOIN dbo.Cliente cli ON drpc.Cliente_ID=cli.Cliente_ID  
+    
+WHERE rpc.CodEmp=@CodEmp   
+  and FechaIngreso=@FechaIngreso  
+  and Turno=@Turno     
+  and drpc.Cliente_ID NOT IN(SELECT Cliente_ID FROM dbo.CtasXCobrar WHERE CodEmp=@CodEmp)   
+   
+
 GO
 * 
 CREATE proc sp_lista_Codigoclientes_Activos    

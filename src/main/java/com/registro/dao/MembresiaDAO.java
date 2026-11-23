@@ -280,6 +280,135 @@ public class MembresiaDAO {
         return ResultadoExitoso;
     }
     
+    /**
+     * Cronograma completo de la suscripción (sp_ListaDetSuscripcionPeriodoClases):
+     * IDSecuencia, Rutina y Asistio, leídos por nombre (frm_RegistroMembresia.listarCronograma).
+     */
+    public ArrayList<MembresiaDTO> ListaCronogramaSuscripcion(String NroSuscripcion_id, String Cliente_ID)
+    {
+        ArrayList<MembresiaDTO> lista = new ArrayList<>();
+        String sql = "{call sp_ListaDetSuscripcionPeriodoClases(?,?)}";
+        try (Connection cn = ConexionBD.obtenerConexion();
+             CallableStatement st = cn.prepareCall(sql)) {
+            st.setString(1, NroSuscripcion_id);
+            st.setString(2, Cliente_ID);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    MembresiaDTO det = new MembresiaDTO();
+                    String sec = texto(rs, "IDSecuencia");
+                    try {
+                        det.setIDSecuencia(sec == null ? 0 : (int) Double.parseDouble(sec));
+                    } catch (NumberFormatException ex) {
+                        det.setIDSecuencia(0);
+                    }
+                    det.setRutina(texto(rs, "Rutina"));
+                    det.setAsistio(siNo(texto(rs, "Asistio")));
+                    lista.add(det);
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return lista;
+    }
+
+    /**
+     * sp_Listasuscripciones_Membresia(@CodEmp, @Opc): suscripciones de la empresa.
+     * Devuelve registro = NroSuscripcion_id, cliente = CodSocio, codigoM, membresia = Periodo,
+     * fechaFin y condicion (se usa para Renovar membresía).
+     */
+    public ArrayList<MembresiaDTO> Listasuscripciones_Membresia(String CodEmp, int Opc)
+    {
+        ArrayList<MembresiaDTO> lista = new ArrayList<>();
+        String sql = "{call sp_Listasuscripciones_Membresia(?,?)}";
+        try (Connection cn = ConexionBD.obtenerConexion();
+             CallableStatement st = cn.prepareCall(sql)) {
+            st.setString(1, CodEmp);
+            st.setInt(2, Opc);
+            try (ResultSet rs = st.executeQuery()) {
+                if (!tieneColumna(rs, "CodSocio") || !tieneColumna(rs, "FechaFin")) return lista;
+                while (rs.next()) {
+                    MembresiaDTO s = new MembresiaDTO();
+                    s.setRegistro(texto(rs, "NroSuscripcion_id"));
+                    s.setCliente(texto(rs, "CodSocio"));
+                    s.setCodigoM(texto(rs, "CodigoM"));
+                    s.setMembresia(texto(rs, "Periodo"));
+                    s.setCondicion(texto(rs, "Condicion"));
+                    s.setFechaFin(fechaDe(rs, "FechaFin"));
+                    // Resto de columnas (consulta de suscripciones, como frm_ConsultaMembresias)
+                    s.setNroSuscripcion_id(s.getRegistro());
+                    s.setcliente_id(s.getCliente());
+                    s.setSocio(texto(rs, "SocioCliente"));
+                    s.setNombreMembresia(s.getMembresia());
+                    s.setDuracionDias(entero(rs, "Duracion"));
+                    s.setFrecuencia(texto(rs, "Frecuencia"));
+                    s.setFechaInicio(fechaDe(rs, "FechaInicio"));
+                    s.setPersonal_ID(entero(rs, "Personal_ID"));
+                    s.setSubTotal(decimal(rs, "SubTotal"));
+                    s.setDescuento(decimal(rs, "Descuento"));
+                    s.setTotal(decimal(rs, "Total"));
+                    s.setDias(entero(rs, "DiasClases"));
+                    s.setEstadoSusc(texto(rs, "Estado"));
+                    s.setObservacionSusc(texto(rs, "Observacion"));
+                    lista.add(s);
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return lista;
+    }
+
+    private static boolean tieneColumna(ResultSet rs, String columna) throws SQLException
+    {
+        ResultSetMetaData md = rs.getMetaData();
+        for (int i = 1; i <= md.getColumnCount(); i++) {
+            if (md.getColumnLabel(i).equalsIgnoreCase(columna)) return true;
+        }
+        return false;
+    }
+
+    private static Date fechaDe(ResultSet rs, String columna) throws SQLException
+    {
+        if (!tieneColumna(rs, columna)) return null;
+        try {
+            Timestamp f = rs.getTimestamp(columna);
+            return f == null ? null : new Date(f.getTime());
+        } catch (SQLException ex) {
+            return null;
+        }
+    }
+
+    private static int entero(ResultSet rs, String columna) throws SQLException
+    {
+        return (int) decimal(rs, columna);
+    }
+
+    private static double decimal(ResultSet rs, String columna) throws SQLException
+    {
+        String v = texto(rs, columna);
+        try {
+            return v == null || v.isEmpty() ? 0 : Double.parseDouble(v);
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+    private static String texto(ResultSet rs, String columna) throws SQLException
+    {
+        if (!tieneColumna(rs, columna)) return null;
+        String v = rs.getString(columna);
+        return v == null ? null : v.trim();
+    }
+
+    /** Asistio puede venir como bit (1/0, true/false) o texto. */
+    private static String siNo(String v)
+    {
+        if (v == null) return "";
+        if (v.equals("1") || v.equalsIgnoreCase("true")) return "Si";
+        if (v.equals("0") || v.equalsIgnoreCase("false")) return "No";
+        return v;
+    }
+
     public MembresiaDTO ListaDetSuscripcionPeriodoClases(String NroSuscripcion_id, String Cliente_ID)
     {
         MembresiaDTO lista = null;

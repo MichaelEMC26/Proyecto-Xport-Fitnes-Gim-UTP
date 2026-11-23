@@ -1,22 +1,21 @@
 /*
- * Suscripción de membresía (estructura de SisdataGimnasio/frm_RegistroMembresia).
- * Comportamiento solo de interfaz: selector de planes, fechas, descuento/total y atajos.
- * Registrar, buscar socio, comprobante e impresión se conectarán al controlador.
+ * Suscripción de membresía (igual que frm_RegistroMembresia de SisdataGimnasio).
+ * SuscripcionMembresiaBean tiene la lógica; aquí: estado Enabled de los botones, clics, atajos,
+ * navegación con flechas en los selectores, confirmación de Renovar e impresión del cronograma.
+ * Se usa delegación de eventos porque las acciones AJAX re-renderizan el formulario.
  */
 document.addEventListener("DOMContentLoaded", function () {
     const $ = function (id) { return document.getElementById(id); };
-    const form = $("formMembresia");
-    const selector = $("selectorPlanes");
 
-    function hoyISO() {
-        const d = new Date();
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 10);
-    }
+    function clic(id) { const el = $(id); if (el) el.click(); }
 
-    function dinero(valor) {
-        const n = parseFloat(valor);
-        return isNaN(n) ? "0.00" : n.toFixed(2);
+    /** Botón del diseño habilitado (data-habilitado="false" = Enabled false en el formulario). */
+    function habilitado(id) { const b = $(id); return !!b && !b.disabled; }
+
+    function aplicarEstados() {
+        document.querySelectorAll("button[data-habilitado]").forEach(function (b) {
+            b.disabled = b.dataset.habilitado !== "true";
+        });
     }
 
     function irDashboard() {
@@ -25,136 +24,164 @@ document.addEventListener("DOMContentLoaded", function () {
         else window.history.back();
     }
 
-    function aviso(texto) { alert(texto); }
+    // ---------- Selectores de planes [F5] y socios [F6]: flechas ↑/↓, Enter o doble clic, botón Agregar ----------
 
-    // ---------- Totales ----------
-    function recalcularTotal() {
-        const subtotal = parseFloat($("subtotal").value) || 0;
-        let descuento = $("aplicarDescuento").checked ? (parseFloat($("descuento").value) || 0) : 0;
-        if (descuento < 0) descuento = 0;
-        if (descuento > subtotal) descuento = subtotal;
-        $("total").value = dinero(subtotal - descuento);
-    }
-
-    $("aplicarDescuento").addEventListener("change", function () {
-        $("descuento").disabled = !this.checked;
-        if (!this.checked) $("descuento").value = "0.00";
-        else $("descuento").focus();
-        recalcularTotal();
-    });
-    $("descuento").addEventListener("input", recalcularTotal);
-    $("descuento").addEventListener("blur", function () { this.value = dinero(this.value); recalcularTotal(); });
-
-    // ---------- Fechas ----------
-    let mesesPlan = 0;
-    function calcularVencimiento() {
-        const inicio = $("fechaInicio").value;
-        if (!inicio || !mesesPlan) return;
-        const f = new Date(inicio + "T00:00:00");
-        f.setMonth(f.getMonth() + mesesPlan);
-        f.setMinutes(f.getMinutes() - f.getTimezoneOffset());
-        $("fechaVencimiento").value = f.toISOString().slice(0, 10);
-    }
-    $("fechaInicio").addEventListener("change", calcularVencimiento);
-
-    // ---------- Selector de planes [F5] ----------
-    function mostrarPlanes() {
-        selector.hidden = !selector.hidden;
-        if (!selector.hidden) selector.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-    $("btnVerMembresias").addEventListener("click", mostrarPlanes);
-    $("btnCerrarPlanes").addEventListener("click", function () { selector.hidden = true; });
-
-    selector.querySelectorAll("tbody tr").forEach(function (fila) {
-        fila.addEventListener("click", function () {
-            selector.querySelectorAll("tbody tr").forEach(function (f) { f.classList.remove("seleccionado"); });
-            fila.classList.add("seleccionado");
-
-            const d = fila.dataset;
-            $("codMembresia").value = d.codigo;
-            $("nombreMembresia").value = d.nombre;
-            $("diasLimite").value = d.limite;
-            $("tarifa").value = dinero(d.tarifa);
-            $("duracion").value = d.duracion;
-            $("frecuencia").value = d.frecuencia;
-            $("subtotal").value = dinero(d.tarifa);
-            mesesPlan = parseInt(d.meses, 10) || 0;
-            if (!$("fechaInicio").value) $("fechaInicio").value = hoyISO();
-            calcularVencimiento();
-            recalcularTotal();
-            selector.hidden = true;
+    function filasDe(tabla) {
+        return Array.prototype.filter.call(tabla.querySelectorAll("tbody tr"), function (tr) {
+            return tr.querySelector("a.link-fila");
         });
-    });
-
-    // ---------- Botones ----------
-    function nuevo() {
-        form.reset();
-        selector.hidden = true;
-        mesesPlan = 0;
-        $("descuento").disabled = true;
-        $("fechaInicio").value = hoyISO();
-        $("condicion").value = "ACTIVA";
-        $("lblEstado").textContent = "Pendiente";
-        $("lblEstado").className = "estado-badge estado-pendiente";
-        recalcularTotal();
-        $("codigo").focus();
     }
 
-    function buscarSocio() {
-        $("codigo").focus();
-        aviso("La búsqueda de socios se conectará cuando implementemos la acción en el controlador.");
+    /** Resalta la fila (como la fila seleccionada del DataGridView) y le da el foco. */
+    function marcarFila(fila) {
+        if (!fila) return;
+        const tabla = fila.closest("table");
+        tabla.querySelectorAll("tbody tr.seleccionado").forEach(function (tr) { tr.classList.remove("seleccionado"); });
+        fila.classList.add("seleccionado");
+        fila.focus();
+        fila.scrollIntoView({ block: "nearest" });
     }
 
-    function registrar() {
-        if (!$("codigo").value.trim()) { aviso("Ingrese o busque el socio [F6]."); $("codigo").focus(); return; }
-        if (!$("codMembresia").value.trim()) { aviso("Seleccione la membresía con Ver membresías [F5]."); return; }
-        aviso("El registro de la suscripción se implementará al conectar el formulario con la base de datos.");
+    function elegirFila(fila) {
+        const a = fila && fila.querySelector("a.link-fila");
+        if (a) a.click();
     }
 
-    $("btnNuevo").addEventListener("click", nuevo);
-    $("btnRegistrar").addEventListener("click", registrar);
-    $("btnBuscar").addEventListener("click", buscarSocio);
-    $("btnNuevoSocio").addEventListener("click", function () {
-        const enlace = document.querySelector('.sidebar a[href*="socios"]');
-        if (enlace) window.location.href = enlace.href;
-        else aviso("Registre el socio desde el módulo Socios.");
-    });
-    $("btnRenovar").addEventListener("click", function () {
-        aviso("La renovación tomará la última membresía terminada del socio al conectar con la base de datos.");
-    });
-    $("btnEliminar").addEventListener("click", function () {
-        if (confirm("¿Eliminar la suscripción " + $("nroRegistro").value + "?")) {
-            aviso("La eliminación se implementará al conectar el formulario con la base de datos.");
+    /** Mueve la selección +1 / -1 dentro de la tabla. */
+    function moverSeleccion(tabla, paso) {
+        const filas = filasDe(tabla);
+        if (!filas.length) return;
+        let i = filas.indexOf(tabla.querySelector("tbody tr.seleccionado"));
+        i = i < 0 ? (paso > 0 ? 0 : filas.length - 1) : Math.min(Math.max(i + paso, 0), filas.length - 1);
+        marcarFila(filas[i]);
+    }
+
+    /** Al abrir un selector: foco en la fila elegida (o la primera); en socios, en el filtro. */
+    function enfocarSelector() {
+        const filtro = $("filtroCliente");
+        if (filtro) { filtro.focus(); return; }
+        const tabla = document.querySelector("#selectorPlanes .tabla-planes");
+        if (!tabla) return;
+        const filas = filasDe(tabla);
+        marcarFila(tabla.querySelector("tbody tr.seleccionado") || filas[0]);
+    }
+
+    // ---------- Renovar e Imprimir ----------
+
+    /** Renovar: si el socio tiene una membresía vigente, se pregunta Sí / No. */
+    function preguntarRenovacion() {
+        const c = $("confirmacionRenovar");
+        const texto = c ? c.dataset.mensaje : "";
+        if (!texto) return;
+        c.dataset.mensaje = "";
+        clic(confirm(texto) ? "lnkConfirmarRenovar" : "lnkCancelarRenovar");
+    }
+
+    /** Imprimir [Pausa]: el bean validó y cargó el cronograma. */
+    function imprimirSiCorresponde() {
+        const p = $("impresionCronograma");
+        if (p && p.dataset.imprimir === "true") {
+            p.dataset.imprimir = "false";
+            setTimeout(function () { window.print(); }, 100);
         }
-    });
-    $("btnComprobante").addEventListener("click", function () {
-        aviso("La generación del comprobante se implementará al conectar con la base de datos.");
-    });
-    $("btnImprimir").addEventListener("click", function () {
-        aviso("La impresión de la suscripción se implementará al conectar con la base de datos.");
-    });
-    $("btnSalir").addEventListener("click", irDashboard);
+    }
 
-    // ---------- Atajos de teclado (como en el formulario de escritorio) ----------
-    document.addEventListener("keydown", function (event) {
+    function alCargar() {
+        aplicarEstados();
+        preguntarRenovacion();
+        imprimirSiCorresponde();
+    }
+
+    // Tras cada AJAX (descuento) se vuelve a aplicar el estado de los botones
+    const ajax = window.faces ? window.faces.ajax : (window.jsf ? window.jsf.ajax : null);
+    if (ajax) ajax.addOnEvent(function (data) { if (data.status === "success") alCargar(); });
+
+    // ---------- Clics ----------
+
+    document.addEventListener("click", function (e) {
+        const t = e.target;
+
+        // Clic en una fila de los selectores: la resalta (el botón Agregar o el doble clic la eligen)
+        const fila = t.closest(".tabla-planes tbody tr");
+        if (fila && !t.closest("a")) {
+            if (fila.querySelector("a.link-fila")) marcarFila(fila);
+            return;
+        }
+
+        const boton = t.closest("button");
+        if (!boton || boton.disabled) return;
+
+        // Botones del diseño original que ejecutan una acción del controlador (enlace JSF oculto)
+        if (boton.dataset.accion) {
+            if (boton.dataset.confirmar && !confirm(boton.dataset.confirmar)) return;
+            clic(boton.dataset.accion);
+            return;
+        }
+
+        if (boton.id === "btnSalir") irDashboard();
+    });
+
+    // Doble clic en una fila = elegirla (dataGridView1_DoubleClick)
+    document.addEventListener("dblclick", function (e) {
+        const fila = e.target.closest(".tabla-planes tbody tr");
+        if (fila && !e.target.closest("a")) elegirFila(fila);
+    });
+
+    // ---------- Teclado ----------
+
+    document.addEventListener("keydown", function (e) {
+        const t = e.target;
+        const fila = t && t.closest ? t.closest(".tabla-planes tbody tr") : null;
+
+        // Flechas dentro de un selector (o desde el filtro de socios hacia la tabla)
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            let tabla = fila ? fila.closest("table") : null;
+            if (!tabla && t && t.id === "filtroCliente") tabla = document.querySelector("#selectorClientes .tabla-planes");
+            if (!tabla && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) {
+                tabla = document.querySelector("#selectorPlanes .tabla-planes, #selectorClientes .tabla-planes");
+            }
+            if (tabla) {
+                e.preventDefault();
+                if (e.key === "ArrowUp" && fila && fila === filasDe(tabla)[0] && $("filtroCliente") && tabla.closest("#selectorClientes")) {
+                    $("filtroCliente").focus();   // desde la primera fila se vuelve al filtro
+                    return;
+                }
+                moverSeleccion(tabla, e.key === "ArrowDown" ? 1 : -1);
+                return;
+            }
+        }
+
+        if (e.key === "Enter" && t) {
+            // Enter en una fila de los selectores: la elige (dataGridView1_KeyDown)
+            if (fila) { e.preventDefault(); elegirFila(fila); return; }
+            // Enter en el código del socio: lo busca por código
+            if (t.id === "codigo") { e.preventDefault(); clic("lnkBuscarCodigo"); return; }
+            // Enter en el filtro de socios: busca
+            if (t.id === "filtroCliente") { e.preventDefault(); clic("lnkFiltrarClientes"); return; }
+        }
+
+        // ---------- Atajos de teclado (solo si el botón está habilitado, como en el formulario) ----------
         const acciones = {
-            "F2": nuevo,
-            "F3": registrar,
-            "F4": function () { $("btnComprobante").click(); },
-            "F5": mostrarPlanes,
-            "F6": buscarSocio,
-            "F7": function () { $("btnNuevoSocio").click(); },
-            "Pause": function () { $("btnImprimir").click(); },
-            "Escape": function () { if (!selector.hidden) selector.hidden = true; else irDashboard(); }
+            "F2": function () { if (habilitado("btnNuevo")) clic("btnNuevo"); },
+            "F3": function () { if (habilitado("btnRegistrar")) clic("btnRegistrar"); },
+            "F4": function () { if (habilitado("btnComprobante")) clic("btnComprobante"); },
+            "F5": function () { if (habilitado("btnVerMembresias")) clic("btnVerMembresias"); },
+            "F6": function () { if (habilitado("btnBuscar")) clic("btnBuscar"); },
+            "F7": function () { if (habilitado("btnNuevoSocio")) clic("btnNuevoSocio"); },
+            "Pause": function () { clic("btnImprimir"); },
+            "Escape": function () {
+                if ($("selectorPlanes")) clic("lnkCerrarPlanes");
+                else if ($("selectorClientes")) clic("lnkCerrarClientes");
+                else irDashboard();
+            }
         };
-        const accion = acciones[event.key];
+        const accion = acciones[e.key];
         if (accion) {
-            event.preventDefault();
+            e.preventDefault();
             accion();
         }
     });
 
-    // Estado inicial
-    if (!$("fechaInicio").value) $("fechaInicio").value = hoyISO();
-    recalcularTotal();
+    alCargar();
+    enfocarSelector();
 });
