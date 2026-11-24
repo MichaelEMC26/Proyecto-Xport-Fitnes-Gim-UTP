@@ -138,7 +138,7 @@
                             <table class="ra-tabla">
                                 <thead>
                                     <tr>
-                                        <th>Nro. Registro</th><th>Duración</th>
+                                        <th>Nro. Registro</th><th>Periodo</th><th>Duración</th>
                                         <th>Frecuencia</th><th>Fecha inicio</th><th>Fecha fin</th><th>Condición</th>
                                     </tr>
                                 </thead>
@@ -147,7 +147,7 @@
                                         <tr>
                                             <td>#{asistenciaBean.periodo.nroSuscripcion_id}</td>
                                             <td>#{asistenciaBean.periodoTexto}</td>
-                                            <td>#{asistenciaBean.periodo.duracion}</td>
+                                            <td>#{asistenciaBean.duracionTexto}</td>
                                             <td>#{asistenciaBean.periodo.frecuencia}</td>
                                             <td>
                                                 <h:outputText value="#{asistenciaBean.periodo.fechaInicio}">

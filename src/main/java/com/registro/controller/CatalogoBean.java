@@ -1,15 +1,18 @@
 package com.registro.controller;
 
+import com.registro.config.AlmacenImagenesProducto;
 import com.registro.dto.CategoriaDTO;
 import com.registro.dto.MarcasDTO;
-import com.registro.dto.ProductosDTO;
+import com.registro.dto.CatalogoDTO;
 import com.registro.dto.UsuarioDTO;
-import com.registro.facade.ProductosFACADE;
+import com.registro.facade.CatalogoFACADE;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
+import jakarta.servlet.http.Part;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +29,12 @@ import java.util.List;
  *  - Buscar (F5) según la condición marcada: nombre (sp_buscaProdxNomTotAct), marca
  *    (sp_buscaProdxMarcaActivo), código de barra o categoría (filtrando sp_Lista_ProductosGral_Activos).
  *  - Listar (F7): productos activos (sp_Lista_ProductosGral_Activos).
+ *  - Imagen (Productos.Imagen): se sube un archivo (se guarda en el servidor y se graba su nombre) o se
+ *    pega una URL externa (se graba la URL). Ver AlmacenImagenesProducto e ImagenProductoServlet.
  */
-@Named("productoBean")
+@Named("catalogoBean")
 @SessionScoped
-public class ProductoBean implements Serializable {
+public class CatalogoBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final String FILTRO_GENERAL = "GENERAL";
@@ -38,11 +43,11 @@ public class ProductoBean implements Serializable {
     private static final String FILTRO_CATEGORIA = "CATEGORIA";
     private static final String FILTRO_MARCA = "MARCA";
 
-    private ProductosDTO producto;
+    private CatalogoDTO producto;
     private boolean edicion;
     private boolean stockEditable = true;
 
-    private List<ProductosDTO> lista = new ArrayList<>();
+    private List<CatalogoDTO> lista = new ArrayList<>();
     private List<CategoriaDTO> listaCategorias = new ArrayList<>();
     private List<MarcasDTO> listaMarcas = new ArrayList<>();
 
@@ -91,7 +96,7 @@ public class ProductoBean implements Serializable {
     }
 
     private void cargarCombos() {
-        ProductosFACADE f = new ProductosFACADE();
+        CatalogoFACADE f = new CatalogoFACADE();
         listaCategorias = f.ListaCategorias();
         listaMarcas = f.ListaMarcas();
     }
@@ -99,14 +104,15 @@ public class ProductoBean implements Serializable {
     // ------------------------------------------------------------------ acciones
 
     public String nuevo() {
-        producto = new ProductosDTO();
+        producto = new CatalogoDTO();
         producto.setEstadoProducto("Activo");
         producto.setUnidadMedida("UND");
         producto.setTipoProd("V");
-        ProductosDTO cod = new ProductosFACADE().AutogeneraProducto();
+        CatalogoDTO cod = new CatalogoFACADE().AutogeneraProducto();
         producto.setProducto_ID(cod == null ? null : cod.getProducto_ID());
         edicion = false;
         stockEditable = true;
+        limpiarImagen();
         return null;
     }
 
@@ -117,10 +123,14 @@ public class ProductoBean implements Serializable {
             return null;
         }
         prepararParaGuardar();
-        if (new ProductosFACADE().Insert_ProductosD(producto)) {
+        String subida = resolverImagen();
+        if (subida == null) return null;
+        if (new CatalogoFACADE().Insert_ProductosD(producto)) {
+            imagenGrabada();
             info("Se grabó correctamente el producto " + producto.getProducto_ID() + ".");
             nuevo();
         } else {
+            AlmacenImagenesProducto.borrar(subida);   // el producto no se grabó: no queda el archivo suelto
             error("No se pudo grabar el producto. Verifique que el código no exista y que los datos sean correctos.");
         }
         return null;
@@ -133,12 +143,16 @@ public class ProductoBean implements Serializable {
         }
         if (!validar()) return null;
         prepararParaGuardar();
-        if (new ProductosFACADE().Update_Productos(producto, stockEditable)) {
+        String subida = resolverImagen();
+        if (subida == null) return null;
+        if (new CatalogoFACADE().Update_Productos(producto, stockEditable)) {
+            imagenGrabada();
             info("Se hicieron los cambios correctamente en el producto " + producto.getProducto_ID() + ".");
             nuevo();
             // Vuelve al listado, donde se eligió el producto.
             return "/Productos.xhtml?faces-redirect=true";
         } else {
+            AlmacenImagenesProducto.borrar(subida);
             error("No se pudo actualizar el producto.");
         }
         return null;
@@ -148,8 +162,8 @@ public class ProductoBean implements Serializable {
      * Botón Editar de Productos.xhtml: pasa la fila al formulario (doble clic / Enter en la grilla
      * de frm_Productos) y abre RegistrarProducto.xhtml en modo edición.
      */
-    public String editar(ProductosDTO fila) {
-        ProductosDTO p = new ProductosDTO();
+    public String editar(CatalogoDTO fila) {
+        CatalogoDTO p = new CatalogoDTO();
         p.setProducto_ID(fila.getProducto_ID());
         p.setDescripcion(fila.getDescripcion());
         p.setNombreProducto(fila.getNombreProducto());
@@ -168,14 +182,16 @@ public class ProductoBean implements Serializable {
         p.setTipoProd(fila.getTipoProd() == null || fila.getTipoProd().isBlank() ? "V" : fila.getTipoProd());
         producto = p;
         edicion = true;
+        limpiarImagen();
+        urlImagen = AlmacenImagenesProducto.esUrlExterna(p.getImagen()) ? p.getImagen().trim() : "";
         // Con ventas registradas el stock ya no se modifica desde aquí (se mueve con compras/ventas).
-        stockEditable = !new ProductosFACADE().TieneVentas(p.getProducto_ID());
+        stockEditable = !new CatalogoFACADE().TieneVentas(p.getProducto_ID());
         return "/RegistrarProducto.xhtml?faces-redirect=true&modo=editar";
     }
 
     /** "Eliminar" de frm_Productos: cambia el estado a Inactivo. */
-    public String eliminar(ProductosDTO fila) {
-        if (new ProductosFACADE().Update_Estado_Producto(fila.getProducto_ID(), "Inactivo", codEmp())) {
+    public String eliminar(CatalogoDTO fila) {
+        if (new CatalogoFACADE().Update_Estado_Producto(fila.getProducto_ID(), "Inactivo", codEmp())) {
             info("Se eliminó el producto " + fila.getProducto_ID() + " (quedó Inactivo).");
             if (edicion && fila.getProducto_ID().equals(producto.getProducto_ID())) nuevo();
             refrescarLista();
@@ -236,11 +252,78 @@ public class ProductoBean implements Serializable {
         return Navegacion.salir("/Productos.xhtml?faces-redirect=true");
     }
 
+    // ------------------------------------------------------------------ imagen del producto
+
+    /** Archivo elegido en "Subir imagen" (solo vive durante la petición de Grabar / Actualizar). */
+    private transient Part archivoImagen;
+    /** URL externa pegada en el formulario. */
+    private String urlImagen = "";
+    /** "Quitar imagen": el producto queda sin imagen. */
+    private boolean quitarImagen;
+
+    private void limpiarImagen() {
+        archivoImagen = null;
+        urlImagen = "";
+        quitarImagen = false;
+    }
+
+    /**
+     * Deja en producto.imagen el valor que se va a grabar, en este orden:
+     *  1. archivo subido (se guarda en el servidor; se graba su nombre),
+     *  2. URL externa (se valida y se graba tal cual),
+     *  3. "Quitar imagen" (vacío),
+     *  4. si no se tocó nada, se conserva la imagen que ya tenía.
+     * Devuelve el nombre del archivo recién subido ("" si no se subió) o null si hubo un error de validación.
+     */
+    private String resolverImagen() {
+        Part archivo = archivoImagen;
+        archivoImagen = null;
+        try {
+            if (archivo != null && archivo.getSize() > 0) {
+                String nombre = AlmacenImagenesProducto.guardar(archivo, producto.getProducto_ID());
+                producto.setImagen(nombre);
+                urlImagen = "";
+                return nombre;
+            }
+            if (!vacio(urlImagen)) {
+                producto.setImagen(AlmacenImagenesProducto.validarUrl(urlImagen));
+            } else if (quitarImagen) {
+                producto.setImagen("");
+            }
+            return "";
+        } catch (AlmacenImagenesProducto.ImagenInvalidaException ex) {
+            error(ex.getMessage());
+        } catch (IOException ex) {
+            error("No se pudo guardar la imagen en el servidor: " + ex.getMessage());
+        }
+        return null;
+    }
+
+    /** Producto grabado: se borran las imágenes subidas que ya no usa (solo queda la actual, si es un archivo). */
+    private void imagenGrabada() {
+        String imagen = producto.getImagen() == null ? "" : producto.getImagen().trim();
+        AlmacenImagenesProducto.borrarAnteriores(producto.getProducto_ID(),
+                AlmacenImagenesProducto.esNombreArchivo(imagen) ? imagen : "");
+    }
+
+    /** Dirección para la vista previa de la imagen guardada ("" si no tiene). */
+    public String getUrlImagenActual() {
+        return AlmacenImagenesProducto.url(
+                FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath(), producto.getImagen());
+    }
+
+    public Part getArchivoImagen() { return archivoImagen; }
+    public void setArchivoImagen(Part archivoImagen) { this.archivoImagen = archivoImagen; }
+    public String getUrlImagen() { return urlImagen; }
+    public void setUrlImagen(String urlImagen) { this.urlImagen = urlImagen == null ? "" : urlImagen.trim(); }
+    public boolean isQuitarImagen() { return quitarImagen; }
+    public void setQuitarImagen(boolean quitarImagen) { this.quitarImagen = quitarImagen; }
+
     // ------------------------------------------------------------------ apoyo
 
     /** Repite el último listado (general, por nombre o por marca), como frm_Productos tras grabar. */
     private void refrescarLista() {
-        ProductosFACADE f = new ProductosFACADE();
+        CatalogoFACADE f = new CatalogoFACADE();
         String emp = codEmp();
         if (FILTRO_NOMBRE.equals(filtro)) {
             lista = f.BuscaProductosXNombre(emp, textoBusqueda.trim());
@@ -250,7 +333,7 @@ public class ProductoBean implements Serializable {
             // No hay procedimiento de búsqueda por código de barra: se filtra el listado de activos.
             String buscado = textoBusqueda.trim().toUpperCase();
             lista = new ArrayList<>();
-            for (ProductosDTO p : f.ListaProductosActivos(emp)) {
+            for (CatalogoDTO p : f.ListaProductosActivos(emp)) {
                 if (p.getCodigoBarra() != null && p.getCodigoBarra().trim().toUpperCase().contains(buscado)) {
                     lista.add(p);
                 }
@@ -259,7 +342,7 @@ public class ProductoBean implements Serializable {
             // El listado devuelve el nombre de la categoría: se compara con la categoría elegida.
             String nombre = nombreCategoria(categoriaBusqueda);
             lista = new ArrayList<>();
-            for (ProductosDTO p : f.ListaProductosActivos(emp)) {
+            for (CatalogoDTO p : f.ListaProductosActivos(emp)) {
                 if (p.getCategoria() != null && p.getCategoria().trim().equalsIgnoreCase(nombre)) {
                     lista.add(p);
                 }
@@ -369,16 +452,16 @@ public class ProductoBean implements Serializable {
 
     // ------------------------------------------------------------------ getters / setters
 
-    public ProductosDTO getProducto() { return producto; }
+    public CatalogoDTO getProducto() { return producto; }
     public String getModo() { return modo; }
     public void setModo(String modo) { this.modo = modo; }
     public boolean isEdicion() { return edicion; }
     public boolean isStockEditable() { return stockEditable; }
-    public List<ProductosDTO> getLista() { return lista; }
+    public List<CatalogoDTO> getLista() { return lista; }
     public int getTotalItems() { return lista == null ? 0 : lista.size(); }
 
     /** Filas de la página actual. */
-    public List<ProductosDTO> getListaPagina() {
+    public List<CatalogoDTO> getListaPagina() {
         if (lista == null || lista.isEmpty()) return lista;
         int desde = (getPagina() - 1) * tamPagina;
         return lista.subList(desde, Math.min(desde + tamPagina, lista.size()));

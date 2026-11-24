@@ -877,6 +877,14 @@
         .pv-product-image {
             background: #F7F9FD;
             color: #8A9AB4;
+            overflow: hidden;
+        }
+
+        .pv-product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .pv-product-card .pv-stock {
@@ -1027,6 +1035,19 @@
         .pv-history-table td {
             border-bottom-color: #E2EAF5;
         }
+        /* Bloqueos: productos durante el cobro de una membresía y toda la venta mientras se graba */
+        .pv-products-pane.pv-bloqueado,
+        .pv-cart-pane.pv-grabando { opacity: .55; pointer-events: none; user-select: none; }
+        .pv-products-pane.pv-bloqueado { filter: grayscale(.5); }
+        .pv-cart-pane.pv-grabando { cursor: progress; }
+        #pvPanelCliente input[readonly],
+        #pvPanelDireccion input[readonly],
+        #pvPanelDireccion textarea[readonly] { background: #f1f5f9; color: #475569; cursor: not-allowed; }
+        .pv-aviso-socio {
+            display: flex; gap: 8px; align-items: center; margin: 0 0 12px; padding: 8px 10px;
+            border-radius: 8px; background: #eff5ff; color: #1e3a8a; font-size: 12px; font-weight: 600;
+        }
+        .pv-aviso-socio[hidden] { display: none; }
     </style>
     </ui:define>
     <ui:define name="content">
@@ -1036,9 +1057,13 @@
         <div id="pvDatosServidor" hidden="hidden"
              data-productos="#{puntoVentaBean.productosJson}"
              data-error-productos="#{puntoVentaBean.errorProductos}"
-             data-error-caja="#{puntoVentaBean.errorCaja}"></div>
+             data-error-caja="#{puntoVentaBean.errorCaja}"
+             data-suscripcion="#{puntoVentaBean.suscripcionJson}"></div>
         <ui:fragment rendered="#{not empty puntoVentaBean.errorCaja}">
             <div class="pv-aviso-servidor"><i class="fa-solid fa-triangle-exclamation"></i> #{puntoVentaBean.errorCaja}</div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty puntoVentaBean.avisoSuscripcion}">
+            <div class="pv-aviso-servidor"><i class="fa-solid fa-triangle-exclamation"></i> #{puntoVentaBean.avisoSuscripcion}</div>
         </ui:fragment>
         <ui:fragment rendered="#{not empty puntoVentaBean.errorProductos}">
             <div class="pv-aviso-servidor"><i class="fa-solid fa-triangle-exclamation"></i> #{puntoVentaBean.errorProductos}</div>
@@ -1086,7 +1111,7 @@
                     <button type="button"
                             class="pv-scan-button"
                             id="pvEscanear"
-                            title="Escanear o introducir código">
+                            title="Buscar y agregar al detalle (Enter)">
                         <i class="fa-solid fa-barcode"></i>
                     </button>
                 </div>
@@ -1148,6 +1173,10 @@
                         <h2>Datos del cliente</h2>
                         <p>Opcional. Sin documento la venta va a CLIENTE general (código 01).
                            El documento es obligatorio para emitir factura o vender al crédito.</p>
+                        <div class="pv-aviso-socio" id="pvAvisoSocio" hidden="hidden">
+                            <i class="fa-solid fa-lock"></i>
+                            Cobro de membresía: los datos son los del socio de la suscripción y no se pueden cambiar.
+                        </div>
 
                         <div class="pv-form-grid">
                             <div class="pv-field full">
@@ -1189,16 +1218,10 @@
                                        placeholder="Av., calle, número, referencia..." />
                             </div>
 
-                            <div class="pv-field">
+                            <div class="pv-field full">
                                 <label for="pvCiudad">Ciudad / distrito</label>
                                 <input id="pvCiudad" type="text" maxlength="80"
                                        placeholder="Lima, San Miguel..." />
-                            </div>
-
-                            <div class="pv-field">
-                                <label for="pvCodigoPostal">Código postal</label>
-                                <input id="pvCodigoPostal" type="text" maxlength="15"
-                                       placeholder="15000" />
                             </div>
 
                             <div class="pv-field full">
@@ -1221,7 +1244,7 @@
                         <button type="button" id="pvCancelarEdicion">Cancelar</button>
                     </div>
 
-                    <!-- Tipo de comprobante: FacturacionFACADE.Lista_TiposDocF (sp_Lista_TiposDoc) -->
+                    <!-- Tipo de comprobante: PuntoVentaFACADE.Lista_TiposDocF (sp_Lista_TiposDoc) -->
                     <div class="pv-tipodoc">
                         <label for="pvTipoDoc">Comprobante</label>
                         <select id="pvTipoDoc">
@@ -1394,7 +1417,7 @@
             </div>
 
             <div class="fp-principal">
-                <!-- Formas de pago ACTIVAS: FormasPagoVentaBean -> FacturacionFACADE.ListaFormasPagoActivoF (sp_ListaFormasPagoActivo)
+                <!-- Formas de pago ACTIVAS: FormasPagoVentaBean -> PuntoVentaFACADE.ListaFormasPagoActivoF (sp_ListaFormasPagoActivo)
                      data-m = clave única, data-tipo = panel que se muestra, data-id = IDFormaPago -->
                 <div class="fp-menu" id="fpMenu">
                     <ui:repeat value="#{formasPagoVentaBean.activas}" var="f" varStatus="st">
@@ -1672,6 +1695,75 @@ document.addEventListener("DOMContentLoaded", function () {
     /** Venta cargada para modificar: { pedido, documento, reservado: { productoId: cantidad } } o null. */
     let ventaEnEdicion = null;
 
+    /*
+     * Bloqueos de la pantalla (el servidor también valida; esto evita que el usuario manipule la venta):
+     *  - grabando: mientras se espera la respuesta del servidor no se puede tocar nada de la venta.
+     *  - cobroMembresia: con una membresía en el carrito no se agregan productos y el DNI / código del
+     *    cliente queda fijo (es el socio de la suscripción).
+     */
+    let grabando = false;
+    let cobroMembresia = false;
+    const panelProductos = document.querySelector(".pv-products-pane");
+    const panelVenta = document.querySelector(".pv-cart-pane");
+
+    function esMembresia(p) {
+        return p ? algunoVerdadero(p.suscripcion, String(p.nombre || "").indexOf("(SUSC. ") !== -1) : false;
+    }
+
+    function productosBloqueados() {
+        return algunoVerdadero(grabando, cobroMembresia);
+    }
+
+    /** Desactiva los controles del panel; al reactivar solo vuelven los que desactivó este bloqueo. */
+    function bloquearControles(panel, marca, bloquear) {
+        if (!panel) return;
+        panel.querySelectorAll("button, input, select, textarea").forEach(function (el) {
+            if (bloquear) {
+                if (!el.disabled) {
+                    el.disabled = true;
+                    el.dataset[marca] = "1";
+                }
+            } else if (el.dataset[marca]) {
+                el.disabled = false;
+                delete el.dataset[marca];
+            }
+        });
+    }
+
+    function aplicarBloqueos() {
+        const sinProductos = productosBloqueados();
+        if (panelProductos) {
+            panelProductos.classList.toggle("pv-bloqueado", sinProductos);
+            panelProductos.setAttribute("aria-disabled", sinProductos ? "true" : "false");
+            panelProductos.title = cobroMembresia
+                ? "Cobro de membresía: no se pueden agregar productos a esta venta" : "";
+        }
+        bloquearControles(panelProductos, "bloqueoProductos", sinProductos);
+        if (panelVenta) {
+            panelVenta.classList.toggle("pv-grabando", grabando);
+            panelVenta.setAttribute("aria-busy", grabando ? "true" : "false");
+        }
+        bloquearControles(panelVenta, "bloqueoGrabar", grabando);
+        // Cobro de membresía: los datos del cliente y de la dirección son los del socio y no se editan
+        const fijos = algunoVerdadero(grabando, cobroMembresia);
+        CAMPOS_CLIENTE.forEach(function (id) {
+            const campo = document.getElementById(id);
+            if (!campo) return;
+            campo.readOnly = fijos;
+            campo.title = cobroMembresia ? "Datos del socio de la membresía; no se pueden cambiar" : "";
+        });
+        const aviso = document.getElementById("pvAvisoSocio");
+        if (aviso) aviso.hidden = !cobroMembresia;
+    }
+
+    const CAMPOS_CLIENTE = ["pvClienteNombre", "pvClienteDocumento", "pvClienteTelefono", "pvClienteEmail",
+                            "pvDireccion", "pvCiudad", "pvReferencia"];
+
+    function ponerGrabando(valor) {
+        grabando = valor;
+        aplicarBloqueos();
+    }
+
     function leerProductosServidor() {
         try {
             const lista = JSON.parse(datosServidor ? datosServidor.dataset.productos || "[]" : "[]");
@@ -1684,7 +1776,11 @@ document.addEventListener("DOMContentLoaded", function () {
     /** Reemplaza los productos con los que devuelve el servidor (stock actualizado). */
     function aplicarProductos(lista) {
         if (!Array.isArray(lista)) return;
-        productos = lista;
+        // La membresía que está en el carrito no es un producto de la BD: se conserva
+        const membresias = productos.filter(function (p) {
+            return todosVerdaderos(p.suscripcion, carrito.some(function (it) { return String(it.productoId) === String(p.id); }));
+        });
+        productos = lista.concat(membresias);
         // La venta en edición sigue "reservando" sus cantidades (al grabar vuelven al stock)
         if (ventaEnEdicion) {
             Object.keys(ventaEnEdicion.reservado).forEach(function (id) {
@@ -1827,7 +1923,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 )
             );
 
-            return todosVerdaderos(coincideTexto, coincideFiltro);
+            return todosVerdaderos(coincideTexto, coincideFiltro, !p.suscripcion);
         });
 
         filtrados.forEach(function (p) {
@@ -1858,9 +1954,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const imagen = document.createElement("div");
             imagen.className = "pv-product-image";
-            imagen.textContent = p.imagenData
-                ? "IMAGEN CONFIGURADA"
-                : "SIN IMAGEN";
+            if (p.imagen) {
+                // loading="lazy": solo se descargan las imágenes de las tarjetas visibles (y quedan en caché)
+                const img = document.createElement("img");
+                img.src = p.imagen;
+                img.alt = p.nombre;
+                img.loading = "lazy";
+                img.decoding = "async";
+                img.referrerPolicy = "no-referrer";
+                img.onerror = function () {
+                    img.remove();
+                    imagen.textContent = "SIN IMAGEN";
+                };
+                imagen.appendChild(img);
+            } else {
+                imagen.textContent = "SIN IMAGEN";
+            }
 
             card.appendChild(imagen);
 
@@ -1879,6 +1988,7 @@ document.addEventListener("DOMContentLoaded", function () {
             footer.appendChild(precio);
             card.appendChild(footer);
 
+            card.disabled = productosBloqueados();
             card.addEventListener("click", function () {
                 seleccionarProducto(p.id);
             });
@@ -1903,6 +2013,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function seleccionarProducto(id) {
+        if (productosBloqueados()) return;
         const p = obtenerProductoPorId(id);
 
         if (!p) {
@@ -1981,10 +2092,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function agregarAlCarrito(productoId, talla) {
+        if (productosBloqueados()) return false;
         const p = obtenerProductoPorId(productoId);
 
         if (!p) {
-            return;
+            return false;
         }
 
         const claveTalla = talla || "";
@@ -2005,7 +2117,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert(
                     "No hay más unidades disponibles de este producto/talla."
                 );
-                return;
+                return false;
             }
 
             existente.cantidad++;
@@ -2019,9 +2131,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         ocultarFeedback();
         renderizarCarrito();
+        return true;
     }
 
     function cambiarCantidad(productoId, talla, delta) {
+        if (grabando) return;
         const item = carrito.find(function (it) {
             return todosVerdaderos(
                 String(it.productoId) === String(productoId),
@@ -2100,6 +2214,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "×",
                 "pv-remove-item",
                 function () {
+                    if (grabando) return;
                     carrito = carrito.filter(function (it) {
                         return it !== item;
                     });
@@ -2176,6 +2291,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.getElementById("pvTotal").textContent =
             formatoDinero(calcularTotal());
+
+        // Con una membresía en el carrito se bloquean los productos y el DNI; al quitarla se liberan
+        const habiaMembresia = cobroMembresia;
+        cobroMembresia = carrito.some(function (it) { return esMembresia(obtenerProductoPorId(it.productoId)); });
+        if (habiaMembresia !== cobroMembresia) {
+            aplicarBloqueos();
+            renderizarProductos();
+        }
     }
 
     function cambiarPestana(nombre) {
@@ -2245,40 +2368,26 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (inputBuscar) {
-        inputBuscar.addEventListener("input", renderizarProductos);
+        // El filtro de la grilla espera 150 ms sin teclear: el lector escribe el código muy rápido
+        // y así no se redibuja la grilla en cada carácter
+        let esperaFiltro = null;
+        inputBuscar.addEventListener("input", function () {
+            clearTimeout(esperaFiltro);
+            esperaFiltro = setTimeout(renderizarProductos, 150);
+        });
 
+        // Enter (el lector de códigos lo envía solo al terminar de leer) = botón de búsqueda del costado
         inputBuscar.addEventListener("keydown", function (e) {
             if (e.key !== "Enter") {
                 return;
             }
 
             e.preventDefault();
-
-            const texto = inputBuscar.value.trim().toLocaleLowerCase("es");
-
-            if (!texto) {
-                return;
-            }
-
-            const lista = obtenerProductos();
-
-            const p = lista.find(function (x) {
-                return algunoVerdadero(
-                    String(x.codigo || "").toLocaleLowerCase("es") === texto,
-                    String(x.nombre || "").toLocaleLowerCase("es") === texto
-                );
-            });
-
-            if (p) {
-                seleccionarProducto(p.id);
-                inputBuscar.value = "";
-                renderizarProductos();
+            clearTimeout(esperaFiltro);
+            if (botonEscanear) {
+                botonEscanear.click();
             } else {
-                renderizarProductos();
-
-                mostrarFeedback(
-                    "No se encontró un producto con ese código o nombre exacto."
-                );
+                buscarYAgregar();
             }
         });
     }
@@ -2299,8 +2408,69 @@ document.addEventListener("DOMContentLoaded", function () {
     const botonEscanear = document.getElementById("pvEscanear");
     const botonEscanearBtn = document.getElementById("pvEscanearBtn");
 
+    /** Devuelve el cursor a la caja del lector, lista para el siguiente código. */
+    function enfocarLector() {
+        if (inputBuscar) {
+            if (!inputBuscar.disabled) inputBuscar.focus();
+        }
+    }
+
+    /**
+     * Botón de búsqueda del costado (también lo pulsa el Enter del lector de códigos).
+     * Igual que txtbusqueda_KeyPress / CalculoCodBarra de frm_Facturacion:
+     *  - Código de barras exacto (o código de producto / nombre exacto): agrega 1 unidad directo al detalle;
+     *    si el producto ya está, ACUMULA la cantidad (respetando el stock).
+     *  - Si no hay coincidencia exacta: la grilla queda filtrada con lo escrito para elegir el producto
+     *    (como frm_BusquedaProductosVentas).
+     * Al terminar se limpia la caja y el cursor vuelve a ella.
+     */
+    function buscarYAgregar() {
+        if (!inputBuscar) return;
+        const texto = inputBuscar.value.trim().toLocaleLowerCase("es");
+
+        if (!texto) {
+            activarEscaneo();
+            return;
+        }
+        if (productosBloqueados()) {
+            mostrarFeedback(cobroMembresia
+                ? "Cobro de membresía: no se pueden agregar productos a esta venta."
+                : "Espere: se está grabando la venta.");
+            return;
+        }
+
+        const lista = obtenerProductos().filter(function (x) { return !x.suscripcion; });
+        const igual = function (valor) { return String(valor || "").toLocaleLowerCase("es") === texto; };
+        // Primero el código de barras (lo que envía el lector); luego el código del producto o el nombre exacto
+        const p = lista.find(function (x) { return igual(x.codigo); })
+            || lista.find(function (x) { return algunoVerdadero(igual(x.id), igual(x.nombre)); });
+
+        if (!p) {
+            renderizarProductos();
+            mostrarFeedback("No hay un producto con ese código. Elija el producto en la lista.");
+            enfocarLector();
+            return;
+        }
+
+        if (todosVerdaderos(p.tallas, Object.keys(p.tallas || {}).length)) {
+            seleccionarProducto(p.id);       // con tallas se elige la talla en la ventana
+        } else if (!(stockTotal(p) > 0)) {
+            alert("El producto " + p.nombre + " está agotado.");
+        } else {
+            const agregado = agregarAlCarrito(p.id, "");
+            const item = carrito.find(function (it) { return String(it.productoId) === String(p.id); });
+            mostrarFeedback(agregado
+                ? "Agregado: " + p.nombre + " · Cantidad en el detalle: " + (item ? item.cantidad : 1)
+                : "La cantidad es mayor al stock de " + p.nombre + " (stock: " + stockTotal(p) + ").");
+        }
+
+        inputBuscar.value = "";
+        renderizarProductos();
+        enfocarLector();
+    }
+
     if (botonEscanear) {
-        botonEscanear.addEventListener("click", activarEscaneo);
+        botonEscanear.addEventListener("click", buscarYAgregar);
     }
 
     if (botonEscanearBtn) {
@@ -2397,6 +2567,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (botonVaciar) {
         botonVaciar.addEventListener("click", function () {
+            if (grabando) return;
             if (carrito.length === 0) {
                 mostrarFeedback("El carrito ya está vacío.");
                 return;
@@ -2567,6 +2738,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (botonPagar) {
         botonPagar.addEventListener("click", function () {
+            if (grabando) return;
             if (carrito.length === 0) {
                 alert("El carrito está vacío.");
                 return;
@@ -2627,7 +2799,7 @@ document.addEventListener("DOMContentLoaded", function () {
         envio = 0;
         notaVenta = "";
         ["pvClienteNombre", "pvClienteDocumento", "pvClienteTelefono", "pvClienteEmail",
-         "pvDireccion", "pvCiudad", "pvCodigoPostal", "pvReferencia"].forEach(function (id) {
+         "pvDireccion", "pvCiudad", "pvReferencia"].forEach(function (id) {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
@@ -2660,7 +2832,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * Graba la venta en la base de datos (PuntoVentaBean.grabar -> FacturacionFACADE):
+     * Graba la venta en la base de datos (PuntoVentaBean.grabar -> PuntoVentaFACADE):
      * nueva -> RegistrarVentaF; en edición -> ModificarVentaF.
      */
     function registrarVenta(lista, pago) {
@@ -2682,7 +2854,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     cantidad: item.cantidad,
                     precio: precioItem(item, p),
                     costo: p ? Number(p.costo) || 0 : 0,
-                    descripcion: p ? p.nombre : ""
+                    descripcion: p ? p.nombre : "",
+                    suscripcion: p ? p.suscripcion || "" : ""
                 };
             }),
             total: redondear2(calcularTotal()),
@@ -2699,25 +2872,30 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         };
 
-        botonPagar.disabled = true;
+        ponerGrabando(true);
         mostrarFeedback(modificar ? "Guardando los cambios de la venta..." : "Grabando la venta...");
 
         PVServidor.llamar("Grabar", venta).then(function (r) {
-            botonPagar.disabled = false;
+            ponerGrabando(false);
             if (!r.ok) {
                 mostrarFeedback("La venta no se grabó: " + r.mensaje);
                 alert(r.mensaje);
                 return;
             }
             salirEdicion(false);
-            aplicarProductos(r.productos);       // stock actualizado desde la base de datos
             limpiarVenta();
+            aplicarProductos(r.productos);       // stock actualizado desde la base de datos
+            renderizarProductos();
+            if (todosVerdaderos(window.history.replaceState, window.location.search.indexOf("suscripcion=") !== -1)) {
+                window.history.replaceState(null, "", window.location.pathname);
+            }
+            enfocarLector();
             cambiarPestana("carrito");
             mostrarFeedback(r.mensaje
                 + (pago.condPago === "Credito" ? " · Crédito, vence " + pago.fechaVencimiento : "")
                 + (pago.vuelto > 0 ? " · Vuelto " + formatoDinero(pago.vuelto) : ""));
         }).catch(function (e) {
-            botonPagar.disabled = false;
+            ponerGrabando(false);
             mostrarFeedback(e.message);
             alert(e.message);
         });
@@ -2912,9 +3090,38 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /**
+     * Cobro de una membresía (PuntoVenta.xhtml?suscripcion=NRO): la línea de la membresía va al carrito
+     * (cantidad 1, precio = total de la suscripción) y los datos del socio a la pestaña Cliente,
+     * como frm_Facturacion con OpcRegC = 1. El servidor vuelve a armar la línea con los datos de la BD.
+     */
+    function cargarSuscripcionParaCobrar() {
+        let s = null;
+        try {
+            s = JSON.parse(datosServidor ? datosServidor.dataset.suscripcion || "null" : "null");
+        } catch (e) {
+            s = null;
+        }
+        if (!s) return;
+        productos.push({ id: s.productoId, nombre: s.descripcion, codigo: s.productoId, precio: Number(s.precio),
+                         costo: 0, stock: 1, categoria: "Membresía", marca: "", suscripcion: s.nro });
+        carrito = [{ productoId: s.productoId, talla: "", cantidad: 1, precio: Number(s.precio) }];
+        [["pvClienteDocumento", s.clienteId], ["pvClienteNombre", s.clienteNombre], ["pvClienteTelefono", s.telefono],
+         ["pvClienteEmail", s.email], ["pvDireccion", s.direccion]].forEach(function (c) {
+            const el = document.getElementById(c[0]);
+            if (el) el.value = c[1] || "";
+        });
+        if (!datosServidor.dataset.errorCaja) {          // sin caja abierta se deja ver ese aviso
+            mostrarFeedback("Membresía N° " + s.nro + " de " + (s.clienteNombre || s.clienteId)
+                    + " lista para cobrar. Elija el comprobante y pulse PAGAR.");
+        }
+    }
+
     // Inicialización de la pantalla.
+    cargarSuscripcionParaCobrar();
     renderizarProductos();
     renderizarCarrito();
+    enfocarLector();          // el cursor queda listo para leer códigos de barras
 });
 </script>
     </ui:define>

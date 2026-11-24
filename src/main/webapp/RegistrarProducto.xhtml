@@ -7,7 +7,7 @@
     <ui:param name="menuSubmenu" value="catalogo" />
     <ui:define name="metadata">
         <f:metadata>
-            <f:viewAction action="#{productoBean.prepararFormulario}" />
+            <f:viewAction action="#{catalogoBean.prepararFormulario}" />
         </f:metadata>
     </ui:define>
     <ui:define name="title">Registro de Productos | Xport Fitness Gym</ui:define>
@@ -175,6 +175,20 @@
             color: #94a3b8;
         }
 
+        .foto-producto-avatar img { object-fit: contain !important; background: #fff; }
+
+        .imagen-botones { display: flex; gap: 6px; justify-content: center; }
+        .btn-quitar-imagen { background: #fee2e2 !important; color: #b42318 !important; }
+        .btn-quitar-imagen:hover { background: #fecaca !important; }
+
+        .imagen-url { margin-top: 12px; text-align: left; }
+        .imagen-url label { display: block; font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 4px; }
+        .imagen-url input {
+            width: 100%; box-sizing: border-box; padding: 8px 9px; font-size: 12px;
+            border: 1px solid #cbd5e1; border-radius: 7px; background: #fff;
+        }
+        .imagen-url input:focus { outline: none; border-color: #275ef5; box-shadow: 0 0 0 2px rgba(39,94,245,.12); }
+
         .mensajes-productos {
             list-style: none;
             margin: 0 0 16px;
@@ -221,14 +235,14 @@
             <h:messages globalOnly="true" layout="list" styleClass="mensajes-productos"
                         infoClass="msj-info" errorClass="msj-error" />
 
-            <h:panelGroup layout="block" styleClass="aviso-edicion" rendered="#{productoBean.edicion}">
+            <h:panelGroup layout="block" styleClass="aviso-edicion" rendered="#{catalogoBean.edicion}">
                 <i class="fa-solid fa-pen-to-square"></i>
-                Editando el producto <strong>#{productoBean.producto.producto_ID}</strong>
-                — #{productoBean.producto.nombreProducto}.
+                Editando el producto <strong>#{catalogoBean.producto.producto_ID}</strong>
+                — #{catalogoBean.producto.nombreProducto}.
                 Pulse <strong>Nuevo (F2)</strong> para registrar otro producto.
             </h:panelGroup>
 
-            <h:form id="frmProducto" prependId="false">
+            <h:form id="frmProducto" prependId="false" enctype="multipart/form-data">
 
             <!-- FORMULARIO Y FOTO -->
             <div class="contenido-form">
@@ -244,7 +258,7 @@
                                 <i class="fa-solid fa-hashtag"></i>
                                 Código
                             </label>
-                            <h:inputText id="codigoProducto" value="#{productoBean.producto.producto_ID}"
+                            <h:inputText id="codigoProducto" value="#{catalogoBean.producto.producto_ID}"
                                          readonly="true" pt:title="Se genera automáticamente" />
                         </div>
 
@@ -253,7 +267,7 @@
                                 <i class="fa-solid fa-circle-check"></i>
                                 Estado
                             </label>
-                            <h:selectOneMenu id="estadoProducto" value="#{productoBean.producto.estadoProducto}">
+                            <h:selectOneMenu id="estadoProducto" value="#{catalogoBean.producto.estadoProducto}">
                                 <f:selectItem itemLabel="Activo" itemValue="Activo" />
                                 <f:selectItem itemLabel="Inactivo" itemValue="Inactivo" />
                             </h:selectOneMenu>
@@ -264,7 +278,7 @@
                                 <i class="fa-solid fa-shapes"></i>
                                 Tipo de producto
                             </label>
-                            <h:selectOneMenu id="tipoProducto" value="#{productoBean.producto.tipoProd}">
+                            <h:selectOneMenu id="tipoProducto" value="#{catalogoBean.producto.tipoProd}">
                                 <f:selectItem itemLabel="VENTA" itemValue="V" />
                                 <f:selectItem itemLabel="SERVICIO" itemValue="S" />
                             </h:selectOneMenu>
@@ -277,7 +291,7 @@
                             <i class="fa-solid fa-align-left"></i>
                             Descripción
                         </label>
-                        <h:inputText id="descripcionProducto" value="#{productoBean.producto.descripcion}"
+                        <h:inputText id="descripcionProducto" value="#{catalogoBean.producto.descripcion}"
                                      maxlength="100" pt:placeholder="Ej. Proteína Whey 2lb Chocolate" />
                     </div>
 
@@ -287,7 +301,7 @@
                             <i class="fa-solid fa-box"></i>
                             Nombre del Producto
                         </label>
-                        <h:inputText id="nombreProducto" value="#{productoBean.producto.nombreProducto}"
+                        <h:inputText id="nombreProducto" value="#{catalogoBean.producto.nombreProducto}"
                                      maxlength="50" pt:placeholder="Si lo deja vacío se usa la descripción" />
                     </div>
 
@@ -300,9 +314,9 @@
                                 <i class="fa-solid fa-tags"></i>
                                 Categoría de Producto
                             </label>
-                            <h:selectOneMenu id="categoriaProducto" value="#{productoBean.producto.categoria_ID}">
+                            <h:selectOneMenu id="categoriaProducto" value="#{catalogoBean.producto.categoria_ID}">
                                 <f:selectItem itemLabel="-- Seleccione --" itemValue="0" />
-                                <f:selectItems value="#{productoBean.listaCategorias}" var="c"
+                                <f:selectItems value="#{catalogoBean.listaCategorias}" var="c"
                                                itemValue="#{c.categoria_ID}" itemLabel="#{c.nombre}" />
                             </h:selectOneMenu>
                         </div>
@@ -312,9 +326,9 @@
                                 <i class="fa-solid fa-copyright"></i>
                                 Marca de Producto
                             </label>
-                            <h:selectOneMenu id="marcaProducto" value="#{productoBean.producto.marcaProducto_ID}">
+                            <h:selectOneMenu id="marcaProducto" value="#{catalogoBean.producto.marcaProducto_ID}">
                                 <f:selectItem itemLabel="-- Seleccione --" itemValue="0" />
-                                <f:selectItems value="#{productoBean.listaMarcas}" var="m"
+                                <f:selectItems value="#{catalogoBean.listaMarcas}" var="m"
                                                itemValue="#{m.marca_ID}" itemLabel="#{m.nombre}" />
                             </h:selectOneMenu>
                         </div>
@@ -327,7 +341,7 @@
                                 <i class="fa-solid fa-ruler"></i>
                                 U. Medida
                             </label>
-                            <h:selectOneMenu id="unidadMedida" value="#{productoBean.producto.unidadMedida}">
+                            <h:selectOneMenu id="unidadMedida" value="#{catalogoBean.producto.unidadMedida}">
                                 <f:selectItem itemLabel="UND" itemValue="UND" />
                                 <f:selectItem itemLabel="PQT" itemValue="PQT" />
                             </h:selectOneMenu>
@@ -338,7 +352,7 @@
                                 <i class="fa-solid fa-barcode"></i>
                                 Código de Barra
                             </label>
-                            <h:inputText id="codigoBarra" value="#{productoBean.producto.codigoBarra}"
+                            <h:inputText id="codigoBarra" value="#{catalogoBean.producto.codigoBarra}"
                                          maxlength="50" pt:placeholder="Escanee o escriba (Insert)" />
                         </div>
 
@@ -347,7 +361,7 @@
                                 <i class="fa-solid fa-weight-hanging"></i>
                                 Peso
                             </label>
-                            <h:inputText id="pesoProducto" value="#{productoBean.producto.peso}"
+                            <h:inputText id="pesoProducto" value="#{catalogoBean.producto.peso}"
                                          pt:type="number" pt:min="0" pt:step="0.01" />
                         </div>
                     </div>
@@ -361,10 +375,10 @@
                                 <i class="fa-solid fa-cubes"></i>
                                 Stock Final
                             </label>
-                            <h:inputText id="stockActual" value="#{productoBean.producto.stockFinal}"
-                                         disabled="#{not productoBean.stockEditable}"
+                            <h:inputText id="stockActual" value="#{catalogoBean.producto.stockFinal}"
+                                         disabled="#{not catalogoBean.stockEditable}"
                                          pt:type="number" pt:min="0" pt:step="1" />
-                            <h:outputText rendered="#{not productoBean.stockEditable}" styleClass="ayuda-campo"
+                            <h:outputText rendered="#{not catalogoBean.stockEditable}" styleClass="ayuda-campo"
                                           value="Tiene ventas: el stock no se modifica aquí." />
                         </div>
 
@@ -373,7 +387,7 @@
                                 <i class="fa-solid fa-cart-shopping"></i>
                                 Precio Costo
                             </label>
-                            <h:inputText id="precioCompra" value="#{productoBean.producto.precioCosto}"
+                            <h:inputText id="precioCompra" value="#{catalogoBean.producto.precioCosto}"
                                          pt:type="number" pt:min="0" pt:step="0.01">
                                 <f:convertNumber minFractionDigits="2" maxFractionDigits="2" groupingUsed="false" locale="en_US" />
                             </h:inputText>
@@ -384,7 +398,7 @@
                                 <i class="fa-solid fa-money-bill-wave"></i>
                                 Precio Venta
                             </label>
-                            <h:inputText id="precioVenta" value="#{productoBean.producto.precioVenta}"
+                            <h:inputText id="precioVenta" value="#{catalogoBean.producto.precioVenta}"
                                          pt:type="number" pt:min="0" pt:step="0.01">
                                 <f:convertNumber minFractionDigits="2" maxFractionDigits="2" groupingUsed="false" locale="en_US" />
                             </h:inputText>
@@ -398,7 +412,7 @@
                                 <i class="fa-solid fa-arrow-down-short-wide"></i>
                                 Precio Límite
                             </label>
-                            <h:inputText id="precioLimite" value="#{productoBean.producto.precioLimite}"
+                            <h:inputText id="precioLimite" value="#{catalogoBean.producto.precioLimite}"
                                          pt:type="number" pt:min="0" pt:step="0.01">
                                 <f:convertNumber minFractionDigits="2" maxFractionDigits="2" groupingUsed="false" locale="en_US" />
                             </h:inputText>
@@ -410,7 +424,7 @@
                                 Utilidad (S/)
                             </label>
                             <input type="text" id="utilidadProducto" readonly="readonly"
-                                   value="#{productoBean.producto.utilidad}" />
+                                   value="#{catalogoBean.producto.utilidad}" />
                         </div>
 
                         <div class="campo">
@@ -419,37 +433,52 @@
                                 Margen
                             </label>
                             <input type="text" id="margenProducto" readonly="readonly"
-                                   value="#{productoBean.producto.margenUtil}" />
+                                   value="#{catalogoBean.producto.margenUtil}" />
                         </div>
                     </div>
 
-                    <h:inputHidden id="imagenNombre" value="#{productoBean.producto.imagen}" />
                 </div>
 
                 <!-- FOTO DEL PRODUCTO -->
                 <aside class="foto-card">
                     <div class="foto-titulo">FOTO DEL PRODUCTO</div>
 
+                    <!-- Vista previa: la imagen guardada (archivo subido o URL externa) -->
                     <div class="foto-avatar foto-producto-avatar"
                          id="fotoProductoAvatar">
-                        <i class="fa-solid fa-image"></i>
+                        <ui:fragment rendered="#{not empty catalogoBean.urlImagenActual}">
+                            <img alt="Imagen del producto" src="#{catalogoBean.urlImagenActual}" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{empty catalogoBean.urlImagenActual}">
+                            <i class="fa-solid fa-image"></i>
+                        </ui:fragment>
                     </div>
 
-                    <input type="file"
-                           id="imagenProducto"
-                           name="imagenProducto"
-                           accept="image/*"
-                           hidden="hidden" />
+                    <!-- Opción 1: subir un archivo (se guarda en el servidor al Grabar / Actualizar) -->
+                    <h:inputFile id="imagenProducto" value="#{catalogoBean.archivoImagen}" style="display:none"
+                                 pt:accept="image/jpeg,image/png,image/gif,image/bmp" />
+                    <h:inputHidden id="quitarImagen" value="#{catalogoBean.quitarImagen}" />
 
-                    <button type="button"
-                            class="btn-subir"
-                            id="btnSubirImagen">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        Subir Imagen
-                    </button>
+                    <div class="imagen-botones">
+                        <button type="button" class="btn-subir" id="btnSubirImagen">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            Subir Imagen
+                        </button>
+                        <button type="button" class="btn-subir btn-quitar-imagen" id="btnQuitarImagen" title="Quitar imagen">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                    <!-- Opción 2: URL externa (se graba la dirección en Productos.Imagen) -->
+                    <div class="imagen-url">
+                        <label for="urlImagen"><i class="fa-solid fa-link"></i> o pegue la URL de la imagen</label>
+                        <h:inputText id="urlImagen" value="#{catalogoBean.urlImagen}" maxlength="150"
+                                     pt:type="url" pt:placeholder="https://..." pt:autocomplete="off" />
+                    </div>
 
                     <p class="foto-ayuda" id="nombreImagen">
-                        #{empty productoBean.producto.imagen ? 'Selecciona una imagen del producto.' : productoBean.producto.imagen}
+                        #{empty catalogoBean.urlImagenActual ? 'Sin imagen.' : 'Imagen guardada.'}
+                        JPG, PNG, GIF o BMP de hasta 2 MB, o una URL https://. Se guarda al presionar #{catalogoBean.edicion ? 'Actualizar' : 'Grabar'}.
                     </p>
                 </aside>
 
@@ -458,21 +487,21 @@
             <!-- BOTONES -->
             <!-- Los cuatro botones en una sola fila: Nuevo, Grabar, Actualizar, Salir -->
             <div class="botones-form botones-productos">
-                <h:commandLink id="btnNuevoProducto" action="#{productoBean.nuevo}" styleClass="btn-form btn-nuevo">
+                <h:commandLink id="btnNuevoProducto" action="#{catalogoBean.nuevo}" styleClass="btn-form btn-nuevo">
                     <i class="fa-solid fa-plus"></i>&#160;Nuevo (F2)
                 </h:commandLink>
 
-                <h:commandLink id="btnGrabarProducto" action="#{productoBean.grabar}"
-                               styleClass="btn-form btn-grabar" disabled="#{productoBean.edicion}">
+                <h:commandLink id="btnGrabarProducto" action="#{catalogoBean.grabar}"
+                               styleClass="btn-form btn-grabar" disabled="#{catalogoBean.edicion}">
                     <i class="fa-solid fa-floppy-disk"></i>&#160;Grabar (F3)
                 </h:commandLink>
 
-                <h:commandLink id="btnActualizarProducto" action="#{productoBean.actualizar}"
-                               styleClass="btn-form btn-actualizar" disabled="#{not productoBean.edicion}">
+                <h:commandLink id="btnActualizarProducto" action="#{catalogoBean.actualizar}"
+                               styleClass="btn-form btn-actualizar" disabled="#{not catalogoBean.edicion}">
                     <i class="fa-solid fa-rotate"></i>&#160;Actualizar (F4)
                 </h:commandLink>
 
-                <h:commandLink id="btnSalirProducto" action="#{productoBean.salir}" immediate="true"
+                <h:commandLink id="btnSalirProducto" action="#{catalogoBean.salir}" immediate="true"
                                styleClass="btn-form btn-salir">
                     <i class="fa-solid fa-right-from-bracket"></i>&#160;Salir (Esc)
                 </h:commandLink>
@@ -490,9 +519,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const inputImagen = document.getElementById("imagenProducto");
     const botonImagen = document.getElementById("btnSubirImagen");
+    const botonQuitar = document.getElementById("btnQuitarImagen");
     const avatar = document.getElementById("fotoProductoAvatar");
     const nombreImagen = document.getElementById("nombreImagen");
-    const imagenOculta = document.getElementById("imagenNombre");
+    const quitarImagen = document.getElementById("quitarImagen");
+    const urlImagen = document.getElementById("urlImagen");
+    const MAX_IMAGEN = 2 * 1024 * 1024;
 
     const descripcion = document.getElementById("descripcionProducto");
     const nombre = document.getElementById("nombreProducto");
@@ -529,7 +561,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Imagen: vista previa y se guarda el nombre del archivo (como txtimagen de frm_Productos)
+    // Imagen del producto: vista previa al instante; el archivo o la URL se guardan al Grabar / Actualizar
+    function mostrarImagen(src) {
+        if (!avatar) return;
+        avatar.replaceChildren();
+        if (src) {
+            const img = document.createElement("img");
+            img.alt = "Imagen del producto";
+            img.src = src;
+            img.onerror = function () {
+                avatar.replaceChildren();
+                const i = document.createElement("i");
+                i.className = "fa-solid fa-triangle-exclamation";
+                avatar.appendChild(i);
+                if (nombreImagen) nombreImagen.textContent = "No se pudo cargar la imagen de esa dirección.";
+            };
+            avatar.appendChild(img);
+        } else {
+            const i = document.createElement("i");
+            i.className = "fa-solid fa-image";
+            avatar.appendChild(i);
+        }
+    }
+
     if (botonImagen) {
         botonImagen.addEventListener("click", function () {
             inputImagen.click();
@@ -541,28 +595,48 @@ document.addEventListener("DOMContentLoaded", function () {
             const archivo = inputImagen.files[0];
             if (!archivo) return;
 
-            if (!archivo.type.startsWith("image/")) {
-                alert("Selecciona un archivo de imagen válido.");
+            if (!/^image\/(jpeg|png|gif|bmp)$/.test(archivo.type)) {
+                alert("Selecciona una imagen JPG, PNG, GIF o BMP.");
                 inputImagen.value = "";
                 return;
             }
-
-            if (imagenOculta) imagenOculta.value = archivo.name.substring(0, 150);
-            if (nombreImagen) nombreImagen.textContent = archivo.name;
-
-            const lector = new FileReader();
-            lector.onload = function (evento) {
-                avatar.replaceChildren();
-                avatar.style.backgroundImage = "url('" + evento.target.result + "')";
-                avatar.style.backgroundSize = "contain";
-                avatar.style.backgroundPosition = "center";
-                avatar.style.backgroundRepeat = "no-repeat";
-            };
-            lector.onerror = function () {
-                alert("No se pudo cargar la imagen seleccionada.");
+            if (archivo.size > MAX_IMAGEN) {
+                alert("La imagen no debe pesar más de 2 MB.");
                 inputImagen.value = "";
-            };
-            lector.readAsDataURL(archivo);
+                return;
+            }
+            // El archivo reemplaza a la URL
+            if (urlImagen) urlImagen.value = "";
+            if (quitarImagen) quitarImagen.value = "false";
+            if (nombreImagen) nombreImagen.textContent = archivo.name + " · se guardará al grabar.";
+            mostrarImagen(URL.createObjectURL(archivo));
+        });
+    }
+
+    if (urlImagen) {
+        urlImagen.addEventListener("change", function () {
+            const url = urlImagen.value.trim();
+            if (url) {
+                if (!/^https?:\/\/\S+$/i.test(url)) {
+                    alert("La URL debe empezar con http:// o https:// y no llevar espacios.");
+                    return;
+                }
+                // La URL reemplaza al archivo elegido
+                if (inputImagen) inputImagen.value = "";
+                if (quitarImagen) quitarImagen.value = "false";
+                if (nombreImagen) nombreImagen.textContent = "URL externa · se guardará al grabar.";
+            }
+            mostrarImagen(url);
+        });
+    }
+
+    if (botonQuitar) {
+        botonQuitar.addEventListener("click", function () {
+            if (inputImagen) inputImagen.value = "";
+            if (urlImagen) urlImagen.value = "";
+            if (quitarImagen) quitarImagen.value = "true";
+            if (nombreImagen) nombreImagen.textContent = "Sin imagen · se quitará al grabar.";
+            mostrarImagen("");
         });
     }
 

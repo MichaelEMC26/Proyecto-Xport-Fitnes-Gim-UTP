@@ -71,8 +71,8 @@ public final class AlmacenFotos {
         return ruta;
     }
 
-    /** Firma de los primeros bytes del archivo. */
-    private static String extensionPorContenido(byte[] b) {
+    /** Firma de los primeros bytes del archivo (también la usa AlmacenImagenesProducto). */
+    static String extensionPorContenido(byte[] b) {
         if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) return "jpg";
         if (b.length >= 8 && (b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G') return "png";
         if (b.length >= 3 && b[0] == 'G' && b[1] == 'I' && b[2] == 'F') return "gif";

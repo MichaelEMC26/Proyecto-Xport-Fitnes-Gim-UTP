@@ -1,7 +1,7 @@
 package com.registro.controller;
 
 import com.registro.dto.UsuarioDTO;
-import com.registro.facade.AperturaCierreCajaFACADE;
+import com.registro.facade.CajaFACADE;
 import com.registro.facade.MembresiaFACADE;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -29,7 +29,7 @@ import java.util.Set;
 @WebFilter(urlPatterns = {"/RegistrarAsistencia.xhtml", "/Ventas.xhtml", "/Registro-plan-membresia.xhtml", "/membresias.xhtml", "/PuntoVenta.xhtml"})
 public class CajaAbiertaFilter implements Filter {
 
-    /** Páginas que requieren caja abierta (mismas que urlPatterns). AperturaCajaBean solo regresa a estas. */
+    /** Páginas que requieren caja abierta (mismas que urlPatterns). CajaBean solo regresa a estas. */
     static final Set<String> PAGINAS_CON_CAJA = Set.of(
             "/RegistrarAsistencia.xhtml", "/Ventas.xhtml", "/Registro-plan-membresia.xhtml", "/membresias.xhtml", "/PuntoVenta.xhtml");
 
@@ -91,7 +91,7 @@ public class CajaAbiertaFilter implements Filter {
     /** HayTurnoAbierto(HoyMedianoche): sp_ListaTurnoAbierto devuelve filas. */
     static boolean hayTurnoAbierto(String codEmp) {
         try {
-            return new AperturaCierreCajaFACADE().ListaTurnoAbiertoF(codEmp, LocalDate.now().atStartOfDay()) != null;
+            return new CajaFACADE().ListaTurnoAbiertoF(codEmp, LocalDate.now().atStartOfDay()) != null;
         } catch (RuntimeException ex) {
             ex.printStackTrace();
             return true;   // si falla la consulta no se bloquea el sistema
