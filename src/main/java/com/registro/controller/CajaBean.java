@@ -1,8 +1,8 @@
 package com.registro.controller;
 
-import com.registro.dto.AperturaCierreCajaDTO;
+import com.registro.dto.CajaDTO;
 import com.registro.dto.UsuarioDTO;
-import com.registro.facade.AperturaCierreCajaFACADE;
+import com.registro.facade.CajaFACADE;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -18,14 +18,14 @@ import java.util.Locale;
  * Generar Apertura de Caja: igual que frm_GenerarAperturaCaja de SisdataGimnasio.
  * Inserta el turno con EstadoCaja = 'A', monto inicial y los demás montos en 0.
  */
-@Named("aperturaCajaBean")
+@Named("cajaBean")
 @ViewScoped
-public class AperturaCajaBean implements Serializable {
+public class CajaBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("hh:mm:ss a", Locale.US);
 
-    private transient AperturaCierreCajaFACADE facade;
+    private transient CajaFACADE facade;
 
     private LocalDate fechaTurno = LocalDate.now();
     private String concepto = "APERTURA DE CAJA";
@@ -34,12 +34,12 @@ public class AperturaCajaBean implements Serializable {
     private String nombreResp = "";
 
     /** Caja ya abierta (no se puede abrir otra hasta cerrarla). */
-    private AperturaCierreCajaDTO cajaAbierta;
+    private CajaDTO cajaAbierta;
     private boolean aperturaGenerada;
     private String turnoGenerado;
 
-    private AperturaCierreCajaFACADE facade() {
-        if (facade == null) facade = new AperturaCierreCajaFACADE();
+    private CajaFACADE facade() {
+        if (facade == null) facade = new CajaFACADE();
         return facade;
     }
 
@@ -86,10 +86,10 @@ public class AperturaCajaBean implements Serializable {
             String codEmp = MembresiaBean.codEmpSesion();
             LocalDateTime fecha = fechaTurno.atStartOfDay();
 
-            AperturaCierreCajaDTO turno = facade().ListaTurnoDiaF(codEmp, fecha);
+            CajaDTO turno = facade().ListaTurnoDiaF(codEmp, fecha);
             String nroTurno = turno != null && turno.getTurno() != null && !turno.getTurno().isEmpty() ? turno.getTurno() : "1";
 
-            AperturaCierreCajaDTO a = new AperturaCierreCajaDTO();
+            CajaDTO a = new CajaDTO();
             a.setFechaTurno(fecha);
             a.setFechaCaja(fecha);
             a.setHoraIni(LocalDateTime.now().format(HORA));
@@ -178,7 +178,7 @@ public class AperturaCajaBean implements Serializable {
     public void setMontoInicial(String montoInicial) { this.montoInicial = montoInicial; }
     public int getCodResp() { return codResp; }
     public String getNombreResp() { return nombreResp; }
-    public AperturaCierreCajaDTO getCajaAbierta() { return cajaAbierta; }
+    public CajaDTO getCajaAbierta() { return cajaAbierta; }
     public boolean isAperturaGenerada() { return aperturaGenerada; }
     public String getTurnoGenerado() { return turnoGenerado; }
     public boolean isBloqueado() { return cajaAbierta != null || aperturaGenerada; }

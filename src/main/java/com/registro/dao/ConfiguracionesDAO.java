@@ -115,10 +115,7 @@ public class ConfiguracionesDAO {
     
     /**
      * IDFormaPago de la forma de pago "Tarjeta" (TarjetasPago.IDFormaPago no admite NULL).
-     * 1) Se busca en sp_ListaFormasPago (la misma lista de frm_Busqueda_FormaPago: col. 1 = ID, col. 2 = nombre)
-     *    la fila cuyo nombre contiene "TARJETA".
-     * 2) Si no aparece, se usa el IDFormaPago que ya tienen las tarjetas registradas.
-     * Devuelve null si no se encuentra por ninguno de los dos caminos.
+
      */
     public String IDFormaPagoTarjeta() {
         try (Connection cn = ConexionBD.obtenerConexion()) {
@@ -172,8 +169,7 @@ public class ConfiguracionesDAO {
 
     /**
      * Tablas (distintas de TarjetasPago) que tienen la columna IDTarjeta y al menos un registro con este código.
-     * Las tablas se buscan en INFORMATION_SCHEMA, así que si mañana otra tabla empieza a usar IDTarjeta
-     * también se revisa, sin cambiar el código. Lista vacía = se puede eliminar.
+
      */
     public List<String> TablasQueUsanTarjeta(String IDTarjeta) {
         List<String> usadas = new ArrayList<>();

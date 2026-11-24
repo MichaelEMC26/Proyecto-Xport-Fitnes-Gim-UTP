@@ -11,18 +11,18 @@ import java.util.List;
 import com.registro.config.ConexionBD;
 import com.registro.dto.CategoriaDTO;
 import com.registro.dto.MarcasDTO;
-import com.registro.dto.ProductosDTO;
+import com.registro.dto.CatalogoDTO;
 import com.registro.dto.UsuarioDTO;
 
 /**
  *
  * @author Ing
  */
-public class ProductosDAO {
+public class CatalogoDAO {
     
-  public ProductosDTO ListaTipoBien()
+  public CatalogoDTO ListaTipoBien()
   {
-      ProductosDTO TipoBien = null;
+      CatalogoDTO TipoBien = null;
       Connection cn = null;
       CallableStatement cs = null;
       ResultSet rs = null;
@@ -37,7 +37,7 @@ public class ProductosDAO {
 
           if(rs.next())
           {
-              TipoBien = new ProductosDTO();
+              TipoBien = new CatalogoDTO();
               
               TipoBien.setTipoBien_ID(rs.getString("TipoBien"));
               
@@ -415,9 +415,9 @@ public class ProductosDAO {
      * */
 
     /** sp_Lista_ProductosGral_Activos @CodEmp: productos activos de la empresa. */
-    public List<ProductosDTO> ListaProductosActivos(String codEmp)
+    public List<CatalogoDTO> ListaProductosActivos(String codEmp)
     {
-        List<ProductosDTO> lista = new ArrayList<>();
+        List<CatalogoDTO> lista = new ArrayList<>();
         String sql = "{call sp_Lista_ProductosGral_Activos(?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
@@ -433,9 +433,9 @@ public class ProductosDAO {
     }
 
     /** sp_buscaProdxNomTotAct @CodEmp, @descprod: búsqueda por nombre/descripción (frm_BusquedaProd). */
-    public List<ProductosDTO> BuscaProductosXNombre(String codEmp, String texto)
+    public List<CatalogoDTO> BuscaProductosXNombre(String codEmp, String texto)
     {
-        List<ProductosDTO> lista = new ArrayList<>();
+        List<CatalogoDTO> lista = new ArrayList<>();
         String sql = "{call sp_buscaProdxNomTotAct(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
@@ -452,9 +452,9 @@ public class ProductosDAO {
     }
 
     /** sp_buscaProdxMarcaActivo @CodEmp, @MarcaProducto_ID: productos activos de una marca. */
-    public List<ProductosDTO> BuscaProductosXMarca(String codEmp, int marcaId)
+    public List<CatalogoDTO> BuscaProductosXMarca(String codEmp, int marcaId)
     {
-        List<ProductosDTO> lista = new ArrayList<>();
+        List<CatalogoDTO> lista = new ArrayList<>();
         String sql = "{call sp_buscaProdxMarcaActivo(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
@@ -471,13 +471,13 @@ public class ProductosDAO {
     }
 
     /** Columnas comunes de los listados: las mismas que ordena frm_Productos.OrdenaGrid(). */
-    private void leerListado(CallableStatement cs, List<ProductosDTO> lista) throws SQLException
+    private void leerListado(CallableStatement cs, List<CatalogoDTO> lista) throws SQLException
     {
         try (ResultSet rs = cs.executeQuery())
         {
             while (rs.next())
             {
-                ProductosDTO p = new ProductosDTO();
+                CatalogoDTO p = new CatalogoDTO();
                 p.setProducto_ID(recortar(rs.getString("Producto_ID")));
                 p.setDescripcion(rs.getString("Descripcion"));
                 p.setEstadoProducto(recortar(rs.getString("EstadoProducto")));
@@ -505,9 +505,9 @@ public class ProductosDAO {
     }
 
     /** sp_autogenera_codprod: siguiente código de 6 dígitos (columna NuevoID; se lee la primera columna). */
-    public ProductosDTO Autogenera_codprod()
+    public CatalogoDTO Autogenera_codprod()
     {
-        ProductosDTO autogenera = new ProductosDTO();
+        CatalogoDTO autogenera = new CatalogoDTO();
         String sql = "{call sp_autogenera_codprod}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql);
@@ -549,7 +549,7 @@ public class ProductosDAO {
     }
 
     /** sp_Insert_Productos. Devuelve true si el procedimiento terminó sin error. */
-    public boolean Insert_ProductosD(ProductosDTO p)
+    public boolean Insert_ProductosD(CatalogoDTO p)
     {
         String sql = "{call sp_Insert_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
@@ -570,7 +570,7 @@ public class ProductosDAO {
      * Actualiza el producto.si el stock se puede editar (sin ventas) usa
      * sp_Update_Productos; si ya tiene ventas usa sp_Update_Productos2, que no recibe StockFinal.
      */
-    public boolean Update_Productos(ProductosDTO p, boolean incluyeStock)
+    public boolean Update_Productos(CatalogoDTO p, boolean incluyeStock)
     {
         String sql = incluyeStock
                 ? "{call sp_Update_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}"
@@ -590,7 +590,7 @@ public class ProductosDAO {
     }
 
     /** Parámetros que envía Alm_Mante_ProductosD (Insert / Update / Update2). */
-    private void asignarComunes(CallableStatement cs, ProductosDTO p, boolean incluyeStock) throws SQLException
+    private void asignarComunes(CallableStatement cs, CatalogoDTO p, boolean incluyeStock) throws SQLException
     {
         cs.setString("Producto_ID", p.getProducto_ID());
         cs.setString("NombreProducto", p.getNombreProducto());
@@ -643,7 +643,7 @@ public class ProductosDAO {
     }
 
     /** sp_Elim_Producto: borrado físico (no lo usa frm_Productos; se conserva por compatibilidad). */
-    public boolean Elim_Producto(ProductosDTO producto)
+    public boolean Elim_Producto(CatalogoDTO producto)
     {
         String sql = "{call sp_Elim_Producto(?)}";
         try (Connection cn = ConexionBD.obtenerConexion();

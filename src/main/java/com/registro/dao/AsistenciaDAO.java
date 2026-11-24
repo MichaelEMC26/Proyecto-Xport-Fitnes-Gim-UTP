@@ -54,14 +54,12 @@ public class AsistenciaDAO {
             cs.setString(2, asistencia.getNroSuscripcion_id());
             cs.setString(3, asistencia.getCliente_ID());
 
-            // @FechaHora -> columna HoraIngreso
             if (asistencia.getFechaHora() != null) {
                 cs.setTimestamp(4, asistencia.getFechaHora());
             } else {
                 cs.setNull(4, Types.TIMESTAMP);
             }
 
-            // @FechaFin -> columna FechaIngreso
             if (asistencia.getFechaFin() != null) {
                 cs.setTimestamp(5, Timestamp.valueOf(asistencia.getFechaFin()));
             } else {
@@ -79,18 +77,6 @@ public class AsistenciaDAO {
         return ResultadoExitoso;
     }
 
-    /**
-     * ListaDetRegistroAsistenciasXRegistro
-     * Devuelve todas las asistencias de la suscripción (tabla "Asistencias del periodo").
-     *
-     * CORRECCIÓN: antes solo se aceptaba FechaIngreso como texto MM/dd/yyyy (CONVERT 101) y HoraIngreso
-     * como HH:mm:ss (CONVERT 108), y la hora solo se armaba si la fecha se había leído. Si el procedimiento
-     * de la base devuelve las columnas como datetime, o en otro formato de texto, la fecha quedaba en null
-     * y con ella también la hora: la tabla mostraba el Día pero Hora y Fecha vacías.
-     * Ahora se leen con leerFechaHora(), que acepta datetime/date, texto en varios formatos y descarta
-     * el valor binario (HoraIngreso tipo "timestamp"/rowversion); esa hora la completa la fachada con
-     * sp_AsistenciaHora_Lista.
-     */
     public List<AsistenciaDTO> ListaDetRegistroAsistenciasXRegistro(String NroSuscripcion_id, String Cliente_ID) {
         List<AsistenciaDTO> lista = new ArrayList<>();
         String sql = "{call sp_ListaDetRegistroAsistenciasXRegistro(?,?)}";
@@ -109,13 +95,12 @@ public class AsistenciaDAO {
                     try {
                         det.setIDSecuencia(dia == null ? 0 : Integer.parseInt(dia));
                     } catch (NumberFormatException ex) {
-                        det.setIDSecuencia(0);   // Dia en texto (p. ej. nombre del día): no es secuencia
+                        det.setIDSecuencia(0); 
                     }
 
                     LocalDateTime fechaCol = leerFechaHora(rs, "FechaIngreso");
                     LocalDateTime horaCol = leerFechaHora(rs, "HoraIngreso");
 
-                    // Fecha: la columna FechaIngreso; si no viene, la parte de fecha de HoraIngreso (datetime completo)
                     LocalDate fecha = fechaCol != null ? fechaCol.toLocalDate()
                             : (horaCol != null && horaCol.toLocalDate().getYear() > 1900 ? horaCol.toLocalDate() : null);
                     det.setFechaIngreso(fecha);
@@ -174,7 +159,7 @@ public class AsistenciaDAO {
 
     /**
      * InsertaAlerta
-     * Igual que el insert de asistencias: SET NOCOUNT ON + RETURN 0.
+
      */
     public boolean InsertaAlerta(AsistenciaDTO asistencia) {
         boolean ResultadoExitoso = false;
@@ -338,7 +323,7 @@ public class AsistenciaDAO {
 
     /**
      * lista_Codigoclientes_Activos
-     * Devuelve todos los clientes activos (antes solo se leía la primera fila).
+
      */
     public List<AsistenciaDTO> lista_Codigoclientes_Activos() {
         List<AsistenciaDTO> lista = new ArrayList<>();
@@ -362,7 +347,6 @@ public class AsistenciaDAO {
 
     /**
      * ListaAperturaCierreCajaAbierto: turno de la caja abierta (columna 18), o "0" si no hay caja abierta.
-     * Igual que frm_RegistrarAsistencia al cargar.
      */
     public String TurnoCajaAbierta(String CodEmp) {
         String sql = "{call sp_ListaAperturaCierreCajaAbierto(?)}";
@@ -382,8 +366,7 @@ public class AsistenciaDAO {
     }
 
     /**
-     * sp_AsistenciaHora_Grabar: guarda la hora del ingreso (la columna HoraIngreso es "timestamp" y no la guarda).
-     * Si el SP no existe, la asistencia queda registrada igual, solo sin hora.
+
      */
     public void GrabarHoraAsistencia(String NroSuscripcion_id, String Cliente_ID, Timestamp FechaHora) {
         String sql = "{call sp_AsistenciaHora_Grabar(?,?,?)}";
@@ -427,7 +410,7 @@ public class AsistenciaDAO {
 
     /**
      * ListaCtasXCobrarXClienteXPedido: deuda pendiente del pedido de la membresía.
-     * Devuelve Total = monto (columna 13) y FechaFin = vencimiento (columna 18); null si no hay deuda.
+
      */
     public AsistenciaDTO DeudaPedido(String CodEmp, String Cliente_ID, String Pedido_ID) {
         String sql = "{call sp_ListaCtasXCobrarXClienteXPedido(?,?,?)}";
@@ -516,8 +499,7 @@ public class AsistenciaDAO {
 
     /**
      * sp_ListaDetRegistroAsistenciasXFechaXTurno(@CodEmp, @FechaIngreso, @Turno): ingresos del día y turno
-     * (frm_ConsultaAsistenciaXDia). Columnas: Dia, Cliente_ID, RazonSocial, (hora sin alias), FechaIngreso,
-     * CondicionCredito. La hora se lee por posición (columna 4) porque el SP no le pone nombre.
+
      */
     public List<AsistenciaDTO> ListaDetRegistroAsistenciasXFechaXTurno(String CodEmp, LocalDateTime FechaIngreso, String Turno)
     {
@@ -652,13 +634,13 @@ public class AsistenciaDAO {
         if (texto == null) return null;
         String t = texto.trim().replace('T', ' ');
         if (t.isEmpty()) return null;
-        // yyyy-MM-dd HH:mm:ss[.fff]
+
         try {
             return Timestamp.valueOf(t.length() == 16 ? t + ":00" : t).toLocalDateTime();
         } catch (IllegalArgumentException ex) {
             // otro formato
         }
-        // "fecha hora" en otros formatos (p. ej. 11/21/2026 14:05:33)
+
         String[] partes = t.split(" +", 2);
         LocalDate fecha = null;
         for (DateTimeFormatter f : FORMATOS_FECHA) {

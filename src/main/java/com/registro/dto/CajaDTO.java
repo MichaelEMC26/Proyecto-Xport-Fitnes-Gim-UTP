@@ -11,7 +11,7 @@ import java.sql.Timestamp;
  *
  * @author Ing
  */
-public class AperturaCierreCajaDTO {
+public class CajaDTO {
     
  LocalDateTime FechaTurno; 
  LocalDateTime FechaCaja; 
@@ -64,7 +64,7 @@ String EmpresaRuc;
 String EmpresaDireccion;
 String EmpresaTelefono;
                 
- public AperturaCierreCajaDTO()
+ public CajaDTO()
  {
      
  }

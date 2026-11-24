@@ -1,10 +1,10 @@
 package com.registro.controller;
 
-import com.registro.dto.AperturaCierreCajaDTO;
+import com.registro.dto.CajaDTO;
 import com.registro.dto.ClienteDTO;
 import com.registro.dto.MembresiaDTO;
 import com.registro.dto.UsuarioDTO;
-import com.registro.facade.AperturaCierreCajaFACADE;
+import com.registro.facade.CajaFACADE;
 import com.registro.facade.ClienteFACADE;
 import com.registro.facade.MembresiaFACADE;
 import com.registro.facade.UsuarioFACADE;
@@ -78,8 +78,8 @@ public class DashboardBean implements Serializable {
 
     /** Suma la venta de todos los turnos del día (sp_lista_Monto_VentaDiaXTurno, turnos 1..último). */
     private static double ventasDelDia(String codEmp, LocalDateTime fecha) {
-        AperturaCierreCajaFACADE caja = new AperturaCierreCajaFACADE();
-        AperturaCierreCajaDTO siguiente = caja.ListaTurnoDiaF(codEmp, fecha);   // MAX(Turno)+1
+        CajaFACADE caja = new CajaFACADE();
+        CajaDTO siguiente = caja.ListaTurnoDiaF(codEmp, fecha);   // MAX(Turno)+1
         int ultimo;
         try { ultimo = siguiente == null ? 0 : Integer.parseInt(siguiente.getTurno().trim()) - 1; }
         catch (NumberFormatException ex) { ultimo = 0; }

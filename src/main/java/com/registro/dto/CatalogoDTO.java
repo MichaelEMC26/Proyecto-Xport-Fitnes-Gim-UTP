@@ -8,7 +8,7 @@ package com.registro.dto;
  *
  * @author Ing
  */
-public class ProductosDTO implements java.io.Serializable {
+public class CatalogoDTO implements java.io.Serializable {
     
  private String Producto_ID;      
  private String NombreProducto;   
@@ -36,11 +36,11 @@ public class ProductosDTO implements java.io.Serializable {
  private String Categoria;
  private String Marca;
 
- public ProductosDTO(){
+ public CatalogoDTO(){
      
  }
  
- public ProductosDTO(String Producto_ID,String NombreProducto,String EstadoProducto,int Categoria_ID,int MarcaProducto_ID,String Descripcion,String UnidadMedida,double StockFinal,double PrecioCosto,double PrecioVenta,double PrecioLimite,double MargenUtil,double Peso,String Imagen,String CodigoBarra,String CodEmp, String TipoProd,String TipoBien_ID, String DescripcionTipo, String EstadoTipo)
+ public CatalogoDTO(String Producto_ID,String NombreProducto,String EstadoProducto,int Categoria_ID,int MarcaProducto_ID,String Descripcion,String UnidadMedida,double StockFinal,double PrecioCosto,double PrecioVenta,double PrecioLimite,double MargenUtil,double Peso,String Imagen,String CodigoBarra,String CodEmp, String TipoProd,String TipoBien_ID, String DescripcionTipo, String EstadoTipo)
  {
      this.Producto_ID = Producto_ID;
      this.NombreProducto = NombreProducto;

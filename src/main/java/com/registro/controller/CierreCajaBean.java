@@ -1,8 +1,8 @@
 package com.registro.controller;
 
-import com.registro.dto.AperturaCierreCajaDTO;
+import com.registro.dto.CajaDTO;
 import com.registro.dto.UsuarioDTO;
-import com.registro.facade.AperturaCierreCajaFACADE;
+import com.registro.facade.CajaFACADE;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.view.ViewScoped;
@@ -22,9 +22,9 @@ import java.util.List;
 public class CierreCajaBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private transient AperturaCierreCajaFACADE facade;
+    private transient CajaFACADE facade;
 
-    private AperturaCierreCajaDTO caja;          // caja abierta (dtot.Rows[0])
+    private CajaDTO caja;          // caja abierta (dtot.Rows[0])
     private int codResp;
     private String nombreResp = "";
 
@@ -42,10 +42,10 @@ public class CierreCajaBean implements Serializable {
     private boolean calculado;                   // btnCerrarCaja.Enabled
     private boolean cerrado;
     private int idCierreImpreso = -1;
-    private AperturaCierreCajaDTO ticket;
+    private CajaDTO ticket;
 
-    private AperturaCierreCajaFACADE facade() {
-        if (facade == null) facade = new AperturaCierreCajaFACADE();
+    private CajaFACADE facade() {
+        if (facade == null) facade = new CajaFACADE();
         return facade;
     }
 
@@ -57,19 +57,19 @@ public class CierreCajaBean implements Serializable {
         UsuarioDTO u = MembresiaBean.usuarioEnSesion();
         if (u != null) {
             codResp = u.getPersonal_ID();
-            nombreResp = AperturaCajaBean.nombreCompleto(u);
+            nombreResp = CajaBean.nombreCompleto(u);
         }
         try {
             caja = facade().CajaAbiertaF(codEmp());
             if (caja == null) {
-                AperturaCajaBean.mensaje(FacesMessage.SEVERITY_WARN, "No hay una caja abierta. Genere primero la apertura de caja.");
+                CajaBean.mensaje(FacesMessage.SEVERITY_WARN, "No hay una caja abierta. Genere primero la apertura de caja.");
                 return;
             }
             fechaTurno = caja.getFechaTurno() != null ? caja.getFechaTurno().toLocalDate() : LocalDate.now();
             fechaTurno2 = fechaTurno;
             cajaInicial = caja.getMontoInicial();
         } catch (RuntimeException ex) {
-            AperturaCajaBean.mensaje(FacesMessage.SEVERITY_ERROR, ex.getMessage());
+            CajaBean.mensaje(FacesMessage.SEVERITY_ERROR, ex.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ public class CierreCajaBean implements Serializable {
             cambioVentaDia(); cambioContado(); cambioCredito(); cambioEfectivo();
             cambioDeposito(); cambioGastos(); cambioCobros();
         } catch (RuntimeException ex) {
-            AperturaCajaBean.mensaje(FacesMessage.SEVERITY_ERROR, ex.getMessage());
+            CajaBean.mensaje(FacesMessage.SEVERITY_ERROR, ex.getMessage());
         }
     }
 
@@ -142,7 +142,7 @@ public class CierreCajaBean implements Serializable {
     public void cerrarCaja() {
         if (caja == null || cerrado || !calculado) return;
         try {
-            AperturaCierreCajaDTO a = new AperturaCierreCajaDTO();
+            CajaDTO a = new CajaDTO();
             a.setidAperturaCierre(caja.getidAperturaCierre());
             a.setFechaTurno(fechaConsulta());
             a.setFechaCaja(LocalDate.now().atStartOfDay());
@@ -156,7 +156,7 @@ public class CierreCajaBean implements Serializable {
             a.setTotalPagos(cobros);
             a.setTotalGastos(gastos);
             a.setTotalIngEfectivo(cajaParcial);
-            a.setHoraCierre(LocalDateTime.now().format(AperturaCajaBean.HORA));
+            a.setHoraCierre(LocalDateTime.now().format(CajaBean.HORA));
             a.setEstadoCaja("C");
             a.setEfectivoActual(efectivoActual);
             a.setTurno(turno());
@@ -164,15 +164,15 @@ public class CierreCajaBean implements Serializable {
             a.setUsuarioMod(codResp);
 
             if (!facade().UpdateAperturaCierreCajaF(a)) {
-                AperturaCajaBean.mensaje(FacesMessage.SEVERITY_ERROR, "No se pudo cerrar la caja.");
+                CajaBean.mensaje(FacesMessage.SEVERITY_ERROR, "No se pudo cerrar la caja.");
                 return;
             }
             cerrado = true;
             idCierreImpreso = caja.getidAperturaCierre();
-            AperturaCajaBean.mensaje(FacesMessage.SEVERITY_INFO, "Se cerró la Caja y Turno correctamente.");
+            CajaBean.mensaje(FacesMessage.SEVERITY_INFO, "Se cerró la Caja y Turno correctamente.");
             reporte();
         } catch (RuntimeException ex) {
-            AperturaCajaBean.mensaje(FacesMessage.SEVERITY_ERROR, ex.getMessage());
+            CajaBean.mensaje(FacesMessage.SEVERITY_ERROR, ex.getMessage());
         }
     }
 
@@ -180,14 +180,14 @@ public class CierreCajaBean implements Serializable {
     public void reporte() {
         if (idCierreImpreso < 0) return;
         try {
-            List<AperturaCierreCajaDTO> datos = facade().Reporte_TicketCierreCajaF(codEmp(), idCierreImpreso);
+            List<CajaDTO> datos = facade().Reporte_TicketCierreCajaF(codEmp(), idCierreImpreso);
             ticket = datos.isEmpty() ? null : datos.get(0);
             if (ticket == null) {
-                AperturaCajaBean.mensaje(FacesMessage.SEVERITY_WARN,
+                CajaBean.mensaje(FacesMessage.SEVERITY_WARN,
                         "La caja se cerró, pero no se pudo obtener el ticket de cierre.");
             }
         } catch (RuntimeException ex) {
-            AperturaCajaBean.mensaje(FacesMessage.SEVERITY_WARN,
+            CajaBean.mensaje(FacesMessage.SEVERITY_WARN,
                     "La caja se cerró, pero no se pudo mostrar el ticket de cierre. " + ex.getMessage());
         }
     }
@@ -215,7 +215,7 @@ public class CierreCajaBean implements Serializable {
     // Getters / setters
     // ---------------------------------------------------------
 
-    public AperturaCierreCajaDTO getCaja() { return caja; }
+    public CajaDTO getCaja() { return caja; }
     public boolean isHayCaja() { return caja != null; }
     public String getTurnoTexto() { return caja == null ? "--" : nombreTurno(caja.getTurno()); }
     public int getIdAperturaCierre() { return idApertura(); }
@@ -257,6 +257,6 @@ public class CierreCajaBean implements Serializable {
     public boolean isCalculado() { return calculado; }
     public boolean isCerrado() { return cerrado; }
     public boolean isPuedeReporte() { return idCierreImpreso >= 0; }
-    public AperturaCierreCajaDTO getTicket() { return ticket; }
+    public CajaDTO getTicket() { return ticket; }
     public String getTicketTurno() { return ticket == null ? "" : nombreTurno(ticket.getTurno()); }
 }

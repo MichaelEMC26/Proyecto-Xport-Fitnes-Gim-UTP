@@ -1,7 +1,7 @@
 package com.registro.controller;
 
-import com.registro.dto.FacturacionDTO;
-import com.registro.facade.FacturacionFACADE;
+import com.registro.dto.PuntoVentaDTO;
+import com.registro.facade.PuntoVentaFACADE;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Named;
 import java.text.Normalizer;
@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  * Formas de pago de la ventana Formas de Pago del Punto de Venta (PuntoVenta.xhtml).
- * Lee las formas de pago ACTIVAS con FacturacionFACADE.ListaFormasPagoActivoF (sp_ListaFormasPagoActivo)
+ * Lee las formas de pago ACTIVAS con PuntoVentaFACADE.ListaFormasPagoActivoF (sp_ListaFormasPagoActivo)
  * y a cada una le asigna el panel que usa la ventana (tipo), según su IDFormaPago o su nombre:
  * efectivo, virtual, tarjeta, deposito, nota, credito (IDFormaPago "06" o "Crédito/Deuda") u otro.
  * Si la consulta falla o no devuelve filas, se muestran las 5 formas de pago fijas de antes.
@@ -48,9 +48,9 @@ public class FormasPagoVentaBean {
 
     private void cargar() {
         activas = new ArrayList<>();
-        List<FacturacionDTO> filas;
+        List<PuntoVentaDTO> filas;
         try {
-            filas = new FacturacionFACADE().ListaFormasPagoActivoF();
+            filas = new PuntoVentaFACADE().ListaFormasPagoActivoF();
         } catch (RuntimeException ex) {
             System.err.println("ListaFormasPagoActivoF: " + ex.getMessage());
             filas = new ArrayList<>();
@@ -58,7 +58,7 @@ public class FormasPagoVentaBean {
         }
 
         Set<String> usadas = new HashSet<>();
-        for (FacturacionDTO f : filas) {
+        for (PuntoVentaDTO f : filas) {
             String nombre = f.getFormasPago() == null ? "" : f.getFormasPago().trim();
             String id = f.getIDFormaPago() == null ? "" : f.getIDFormaPago().trim();
             if (nombre.isEmpty() && id.isEmpty()) continue;
