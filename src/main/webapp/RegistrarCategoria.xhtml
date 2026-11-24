@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
-    xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
+    xmlns:pt="jakarta.faces.passthrough" xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="nuevaCategoria" />
     <ui:param name="menuSubmenu" value="catalogo" />
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{categoriaBean.prepararFormulario}" />
+        </f:metadata>
+    </ui:define>
     <ui:define name="title">Registrar Categoría | Xport Fitness Gym</ui:define>
     
     <ui:define name="styles">
@@ -23,14 +28,13 @@
     </ui:define>
 
     <ui:define name="content">
-<!-- CONTENIDO PRINCIPAL -->
     <main class="gastos-main catalogo-main">
 
         <!-- CABECERA -->
         <header class="gastos-header">
             <div>
                 <p class="gastos-eyebrow">CONTROL DE INVENTARIO</p>
-                <h1>Registrar Categoría</h1>
+                <h1 id="tituloPagina">#{categoriaBean.edicion ? 'Editar Categoria' : 'Registrar Categoría'}</h1>
                 <p class="gastos-subtitle">
                     Registra una nueva categoría para organizar los productos del gimnasio.
                 </p>
@@ -43,9 +47,8 @@
             </a>
         </header>
 
-        <!-- FORMULARIO DE REGISTRO -->
-        <section class="contenido-card registro-categoria-card"
-                 id="formulario">
+        <!-- FORMULARIO -->
+        <section class="contenido-card registro-categoria-card" id="formulario">
 
             <div class="card-heading">
                 <div>
@@ -53,57 +56,33 @@
                         <i class="fa-solid fa-tags"></i>
                         Datos de la categoría
                     </h2>
-                    <p>
-                        Los campos marcados con * son obligatorios.
-                    </p>
+                    <p>Los campos marcados con * son obligatorios.</p>
                 </div>
 
                 <i class="fa-solid fa-folder-plus heading-icon"></i>
             </div>
 
-            <div id="avisoCategoria" class="registro-categoria-aviso"
-                 role="status" aria-live="polite"></div>
+            <h:messages globalOnly="true" layout="list"
+                        styleClass="mensajes-productos"
+                        infoClass="msj-info" errorClass="msj-error" />
 
-            <form id="formRegistrarCategoria"
-                  class="registro-categoria-form">
+            <h:form id="formRegistrarCategoria" prependId="false" styleClass="registro-categoria-form">
 
                 <div class="registro-categoria-campos">
 
-                    <!-- NOMBRE -->
                     <div class="registro-categoria-campo">
                         <label for="nombreCategoria">
                             <i class="fa-solid fa-tag"></i>
                             Nombre de la categoría *
                         </label>
 
-                        <input type="text"
-                               id="nombreCategoria"
-                               name="nombre"
-                               maxlength="60"
-                               required="required"
-                               autocomplete="off"
-                               placeholder="Ej. Suplementos" />
+                        <h:inputText id="nombreCategoria" value="#{categoriaBean.categoria.nombre}"
+                                     maxlength="60"
+                                     pt:placeholder="Ej. Suplementos"
+                                     pt:autocomplete="off" />
 
                         <span class="registro-categoria-ayuda">
-                            Utiliza un nombre breve y fácil de identificar.
-                        </span>
-                    </div>
-
-                    <!-- DESCRIPCION -->
-                    <div class="registro-categoria-campo">
-                        <label for="descripcionCategoria">
-                            <i class="fa-solid fa-align-left"></i>
-                            Descripción
-                        </label>
-
-                        <textarea id="descripcionCategoria"
-                                  name="descripcion"
-                                  maxlength="180"
-                                  rows="4"
-                                  placeholder="Describe qué tipos de productos pertenecen a esta categoría."></textarea>
-
-                        <span class="registro-categoria-ayuda">
-                            Campo opcional. Máximo 180 caracteres.
+                            Máximo 60 caracteres. No se admiten nombres repetidos.
                         </span>
                     </div>
 
@@ -112,18 +91,17 @@
                 <!-- BOTONES -->
                 <div class="registro-categoria-botones">
 
-                    <button type="submit"
-                            class="btn-registrar-categoria">
+                    <h:commandLink id="btnGuardarCategoria" action="#{categoriaBean.grabar}"
+                                   styleClass="btn-registrar-categoria">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        Registrar categoría
-                    </button>
+                        <span>#{categoriaBean.edicion ? 'Guardar cambios' : 'Registrar categoria'}</span>
+                    </h:commandLink>
 
-                    <button type="reset"
-                            class="btn-limpiar-categoria"
-                            id="btnLimpiarCategoria">
+                    <h:commandLink id="btnLimpiarCategoria" action="#{categoriaBean.nuevo}" immediate="true"
+                                   styleClass="btn-limpiar-categoria">
                         <i class="fa-solid fa-eraser"></i>
                         Limpiar
-                    </button>
+                    </h:commandLink>
 
                     <a class="btn-volver-categorias"
                        href="#{request.contextPath}/Categorias.xhtml">
@@ -133,99 +111,15 @@
 
                 </div>
 
-            </form>
-
-        </section>
-
-        <!-- INFORMACION COMPLEMENTARIA -->
-        <section class="registro-categoria-pasos">
-
-            <article class="registro-categoria-paso">
-                <i class="fa-solid fa-tag"></i>
-                <div>
-                    <strong>Nombre identificable</strong>
-                    <p>Usa nombres como Suplementos, Accesorios, Ropa Deportiva o Bebidas.</p>
-                </div>
-            </article>
-
-            <article class="registro-categoria-paso">
-                <i class="fa-solid fa-align-left"></i>
-                <div>
-                    <strong>Descripción clara</strong>
-                    <p>Explica brevemente qué productos estarán agrupados en la categoría.</p>
-                </div>
-            </article>
-
-            <article class="registro-categoria-paso">
-                <i class="fa-solid fa-boxes-stacked"></i>
-                <div>
-                    <strong>Organización del catálogo</strong>
-                    <p>Las categorías permiten ordenar los productos por tipo.</p>
-                </div>
-            </article>
+            </h:form>
 
         </section>
 
         <p class="nota-demo" style="margin-top:18px;">
             <i class="fa-solid fa-circle-info"></i>
-            Interfaz visual: el registro todavía debe conectarse al controlador y a SQL Server.
+            Los datos se guardan en SQL Server (sp_Mante_Categorias).
         </p>
 
     </main>
-    </ui:define>
-    <ui:define name="scripts">
-<script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function () {
-    "use strict";
-
-    const formulario = document.getElementById("formRegistrarCategoria");
-    const nombre = document.getElementById("nombreCategoria");
-    const descripcion = document.getElementById("descripcionCategoria");
-    const aviso = document.getElementById("avisoCategoria");
-    const botonLimpiar = document.getElementById("btnLimpiarCategoria");
-
-    // Verificar que existan los elementos del formulario.
-    if (!formulario || !nombre || !aviso || !botonLimpiar) {
-        console.error("No se encontraron todos los elementos del formulario de categorías.");
-        return;
-    }
-
-    // Por ahora, la pantalla no está conectada a SQL Server.
-    formulario.addEventListener("submit", function (evento) {
-        evento.preventDefault();
-
-        const nombreCategoria = nombre.value.trim();
-
-        // Validar que el nombre no esté vacío.
-        if (nombreCategoria === "") {
-            nombre.setCustomValidity("Ingresa el nombre de la categoría.");
-            nombre.reportValidity();
-            nombre.focus();
-            return;
-        }
-
-        nombre.setCustomValidity("");
-
-        // Mostrar el aviso correspondiente.
-        aviso.textContent =
-            "El formulario está listo, pero el registro aún no se ha guardado. " +
-            "Falta conectar esta pantalla al controlador y a SQL Server.";
-
-        aviso.classList.add("visible");
-    });
-
-    // Quitar el mensaje de validación mientras se escribe.
-    nombre.addEventListener("input", function () {
-        nombre.setCustomValidity("");
-    });
-
-    // Limpiar el aviso y el mensaje de validación.
-    botonLimpiar.addEventListener("click", function () {
-        aviso.textContent = "";
-        aviso.classList.remove("visible");
-        nombre.setCustomValidity("");
-    });
-});
-</script>
     </ui:define>
 </ui:composition>

@@ -88,6 +88,8 @@ public class ProductosDAO {
               categoria.setCategoria_ID(rs.getInt("Categoria_ID"));
               categoria.setNombre(rs.getString("Nombre"));
               categoria.setEstado(rs.getString("Estado"));
+               // Mante_Categorias reenvia rutaimagen al editar: se lee si el SP la devuelve (si no, queda null).
+               try { categoria.setrutaimagen(rs.getString("rutaimagen")); } catch(SQLException ignorar) { }
               
               listaCat.add(categoria);
           }

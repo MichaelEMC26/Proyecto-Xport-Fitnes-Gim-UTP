@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
-    xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
+    xmlns:pt="jakarta.faces.passthrough" xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="listarCategorias" />
     <ui:param name="menuSubmenu" value="catalogo" />
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{categoriaBean.prepararListado}" />
+        </f:metadata>
+    </ui:define>
     <ui:define name="title">Gestión de Categorías | Xport Fitness Gym</ui:define>
     <ui:define name="styles">
 <link rel="stylesheet"
@@ -145,28 +150,26 @@
     </style>
     </ui:define>
     <ui:define name="content">
-<!-- CONTENIDO PRINCIPAL -->
     <main class="gastos-main catalogo-main">
 
         <header class="gastos-header">
             <div>
                 <p class="gastos-eyebrow">CONTROL DE INVENTARIO</p>
-                <h1 id="tituloPagina">
-                    
-                </h1>
+                <h1 id="tituloPagina">Gestión de Categorías</h1>
                 <p class="gastos-subtitle">
                     Organiza y administra las categorías de productos del gimnasio.
                 </p>
             </div>
 
             <a class="periodo productos-nuevo"
-                href="#{request.contextPath}/RegistrarCategoria.xhtml">
-                 <i class="fa-solid fa-plus"></i>
-                 <span>Nueva categoría</span>
-             </a>
+               href="#{request.contextPath}/RegistrarCategoria.xhtml">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nueva categoría</span>
+            </a>
         </header>
 
-        
+        <h:messages globalOnly="true" layout="list" styleClass="mensajes-productos"
+                    infoClass="msj-info" errorClass="msj-error" />
 
         <!-- RESUMEN -->
         <section class="resumen-grid catalogo-resumen">
@@ -176,7 +179,7 @@
                     <i class="fa-solid fa-tags"></i>
                 </div>
                 <p class="resumen-label">Categorías registradas</p>
-                <p class="resumen-value" id="totalCategorias">4</p>
+                <p class="resumen-value" id="totalCategorias">#{categoriaBean.total}</p>
                 <span class="resumen-foot">
                     <i class="fa-solid fa-layer-group"></i>
                     En el catálogo
@@ -188,7 +191,7 @@
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
                 <p class="resumen-label">Categorías activas</p>
-                <p class="resumen-value" id="totalActivas">4</p>
+                <p class="resumen-value" id="totalActivas">#{categoriaBean.totalActivas}</p>
                 <span class="resumen-foot">
                     <i class="fa-solid fa-shield-halved"></i>
                     Disponibles en el catálogo
@@ -203,7 +206,7 @@
                 <p class="resumen-value catalogo-value-label">Rápida</p>
                 <span class="resumen-foot">
                     <i class="fa-solid fa-filter"></i>
-                    Nombre y descripción
+                    Por nombre
                 </span>
             </article>
 
@@ -214,557 +217,94 @@
 
             <div class="card-heading movimientos-heading">
                 <div>
-                    <h2>Lista de Categorías</h2>
+                    <h2>Lista de categorías</h2>
                     <p>Busca y administra las categorías del catálogo</p>
                 </div>
 
                 <span class="movimientos-count" id="cantidadResultados">
-                    4 resultados
+                    #{categoriaBean.totalResultados} #{categoriaBean.totalResultados eq 1 ? 'resultado' : 'resultados'}
                 </span>
             </div>
 
-            <div class="productos-toolbar">
+            <h:form id="frmListaCategoria" prependId="false">
 
-                <label class="busqueda-productos">
-                    <i class="fa-solid fa-magnifying-glass"></i>
+                <div class="productos-toolbar">
+                    <label class="busqueda-productos">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <h:inputText id="buscarCategoria" value="#{categoriaBean.textoBusqueda}"
+                                     pt:placeholder="Buscar por nombre..."
+                                     pt:aria-label="Buscar categorías"
+                                     pt:autocomplete="off" />
+                    </label>
 
-                    <input type="search"
-                           id="buscarCategoria"
-                           placeholder="Buscar por nombre o descripción..."
-                           aria-label="Buscar categorías" />
-                </label>
+                    <h:commandLink id="btnBuscarCategoria" action="#{categoriaBean.buscar}" styleClass="btn-toolbar btn-buscar">
+                        Buscar
+                    </h:commandLink>
+                    <h:commandLink id="btnListarCategoria" action="#{categoriaBean.listar}" styleClass="btn-toolbar btn-listar">
+                        Listar todo
+                    </h:commandLink>
+                </div>
 
-                <button type="button"
-                        class="catalogo-buscar"
-                        id="btnBuscarCategoria">
-                    Buscar
-                </button>
+                <div class="tabla-scroll" data-paginar="categorías">
 
-            </div>
+                    <table class="tabla-movimientos tabla-productos catalogo-tabla">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Estado</th>
+                                <th class="acciones-col">Acciones</th>
+                            </tr>
+                        </thead>
 
-            <div class="tabla-scroll" data-paginar="categorías">
+                        <tbody id="filasCategorias">
+                            <ui:repeat value="#{categoriaBean.lista}" var="c">
+                                <tr>
+                                    <td>#{categoriaBean.codigo(c)}</td>
 
-                <table class="tabla-movimientos tabla-productos catalogo-tabla">
+                                    <td>
+                                        <span class="mov-icon prod-icon catalogo-item-icon">
+                                            <i class="fa-solid fa-tags"></i>
+                                        </span>
+                                        <span class="mov-info">
+                                            <strong>#{c.nombre}</strong>
+                                        </span>
+                                    </td>
 
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Estado</th>
-                            <th class="acciones-col">Acciones</th>
-                        </tr>
-                    </thead>
+                                    <td>
+                                        <span class="categoria-estado marca-estado">
+                                            <span class="punto"></span> #{c.estado}
+                                        </span>
+                                    </td>
 
-                    <tbody id="filasCategorias">
+                                    <td class="acciones">
+                                        <h:commandLink action="#{categoriaBean.editar(c)}" styleClass="accion-btn editar-btn"
+                                                       title="Editar categoria">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </h:commandLink>
 
-                        <tr data-id="1"
-                            data-nombre="Suplementos"
-                            data-descripcion="Proteínas, creatina y complementos deportivos">
+                                        <h:commandLink action="#{categoriaBean.eliminar(c)}" styleClass="accion-btn eliminar-btn"
+                                                       title="Eliminar categoria"
+                                                       onclick="return confirm('¿Eliminar categoria?');">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </h:commandLink>
+                                    </td>
+                                </tr>
+                            </ui:repeat>
+                        </tbody>
+                    </table>
 
-                            <td>CAT-001</td>
+                    <h:panelGroup layout="block" styleClass="categoria-vacio marca-vacio"
+                                  rendered="#{categoriaBean.totalResultados eq 0}">
+                        No se encontraron categorías.
+                    </h:panelGroup>
 
-                            <td>
-                                <span class="mov-icon prod-icon catalogo-item-icon">
-                                    <i class="fa-solid fa-pills"></i>
-                                </span>
-                                <span class="mov-info">
-                                    <strong>Suplementos</strong>
-                                </span>
-                            </td>
+                </div>
 
-                            <td class="catalogo-descripcion">
-                                Proteínas, creatina y complementos deportivos
-                            </td>
-
-                            <td>
-                                <span class="categoria-estado">
-                                    <span class="punto"></span> Activa
-                                </span>
-                            </td>
-
-                            <td class="acciones">
-                                <button type="button"
-                                        class="accion-btn editar-btn btn-editar-categoria"
-                                        title="Editar categoría">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="accion-btn eliminar-btn btn-eliminar-categoria"
-                                        title="Eliminar categoría">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                        <tr data-id="2"
-                            data-nombre="Accesorios"
-                            data-descripcion="Accesorios y artículos para entrenamiento">
-
-                            <td>CAT-002</td>
-
-                            <td>
-                                <span class="mov-icon prod-icon catalogo-item-icon">
-                                    <i class="fa-solid fa-dumbbell"></i>
-                                </span>
-                                <span class="mov-info">
-                                    <strong>Accesorios</strong>
-                                </span>
-                            </td>
-
-                            <td class="catalogo-descripcion">
-                                Accesorios y artículos para entrenamiento
-                            </td>
-
-                            <td>
-                                <span class="categoria-estado">
-                                    <span class="punto"></span> Activa
-                                </span>
-                            </td>
-
-                            <td class="acciones">
-                                <button type="button"
-                                        class="accion-btn editar-btn btn-editar-categoria"
-                                        title="Editar categoría">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="accion-btn eliminar-btn btn-eliminar-categoria"
-                                        title="Eliminar categoría">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                        <tr data-id="3"
-                            data-nombre="Ropa Deportiva"
-                            data-descripcion="Poleras y prendas deportivas">
-
-                            <td>CAT-003</td>
-
-                            <td>
-                                <span class="mov-icon prod-icon catalogo-item-icon">
-                                    <i class="fa-solid fa-shirt"></i>
-                                </span>
-                                <span class="mov-info">
-                                    <strong>Ropa Deportiva</strong>
-                                </span>
-                            </td>
-
-                            <td class="catalogo-descripcion">
-                                Poleras y prendas deportivas
-                            </td>
-
-                            <td>
-                                <span class="categoria-estado">
-                                    <span class="punto"></span> Activa
-                                </span>
-                            </td>
-
-                            <td class="acciones">
-                                <button type="button"
-                                        class="accion-btn editar-btn btn-editar-categoria"
-                                        title="Editar categoría">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="accion-btn eliminar-btn btn-eliminar-categoria"
-                                        title="Eliminar categoría">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                        <tr data-id="4"
-                            data-nombre="Bebidas"
-                            data-descripcion="Agua y bebidas deportivas">
-
-                            <td>CAT-004</td>
-
-                            <td>
-                                <span class="mov-icon prod-icon catalogo-item-icon">
-                                    <i class="fa-solid fa-bottle-water"></i>
-                                </span>
-                                <span class="mov-info">
-                                    <strong>Bebidas</strong>
-                                </span>
-                            </td>
-
-                            <td class="catalogo-descripcion">
-                                Agua y bebidas deportivas
-                            </td>
-
-                            <td>
-                                <span class="categoria-estado">
-                                    <span class="punto"></span> Activa
-                                </span>
-                            </td>
-
-                            <td class="acciones">
-                                <button type="button"
-                                        class="accion-btn editar-btn btn-editar-categoria"
-                                        title="Editar categoría">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="accion-btn eliminar-btn btn-eliminar-categoria"
-                                        title="Eliminar categoría">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
-                <p id="categoriasSinResultados"
-                   class="categoria-vacio"
-                   hidden="hidden">
-                    No se encontraron categorías con esa búsqueda.
-                </p>
-
-            </div>
-
-            <p class="nota-demo">
-                <i class="fa-solid fa-circle-info"></i>
-                Categorías de muestra. Los cambios aún no se guardan en SQL Server.
-            </p>
+            </h:form>
 
         </section>
 
     </main>
-    </ui:define>
-    <ui:define name="scripts">
-<script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function () {
-
-    const formulario = document.getElementById("formCategoria");
-    const nombre = document.getElementById("nombreCategoria");
-    const descripcion = document.getElementById("descripcionCategoria");
-    const id = document.getElementById("categoriaId");
-    const filas = document.getElementById("filasCategorias");
-    const busqueda = document.getElementById("buscarCategoria");
-    const mensaje = document.getElementById("mensajeCategoria");
-    const total = document.getElementById("totalCategorias");
-    const resultados = document.getElementById("cantidadResultados");
-    const sinResultados = document.getElementById("categoriasSinResultados");
-    const tituloFormulario = document.getElementById("tituloFormulario");
-    const textoGuardar = document.getElementById("textoGuardar");
-
-    let siguienteId = 5;
-
-    function mostrarMensaje(texto) {
-        mensaje.textContent = texto;
-        mensaje.hidden = false;
-    }
-
-    function limpiarFormulario() {
-        formulario.reset();
-        id.value = "";
-        tituloFormulario.textContent = "Registrar Categoría";
-        textoGuardar.textContent = "Registrar categoría";
-    }
-
-    function actualizarTotales() {
-        const todas = Array.from(filas.querySelectorAll("tr"));
-
-        const visibles = todas.filter(function (fila) {
-            return fila.style.display !== "none";
-        });
-
-        total.textContent = todas.length;
-
-        resultados.textContent =
-            visibles.length
-            + (visibles.length === 1 ? " resultado" : " resultados");
-
-        sinResultados.hidden = visibles.length !== 0;
-    }
-
-    function filtrarCategorias() {
-        const texto = busqueda.value.trim().toLocaleLowerCase("es");
-
-        Array.from(filas.querySelectorAll("tr")).forEach(function (fila) {
-
-            const nombreFila =
-                (fila.dataset.nombre || "").toLocaleLowerCase("es");
-
-            const descripcionFila =
-                (fila.dataset.descripcion || "").toLocaleLowerCase("es");
-
-            if (nombreFila.includes(texto)) {
-                fila.style.display = "";
-            } else {
-                if (descripcionFila.includes(texto)) {
-                    fila.style.display = "";
-                } else {
-                    fila.style.display = "none";
-                }
-            }
-        });
-
-        actualizarTotales();
-    }
-
-    function crearCelda(texto, clase) {
-        const td = document.createElement("td");
-
-        if (clase) {
-            td.className = clase;
-        }
-
-        td.textContent = texto || "—";
-
-        return td;
-    }
-
-    function crearFila(categoriaId, categoriaNombre, categoriaDescripcion) {
-        const fila = document.createElement("tr");
-
-        fila.dataset.id = categoriaId;
-        fila.dataset.nombre = categoriaNombre;
-        fila.dataset.descripcion = categoriaDescripcion;
-
-        fila.appendChild(
-            crearCelda("CAT-" + String(categoriaId).padStart(3, "0"))
-        );
-
-        // Celda del nombre de categoría.
-        const celdaNombre = document.createElement("td");
-
-        const icono = document.createElement("span");
-        icono.className = "mov-icon prod-icon catalogo-item-icon";
-
-        const iconoTags = document.createElement("i");
-        iconoTags.className = "fa-solid fa-tags";
-
-        icono.appendChild(iconoTags);
-
-        const info = document.createElement("span");
-        info.className = "mov-info";
-
-        const strong = document.createElement("strong");
-        strong.textContent = categoriaNombre;
-
-        info.appendChild(strong);
-        celdaNombre.appendChild(icono);
-        celdaNombre.appendChild(info);
-        fila.appendChild(celdaNombre);
-
-        fila.appendChild(
-            crearCelda(
-                categoriaDescripcion || "—",
-                "catalogo-descripcion"
-            )
-        );
-
-        // Celda del estado.
-        const celdaEstado = document.createElement("td");
-
-        const estado = document.createElement("span");
-        estado.className = "categoria-estado";
-
-        const punto = document.createElement("span");
-        punto.className = "punto";
-
-        estado.appendChild(punto);
-        estado.appendChild(document.createTextNode(" Activa"));
-
-        celdaEstado.appendChild(estado);
-        fila.appendChild(celdaEstado);
-
-        // Celda de acciones.
-        const celdaAcciones = document.createElement("td");
-        celdaAcciones.className = "acciones";
-
-        const btnEditar = document.createElement("button");
-        btnEditar.type = "button";
-        btnEditar.className =
-            "accion-btn editar-btn btn-editar-categoria";
-        btnEditar.title = "Editar categoría";
-        btnEditar.setAttribute("aria-label", "Editar categoría");
-
-        const iconoEditar = document.createElement("i");
-        iconoEditar.className = "fa-solid fa-pen";
-        btnEditar.appendChild(iconoEditar);
-
-        const btnEliminar = document.createElement("button");
-        btnEliminar.type = "button";
-        btnEliminar.className =
-            "accion-btn eliminar-btn btn-eliminar-categoria";
-        btnEliminar.title = "Eliminar categoría";
-        btnEliminar.setAttribute("aria-label", "Eliminar categoría");
-
-        const iconoEliminar = document.createElement("i");
-        iconoEliminar.className = "fa-solid fa-trash";
-        btnEliminar.appendChild(iconoEliminar);
-
-        celdaAcciones.appendChild(btnEditar);
-        celdaAcciones.appendChild(btnEliminar);
-
-        fila.appendChild(celdaAcciones);
-
-        return fila;
-    }
-
-    formulario.addEventListener("submit", function (evento) {
-        evento.preventDefault();
-
-        const nombreCategoria = nombre.value.trim();
-        const descripcionCategoria = descripcion.value.trim();
-
-        if (!nombreCategoria) {
-            nombre.focus();
-            return;
-        }
-
-        const filasExistentes =
-            Array.from(filas.querySelectorAll("tr"));
-
-        const duplicada = filasExistentes.some(function (fila) {
-
-            const mismoNombre =
-                fila.dataset.nombre.toLocaleLowerCase("es")
-                === nombreCategoria.toLocaleLowerCase("es");
-
-            const otraCategoria =
-                fila.dataset.id !== id.value;
-
-            if (mismoNombre) {
-                if (otraCategoria) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
-
-        if (duplicada) {
-            mostrarMensaje("Ya existe una categoría con ese nombre.");
-            return;
-        }
-
-        if (id.value) {
-
-            const filaExistente = filas.querySelector(
-                'tr[data-id="' + id.value + '"]'
-            );
-
-            if (filaExistente) {
-                const reemplazo = crearFila(
-                    id.value,
-                    nombreCategoria,
-                    descripcionCategoria
-                );
-
-                filaExistente.replaceWith(reemplazo);
-
-                mostrarMensaje(
-                    "Categoría actualizada en esta vista de demostración."
-                );
-            }
-
-        } else {
-
-            const nuevaFila = crearFila(
-                siguienteId++,
-                nombreCategoria,
-                descripcionCategoria
-            );
-
-            filas.appendChild(nuevaFila);
-
-            mostrarMensaje(
-                "Categoría agregada temporalmente a la lista."
-            );
-        }
-
-        limpiarFormulario();
-        filtrarCategorias();
-    });
-
-    document.getElementById("btnLimpiarCategoria")
-        .addEventListener("click", function () {
-            limpiarFormulario();
-            mensaje.hidden = true;
-        });
-
-    document.getElementById("btnBuscarCategoria")
-        .addEventListener("click", filtrarCategorias);
-
-    busqueda.addEventListener("input", filtrarCategorias);
-
-    filas.addEventListener("click", function (evento) {
-
-        const botonEditar =
-            evento.target.closest(".btn-editar-categoria");
-
-        const botonEliminar =
-            evento.target.closest(".btn-eliminar-categoria");
-
-        if (botonEditar) {
-
-            const fila = botonEditar.closest("tr");
-
-            id.value = fila.dataset.id;
-            nombre.value = fila.dataset.nombre;
-            descripcion.value = fila.dataset.descripcion;
-
-            tituloFormulario.textContent = "Editar Categoría";
-            textoGuardar.textContent = "Guardar cambios";
-
-            document.getElementById("formulario").scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-
-            nombre.focus();
-        }
-
-        if (botonEliminar) {
-
-            const fila = botonEliminar.closest("tr");
-
-            if (confirm(
-                "¿Eliminar la categoría "
-                + fila.dataset.nombre
-                + " de esta vista de demostración?"
-            )) {
-                fila.remove();
-
-                limpiarFormulario();
-                filtrarCategorias();
-
-                mostrarMensaje(
-                    "Categoría eliminada de la vista de demostración."
-                );
-            }
-        }
-    });
-
-    actualizarTotales();
-
-    // Si se entra desde Registrar Categorías, enfocar el formulario.
-    const parametros = new URLSearchParams(window.location.search);
-    const modo = parametros.get("modo");
-
-    if (modo === "registrar") {
-        document.getElementById("formulario").scrollIntoView({
-            behavior: "auto",
-            block: "start"
-        });
-
-        nombre.focus({
-            preventScroll: true
-        });
-    }
-
-});
-</script>
     </ui:define>
 </ui:composition>

@@ -54,3 +54,46 @@
         flex: 1 1 auto;
     }
 }
+
+/* Barra de búsqueda: botones Buscar / Listar todo (mismo diseño que Productos.xhtml) */
+
+.btn-toolbar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn-toolbar.btn-buscar { background: #2864F0; border: 1px solid #2864F0; color: #FFFFFF; }
+.btn-toolbar.btn-buscar:hover { background: #174CC5; }
+.btn-toolbar.btn-listar { background: #FFFFFF; border: 1px solid #2864F0; color: #2864F0; }
+.btn-toolbar.btn-listar:hover { background: #EAF0FF; }
+
+/* Mensajes JSF (h:messages): éxito y error */
+
+.mensajes-productos {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+    font-size: 13px;
+}
+
+.mensajes-productos li {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+
+.mensajes-productos .msj-info { background: #ECFDF3; color: #067647; border: 1px solid #A6E3BD; }
+.mensajes-productos .msj-error { background: #FFF1F1; color: #B42318; border: 1px solid #F3B4B4; }
+
+/* Mensajes sin contenido: no ocupan espacio */
+.mensajes-productos:empty { display: none; }
