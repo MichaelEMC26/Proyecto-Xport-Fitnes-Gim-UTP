@@ -119,7 +119,7 @@ public class AlmacenDAO {
     }
 
     /** sp_ListaMontosExistenciasProductos: totales del reporte de existencias (una sola fila). */
-    public AlmacenDTO ListaAcuentaPagoXFechasXTurno(String CodEmp, String Filtro) {
+    public AlmacenDTO ListaMontosExistenciasProductos(String CodEmp, String Filtro) {
         String sql = "{call sp_ListaMontosExistenciasProductos(?,?)}";
 
         try (Connection cn = ConexionBD.obtenerConexion();

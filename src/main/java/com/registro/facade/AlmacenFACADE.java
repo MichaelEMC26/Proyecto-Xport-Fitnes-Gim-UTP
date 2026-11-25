@@ -28,9 +28,9 @@ public class AlmacenFACADE {
         return dao.ReporteExistenciasProductos(CodEmp, Filtro);
     }
 
-    public AlmacenDTO ListaAcuentaPagoXFechasXTurnoF(String CodEmp, String Filtro)
+    public AlmacenDTO ListaMontosExistenciasProductosF(String CodEmp, String Filtro)
     {
-        return dao.ListaAcuentaPagoXFechasXTurno(CodEmp, Filtro);
+        return dao.ListaMontosExistenciasProductos(CodEmp, Filtro);
     }
 
     public List<AlmacenDTO> ListaInventarioXRangoFechasF(String CodEmp, LocalDateTime FechaIni, LocalDateTime FechaFin)
