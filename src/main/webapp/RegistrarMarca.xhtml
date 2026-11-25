@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
+    xmlns:pt="jakarta.faces.passthrough"
     xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="nuevaMarca" />
     <ui:param name="menuSubmenu" value="catalogo" />
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{marcaBean.prepararFormulario}" />
+        </f:metadata>
+    </ui:define>
     <ui:define name="title">Registrar Marca | Xport Fitness Gym</ui:define>
     <ui:define name="styles">
 
@@ -295,23 +301,59 @@
                     min-width: 0;
                 }
             }
+        
+        /* Mensajes de grabar / actualizar / eliminar (h:messages) */
+        .mensajes-catalogo { list-style: none; margin: 0 0 14px; padding: 0; font-size: 13px; }
+        .mensajes-catalogo li { padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; }
+        .mensajes-catalogo .msj-info { background: #ECFDF3; color: #067647; border: 1px solid #A6E3BD; }
+        .mensajes-catalogo .msj-error { background: #FFF1F1; color: #B42318; border: 1px solid #F3B4B4; }
+        input[type="submit"].catalogo-buscar { cursor: pointer; }
+    
+            /* Código angosto (solo número), Estado a su lado, Nombre a todo el ancho */
+            .registro-marca-card .registro-marca-campos {
+                grid-template-columns: 130px minmax(0, 220px) !important;
+            }
+            .registro-marca-card .campo-codigo input {
+                background: #F4F7FB !important;
+                color: #41516B !important;
+                text-align: center;
+                font-weight: 700 !important;
+                cursor: default;
+            }
+            .registro-marca-card .registro-marca-campo select {
+                display: block;
+                width: 100%;
+                min-height: 44px;
+                padding: 11px 13px;
+                border: 1px solid #D6E1F2;
+                border-radius: 8px;
+                background: #FFFFFF;
+                color: #102653;
+                font-size: 13px;
+                box-sizing: border-box;
+            }
+            .registro-marca-card .registro-marca-campo select:disabled { background: #F4F7FB; color: #41516B; }
+            @media (max-width: 520px) {
+                .registro-marca-card .registro-marca-campos { grid-template-columns: minmax(0, 1fr) !important; }
+            }
         </style>
 
     </ui:define>
     <ui:define name="content">
-<!-- CONTENIDO PRINCIPAL -->
+<!-- CONTENIDO PRINCIPAL (marcaBean: grabar = sp_Mante_marcas, nuevo código = sp_max_marc) -->
     <main class="gastos-main catalogo-main">
 
-        <!-- CABECERA -->
+        <!-- CABECERA: cambia según se registre o se edite (?modo=editar desde Marcas.xhtml) -->
         <header class="gastos-header">
             <div>
                 <p class="gastos-eyebrow">CONTROL DE INVENTARIO</p>
 
-                <h1 id="tituloPagina">Registrar Marca</h1>
+                <h1 id="tituloPagina">#{marcaBean.edicion ? 'Editar Marca' : 'Registrar Marca'}</h1>
 
                 <p class="gastos-subtitle">
-                    Registra una marca para identificar los productos
-                    del catálogo del gimnasio.
+                    #{marcaBean.edicion
+                      ? 'Modifica los datos de la marca seleccionada.'
+                      : 'Registra una marca para identificar los productos del catálogo del gimnasio.'}
                 </p>
             </div>
 
@@ -341,70 +383,64 @@
                 <i class="fa-solid fa-copyright heading-icon"></i>
             </div>
 
-            <div id="avisoMarca"
-                 class="registro-marca-aviso"
-                 role="status"
-                 aria-live="polite"></div>
+            <!-- Validaciones y errores de grabación del bean -->
+            <h:messages globalOnly="true" layout="list" styleClass="mensajes-catalogo"
+                        infoClass="msj-info" errorClass="msj-error" />
 
-            <form id="formRegistrarMarca"
-                  class="registro-marca-form">
+            <h:form id="formRegistrarMarca" prependId="false"
+                    styleClass="registro-marca-form">
 
                 <div class="registro-marca-campos">
 
-                    <!-- NOMBRE -->
+                    <!-- CÓDIGO (autogenerado con sp_max_marc; no editable) -->
+                    <div class="registro-marca-campo campo-codigo">
+                        <label for="codigoMarca">
+                            <i class="fa-solid fa-hashtag"></i>
+                            Código
+                        </label>
+
+                        <input type="text" id="codigoMarca" readonly="readonly"
+                               value="#{marcaBean.codigo(marcaBean.marca)}" />
+
+                    </div>
+
+                    <!-- ESTADO: en edición se puede activar / inactivar (sp_Mante_marcas actualiza EstadoMarca) -->
                     <div class="registro-marca-campo">
+                        <label for="estadoMarca">
+                            <i class="fa-solid fa-circle-check"></i>
+                            Estado
+                        </label>
+
+                        <h:selectOneMenu id="estadoMarca"
+                                         value="#{marcaBean.marca.estadoMarca}"
+                                         disabled="#{not marcaBean.edicion}">
+                            <f:selectItem itemLabel="Activo" itemValue="Activo" />
+                            <f:selectItem itemLabel="Inactivo" itemValue="Inactivo" />
+                        </h:selectOneMenu>
+
+                        <span class="registro-marca-ayuda">
+                            Las marcas nuevas se registran como Activo. Una marca Inactiva no aparece en el listado.
+                        </span>
+                    </div>
+
+                    <!-- NOMBRE -->
+                    <div class="registro-marca-campo registro-marca-campo-completo">
                         <label for="nombreMarca">
                             <i class="fa-solid fa-tag"></i>
                             Nombre de la marca *
                         </label>
 
-                        <input type="text"
-                               id="nombreMarca"
-                               name="nombre"
-                               maxlength="100"
-                               required="required"
-                               autocomplete="off"
-                               placeholder="Ej. Nike" />
-                        
-                        <span class="registro-marca-ayuda">
-                            Introduce el nombre con el que se identifica la marca.
-                        </span>
-                    </div>
-
-                    <!-- PAÍS -->
-                    <div class="registro-marca-campo">
-                        <label for="paisMarca">
-                            <i class="fa-solid fa-globe"></i>
-                            País de origen
-                        </label>
-
-                        <input type="text"
-                               id="paisMarca"
-                               name="pais"
-                               maxlength="100"
-                               autocomplete="off"
-                               placeholder="Ej. Perú" />
+                        <h:inputText id="nombreMarca"
+                                     value="#{marcaBean.marca.nombre}"
+                                     maxlength="50"
+                                     pt:required="required"
+                                     pt:autocomplete="off"
+                                     pt:autofocus="autofocus"
+                                     pt:placeholder="Ej. Nike" />
 
                         <span class="registro-marca-ayuda">
-                            Campo opcional. País de origen de la marca.
-                        </span>
-                    </div>
-
-                    <!-- DESCRIPCIÓN -->
-                    <div class="registro-marca-campo registro-marca-campo-completo">
-                        <label for="descripcionMarca">
-                            <i class="fa-solid fa-align-left"></i>
-                            Descripción
-                        </label>
-
-                        <textarea id="descripcionMarca"
-                                  name="descripcion"
-                                  maxlength="500"
-                                  rows="4"
-                                  placeholder="Describe brevemente la marca y sus productos."></textarea>
-
-                        <span class="registro-marca-ayuda">
-                            Campo opcional. Máximo 500 caracteres.
+                            Introduce el nombre con el que se identifica la marca. Máximo 50 caracteres.
+                            #{marcaBean.edicion ? '' : 'El código se asigna automáticamente al grabar.'}
                         </span>
                     </div>
 
@@ -413,19 +449,21 @@
                 <!-- BOTONES -->
                 <div class="registro-marca-botones">
 
-                    <button type="submit"
-                            class="btn-registrar-marca"
-                            id="btnGuardarMarca">
+                    <h:commandLink id="btnGuardarMarca"
+                                   action="#{marcaBean.grabar}"
+                                   styleClass="btn-registrar-marca">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        <span id="textoGuardar">Registrar marca</span>
-                    </button>
+                        <span id="textoGuardar">#{marcaBean.edicion ? 'Guardar cambios' : 'Registrar marca'}</span>
+                    </h:commandLink>
 
-                    <button type="button"
-                            class="btn-limpiar-marca"
-                            id="btnLimpiarMarca">
+                    <!-- Nuevo: sale del modo edición, limpia y autogenera un código -->
+                    <h:commandLink id="btnLimpiarMarca"
+                                   action="#{marcaBean.nuevo}"
+                                   immediate="true"
+                                   styleClass="btn-limpiar-marca">
                         <i class="fa-solid fa-eraser"></i>
-                        Limpiar
-                    </button>
+                        #{marcaBean.edicion ? 'Nueva marca' : 'Limpiar'}
+                    </h:commandLink>
 
                     <a class="btn-volver-marcas"
                        href="#{request.contextPath}/Marcas.xhtml">
@@ -435,7 +473,7 @@
 
                 </div>
 
-            </form>
+            </h:form>
 
         </section>
 
@@ -456,14 +494,14 @@
             </article>
 
             <article class="registro-marca-paso">
-                <i class="fa-solid fa-globe"></i>
+                <i class="fa-solid fa-ban"></i>
 
                 <div>
-                    <strong>País de origen</strong>
+                    <strong>Sin duplicados</strong>
 
                     <p>
-                        Puedes indicar el país de procedencia
-                        para complementar la información.
+                        No se permite grabar dos marcas
+                        con el mismo nombre.
                     </p>
                 </div>
             </article>
@@ -483,276 +521,6 @@
 
         </section>
 
-        <p class="registro-marca-nota">
-            <i class="fa-solid fa-circle-info"></i>
-            Modo de demostración: las marcas se guardan en el navegador.
-            Todavía no se registran en SQL Server.
-        </p>
-
     </main>
-    </ui:define>
-    <ui:define name="scripts">
-<script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function () {
-    "use strict";
-
-    const contexto = '#{request.contextPath}';
-    const claveMarcas = "marcasCatalogo";
-
-    const formulario = document.getElementById("formRegistrarMarca");
-    const nombre = document.getElementById("nombreMarca");
-    const pais = document.getElementById("paisMarca");
-    const descripcion = document.getElementById("descripcionMarca");
-
-    const aviso = document.getElementById("avisoMarca");
-    const botonGuardar = document.getElementById("btnGuardarMarca");
-    const textoGuardar = document.getElementById("textoGuardar");
-    const botonLimpiar = document.getElementById("btnLimpiarMarca");
-    const tituloPagina = document.getElementById("tituloPagina");
-
-    // Comprobar que existan los elementos del formulario.
-    if (!formulario || !nombre || !pais || !descripcion
-            || !aviso || !botonGuardar || !textoGuardar
-            || !botonLimpiar || !tituloPagina) {
-        console.error(
-            "No se encontraron todos los elementos del formulario de marcas."
-        );
-        return;
-    }
-
-    const parametros = new URLSearchParams(window.location.search);
-    const idEditar = parametros.get("id");
-
-    const marcasIniciales = [
-        {
-            id: "marca-1",
-            nombre: "Nike",
-            descripcion: "Marca de ropa y accesorios deportivos",
-            pais: "Estados Unidos",
-            activa: true
-        },
-        {
-            id: "marca-2",
-            nombre: "Adidas",
-            descripcion: "Calzado y artículos deportivos",
-            pais: "Alemania",
-            activa: true
-        },
-        {
-            id: "marca-3",
-            nombre: "Puma",
-            descripcion: "Ropa y calzado deportivo",
-            pais: "Alemania",
-            activa: true
-        },
-        {
-            id: "marca-4",
-            nombre: "Reebok",
-            descripcion: "Productos de entrenamiento",
-            pais: "Reino Unido",
-            activa: true
-        }
-    ];
-
-    function obtenerMarcas() {
-        const datos = localStorage.getItem(claveMarcas);
-
-        if (datos === null) {
-            guardarMarcas(marcasIniciales);
-
-            return marcasIniciales.map(function (marca) {
-                return Object.assign({}, marca);
-            });
-        }
-
-        try {
-            const marcas = JSON.parse(datos);
-            return Array.isArray(marcas) ? marcas : [];
-        } catch (error) {
-            guardarMarcas(marcasIniciales);
-
-            return marcasIniciales.map(function (marca) {
-                return Object.assign({}, marca);
-            });
-        }
-    }
-
-    function guardarMarcas(marcas) {
-        localStorage.setItem(claveMarcas, JSON.stringify(marcas));
-    }
-
-    function mostrarAviso(texto, esExito) {
-        aviso.textContent = texto;
-        aviso.classList.add("visible");
-        aviso.classList.toggle("exito", Boolean(esExito));
-    }
-
-    function ocultarAviso() {
-        aviso.textContent = "";
-        aviso.classList.remove("visible");
-        aviso.classList.remove("exito");
-    }
-
-    let marcaExistente = null;
-
-    function limpiarFormulario() {
-        formulario.reset();
-        ocultarAviso();
-
-        if (marcaExistente) {
-            nombre.value = marcaExistente.nombre || "";
-            pais.value = marcaExistente.pais || "";
-            descripcion.value = marcaExistente.descripcion || "";
-        } else {
-            nombre.value = "";
-            pais.value = "";
-            descripcion.value = "";
-        }
-
-        nombre.focus();
-    }
-
-    // Cargar las marcas existentes.
-    const marcas = obtenerMarcas();
-
-    // Si existe un ID en la URL, buscar la marca que se editará.
-    if (idEditar !== null) {
-        marcaExistente = marcas.find(function (marca) {
-            return String(marca.id) === String(idEditar);
-        });
-
-        if (marcaExistente) {
-            tituloPagina.textContent = "Editar Marca";
-            textoGuardar.textContent = "Guardar cambios";
-
-            nombre.value = marcaExistente.nombre || "";
-            pais.value = marcaExistente.pais || "";
-            descripcion.value = marcaExistente.descripcion || "";
-        } else {
-            mostrarAviso(
-                "No se encontró la marca que deseas editar. " +
-                "Regresa al listado e inténtalo nuevamente.",
-                false
-            );
-
-            botonGuardar.disabled = true;
-        }
-    }
-
-    // Registrar una marca nueva o actualizar una existente.
-    formulario.addEventListener("submit", function (evento) {
-        evento.preventDefault();
-        ocultarAviso();
-
-        // Validar que la marca que se pretende editar exista.
-        if (idEditar !== null) {
-            if (!marcaExistente) {
-                mostrarAviso(
-                    "No se puede editar una marca que no existe.",
-                    false
-                );
-                return;
-            }
-        }
-
-        const nombreValor = nombre.value.trim();
-        const paisValor = pais.value.trim();
-        const descripcionValor = descripcion.value.trim();
-
-        if (!nombreValor) {
-            mostrarAviso(
-                "Debes ingresar el nombre de la marca.",
-                false
-            );
-
-            nombre.focus();
-            return;
-        }
-
-        const listaMarcas = obtenerMarcas();
-
-        // Verificar si ya existe otra marca con el mismo nombre.
-        const nombreDuplicado = listaMarcas.some(function (marca) {
-            const mismoNombre =
-                String(marca.nombre || "")
-                    .trim()
-                    .toLocaleLowerCase("es")
-                === nombreValor.toLocaleLowerCase("es");
-
-            const esOtraMarca =
-                String(marca.id) !== String(idEditar);
-
-            if (mismoNombre) {
-                if (esOtraMarca) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
-
-        if (nombreDuplicado) {
-            mostrarAviso(
-                "Ya existe una marca registrada con ese nombre.",
-                false
-            );
-
-            nombre.focus();
-            return;
-        }
-
-        // Actualizar una marca existente.
-        if (idEditar !== null) {
-            const indice = listaMarcas.findIndex(function (marca) {
-                return String(marca.id) === String(idEditar);
-            });
-
-            if (indice === -1) {
-                mostrarAviso(
-                    "No se encontró la marca que deseas actualizar.",
-                    false
-                );
-                return;
-            }
-
-            listaMarcas[indice] = Object.assign(
-                {},
-                listaMarcas[indice],
-                {
-                    nombre: nombreValor,
-                    pais: paisValor,
-                    descripcion: descripcionValor
-                }
-            );
-
-            guardarMarcas(listaMarcas);
-
-            window.location.href =
-                contexto + "/Marcas.xhtml?actualizado=1";
-
-        } else {
-            // Registrar una marca nueva.
-            const nuevaMarca = {
-                id: "marca-" + Date.now(),
-                nombre: nombreValor,
-                pais: paisValor,
-                descripcion: descripcionValor,
-                activa: true
-            };
-
-            listaMarcas.push(nuevaMarca);
-            guardarMarcas(listaMarcas);
-
-            window.location.href =
-                contexto + "/Marcas.xhtml?guardado=1";
-        }
-    });
-
-    // Limpiar los campos o restaurar los valores de la marca editada.
-    botonLimpiar.addEventListener("click", function () {
-        limpiarFormulario();
-    });
-});
-</script>
     </ui:define>
 </ui:composition>
