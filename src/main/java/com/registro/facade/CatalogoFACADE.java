@@ -24,6 +24,10 @@ public class CatalogoFACADE {
     {
         return dao.Mante_Categorias(categoria);
     }
+    public String RutaImagenCategoria(int categoriaId)
+    {
+        return dao.RutaImagenCategoria(categoriaId);
+    }
     public boolean Elimina_Categorias(CategoriaDTO categoria)
     {
         return dao.Elimina_Categorias(categoria);
