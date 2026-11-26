@@ -273,6 +273,7 @@ public class ClienteBean implements Serializable {
     private void prepararNuevo(boolean resetList) {
         limpiarDatosDocumento();
         archivoFoto = null;
+        huellaCapturada = null;
         try {
             socio = getFacade().autogenera_CodCliente();
         } catch (RuntimeException ex) {
@@ -293,6 +294,7 @@ public class ClienteBean implements Serializable {
         }
         modo = "actualizar";
         archivoFoto = null;
+        huellaCapturada = null;
         origenSuscripcion = false;
         limpiarDatosDocumento();
         return "/socios.xhtml?faces-redirect=true";
@@ -307,6 +309,7 @@ public class ClienteBean implements Serializable {
             mensaje(FacesMessage.SEVERITY_ERROR, "La fecha de cumpleaños no puede ser posterior a hoy.");
             return null;
         }
+        if (!aplicarHuellaCapturada()) return null;
         try {
             boolean ok;
             if ("actualizar".equals(modo)) {
@@ -402,6 +405,38 @@ public class ClienteBean implements Serializable {
         return socio;
     }
     public void setSocio(ClienteDTO socio) { this.socio = socio; }
+
+    // ---------------------------------------------------------
+    // Huella dactilar (lector ZK9500 por medio del agente local, ver js/huella-zk.js)
+    // ---------------------------------------------------------
+
+    /** Plantilla en Base64 que dejó la página al capturar la huella; se graba en Cliente.HuellaDactilar. */
+    private String huellaCapturada;
+
+    public String getHuellaCapturada() { return huellaCapturada; }
+    public void setHuellaCapturada(String huellaCapturada) { this.huellaCapturada = huellaCapturada; }
+
+    /** El socio ya tiene huella grabada (o capturada en esta pantalla). */
+    public boolean isTieneHuella() {
+        return (huellaCapturada != null && !huellaCapturada.isBlank())
+                || (socio != null && socio.getHuellaDactilar() != null && socio.getHuellaDactilar().length > 0);
+    }
+
+    /** Pasa la huella capturada al socio. Sin captura nueva se conserva la grabada (el SP usa ISNULL). */
+    private boolean aplicarHuellaCapturada() {
+        String b64 = huellaCapturada == null ? "" : huellaCapturada.trim();
+        if (b64.isEmpty()) return true;
+        try {
+            byte[] plantilla = java.util.Base64.getDecoder().decode(b64);
+            if (plantilla.length < 64 || plantilla.length > 4096) throw new IllegalArgumentException();
+            socio.setHuellaDactilar(plantilla);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            huellaCapturada = null;
+            mensaje(FacesMessage.SEVERITY_ERROR, "La huella capturada no es válida. Vuelva a capturarla.");
+            return false;
+        }
+    }
 
     // ---------------------------------------------------------
     // Foto del socio: botón "Cargar foto" (h:inputFile); se guarda en el servidor al Grabar/Actualizar

@@ -123,3 +123,14 @@ html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;backgr
 .doc-detalle{display:block;margin-top:4px;font-size:11px;color:var(--muted)}
 .doc-detalle.doc-observado{color:#DC2626;font-weight:700}
 .aviso-origen{margin:0 0 12px;padding:9px 12px;border-radius:8px;background:#EAF1FF;color:#1E3A8A;border:1px solid #C7D8FB;font-size:13px}
+
+/* Huella dactilar (lector ZK9500) */
+.huella-box{position:relative;overflow:hidden;transition:border-color .2s,color .2s}
+.huella-box img{height:100%;width:auto;object-fit:contain;filter:grayscale(1)}
+.huella-box img:not([hidden]) + i{display:none}
+.huella-box[data-estado="guardada"],.huella-box[data-estado="ok"]{border:2px solid #16A34A;color:#16A34A}
+.huella-box[data-estado="leyendo"]{border:2px solid #2864F0;color:#2864F0}
+.huella-box[data-estado="error"]{border:2px solid #DC2626;color:#DC2626}
+.huella-botones{margin-top:10px}
+#huellaEstado[data-tipo="error"]{color:#B42318}
+#huellaEstado[data-tipo="ok"]{color:#15803D;font-weight:700}

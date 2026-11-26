@@ -35,12 +35,13 @@ public class CatalogoDTO implements java.io.Serializable {
  // Nombres que devuelven los listados (sp_Lista_ProductosGral_Activos y búsquedas)
  private String Categoria;
  private String Marca;
+ private double StockMinimo;   
 
  public CatalogoDTO(){
      
  }
  
- public CatalogoDTO(String Producto_ID,String NombreProducto,String EstadoProducto,int Categoria_ID,int MarcaProducto_ID,String Descripcion,String UnidadMedida,double StockFinal,double PrecioCosto,double PrecioVenta,double PrecioLimite,double MargenUtil,double Peso,String Imagen,String CodigoBarra,String CodEmp, String TipoProd,String TipoBien_ID, String DescripcionTipo, String EstadoTipo)
+ public CatalogoDTO(String Producto_ID,String NombreProducto,String EstadoProducto,int Categoria_ID,int MarcaProducto_ID,String Descripcion,String UnidadMedida,double StockFinal,double PrecioCosto,double PrecioVenta,double PrecioLimite,double MargenUtil,double Peso,String Imagen,String CodigoBarra,String CodEmp, String TipoProd,String TipoBien_ID, String DescripcionTipo, String EstadoTipo, double StockMinimo)
  {
      this.Producto_ID = Producto_ID;
      this.NombreProducto = NombreProducto;
@@ -63,6 +64,7 @@ public class CatalogoDTO implements java.io.Serializable {
   
      this.DescripcionTipo = DescripcionTipo;
      this.EstadoTipo = EstadoTipo;
+     this.StockMinimo = StockMinimo;
  }
  
      public String getProducto_ID(){ return Producto_ID;}
@@ -136,4 +138,17 @@ public class CatalogoDTO implements java.io.Serializable {
 
     /** "VENTA" o "SERVICIO" según TipoProd (V / S). */
     public String getTipoProdTexto(){ return "S".equalsIgnoreCase(TipoProd == null ? "" : TipoProd.trim()) ? "SERVICIO" : "VENTA";}
+    
+    public double getStockMinimo(){ return StockMinimo;}
+    public void setStockMinimo(double StockMinimo){ this.StockMinimo = StockMinimo;}
+
+    /**
+     * Nivel de stock para los colores de las páginas:
+     * "agotado" (StockFinal &lt;= 0), "bajo" (StockFinal &lt;= StockMinimo) o "disponible".
+     */
+    public String getNivelStock(){
+        if (StockFinal <= 0) return "agotado";
+        if (StockFinal <= StockMinimo) return "bajo";
+        return "disponible";
+    }
 }

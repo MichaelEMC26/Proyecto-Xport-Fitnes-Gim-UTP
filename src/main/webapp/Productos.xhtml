@@ -243,6 +243,13 @@
         }
 
         .productos-main .accion-btn { text-decoration: none; }
+
+        /* Celda Stock: amarilla si StockFinal es igual o menor al StockMinimo, roja si no hay stock */
+        .productos-main .tabla-productos td.celda-stock { font-weight: 700; white-space: nowrap; }
+        .productos-main .tabla-productos td.celda-stock .stock-minimo { display: block; font-size: 10px; font-weight: 600; opacity: .8; }
+        .productos-main .tabla-productos td.stock-bajo { background: #FFF3BF; color: #8A6100; }
+        .productos-main .tabla-productos td.stock-agotado { background: #FFE3E3; color: #C92A2A; }
+        .productos-main .barra-agotado { background: #E5484D; }
     </style>
     </ui:define>
     <ui:define name="content">
@@ -274,7 +281,7 @@
                     <i class="fa-solid fa-boxes-stacked"></i>
                 </div>
                 <p class="resumen-label">Productos registrados</p>
-                <p class="resumen-value" id="metric-total">8</p>
+                <p class="resumen-value" id="metric-total">#{catalogoBean.resumenTotal}</p>
                 <span class="resumen-foot">
                     <i class="fa-solid fa-layer-group"></i>
                     En el catálogo
@@ -286,7 +293,9 @@
                     <i class="fa-solid fa-cubes-stacked"></i>
                 </div>
                 <p class="resumen-label">Unidades disponibles</p>
-                <p class="resumen-value" id="metric-stock">168</p>
+                <p class="resumen-value" id="metric-stock">
+                    <h:outputText value="#{catalogoBean.resumenUnidades}"><f:convertNumber maxFractionDigits="2" /></h:outputText>
+                </p>
                 <span class="resumen-foot">
                     <i class="fa-solid fa-circle-check"></i>
                     Stock total actual
@@ -297,8 +306,8 @@
                 <div class="resumen-icon">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <p class="resumen-label">Productos agotados</p>
-                <p class="resumen-value" id="metric-agotados">2</p>
+                <p class="resumen-label">Productos sin stock</p>
+                <p class="resumen-value" id="metric-agotados">#{catalogoBean.resumenSinStock}</p>
                 <span class="resumen-foot">
                     <i class="fa-solid fa-arrow-rotate-right"></i>
                     Requieren reposición
@@ -367,34 +376,35 @@
                     <i class="fa-solid fa-chart-column heading-icon"></i>
                 </div>
 
+                <!-- Productos activos según su stock mínimo (catalogoBean.calcularResumen) -->
                 <div class="barras-categorias">
                     <div class="barra-item">
                         <div class="barra-meta">
-                            <span>Disponibles</span>
-                            <strong>5 productos</strong>
+                            <span>Con stock <small>(sobre el stock mínimo)</small></span>
+                            <strong>#{catalogoBean.resumenConStock} #{catalogoBean.resumenConStock eq 1 ? 'producto' : 'productos'}</strong>
                         </div>
                         <div class="barra-fondo">
-                            <span class="barra barra-disponible"></span>
+                            <span class="barra barra-disponible" style="width: #{catalogoBean.porcConStock}%"></span>
                         </div>
                     </div>
 
                     <div class="barra-item">
                         <div class="barra-meta">
-                            <span>Stock bajo <small>(1–5 unidades)</small></span>
-                            <strong>1 producto</strong>
+                            <span>Stock bajo <small>(igual o debajo del stock mínimo)</small></span>
+                            <strong>#{catalogoBean.resumenStockBajo} #{catalogoBean.resumenStockBajo eq 1 ? 'producto' : 'productos'}</strong>
                         </div>
                         <div class="barra-fondo">
-                            <span class="barra barra-bajo"></span>
+                            <span class="barra barra-bajo" style="width: #{catalogoBean.porcStockBajo}%"></span>
                         </div>
                     </div>
 
                     <div class="barra-item">
                         <div class="barra-meta">
-                            <span>Agotados</span>
-                            <strong>2 productos</strong>
+                            <span>Sin stock</span>
+                            <strong>#{catalogoBean.resumenSinStock} #{catalogoBean.resumenSinStock eq 1 ? 'producto' : 'productos'}</strong>
                         </div>
                         <div class="barra-fondo">
-                            <span class="barra barra-agotado"></span>
+                            <span class="barra barra-agotado" style="width: #{catalogoBean.porcSinStock}%"></span>
                         </div>
                     </div>
                 </div>
@@ -503,13 +513,16 @@
                                     <td class="precio-producto">
                                         S/ <h:outputText value="#{p.precioVenta}"><f:convertNumber minFractionDigits="2" maxFractionDigits="2" /></h:outputText>
                                     </td>
-                                    <td>
+                                    <!-- Amarilla: stock igual o debajo del mínimo; roja: sin stock -->
+                                    <td class="celda-stock stock-#{p.nivelStock}"
+                                        title="Stock mínimo: #{p.stockMinimo}">
                                         <h:outputText value="#{p.stockFinal}"><f:convertNumber maxFractionDigits="2" /></h:outputText>
                                         #{p.stockFinal eq 1 ? 'unidad' : 'unidades'}
+                                        <small class="stock-minimo">Mín.: <h:outputText value="#{p.stockMinimo}"><f:convertNumber maxFractionDigits="2" /></h:outputText></small>
                                     </td>
                                     <td>
-                                        <span class="estado #{p.stockFinal le 0 ? 'estado-agotado' : (p.stockFinal le 5 ? 'estado-bajo' : 'estado-completado')}">
-                                            #{p.stockFinal le 0 ? 'Agotado' : (p.stockFinal le 5 ? 'Stock bajo' : 'Disponible')}
+                                        <span class="estado #{p.nivelStock eq 'agotado' ? 'estado-agotado' : (p.nivelStock eq 'bajo' ? 'estado-bajo' : 'estado-completado')}">
+                                            #{p.nivelStock eq 'agotado' ? 'Sin stock' : (p.nivelStock eq 'bajo' ? 'Stock bajo' : 'Disponible')}
                                         </span>
                                     </td>
                                     <td class="acciones">

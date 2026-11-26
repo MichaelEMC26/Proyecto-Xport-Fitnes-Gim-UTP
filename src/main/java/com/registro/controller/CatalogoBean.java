@@ -31,6 +31,10 @@ import java.util.List;
  *  - Listar (F7): productos activos (sp_Lista_ProductosGral_Activos).
  *  - Imagen (Productos.Imagen): se sube un archivo (se guarda en el servidor y se graba su nombre) o se
  *    pega una URL externa (se graba la URL). Ver AlmacenImagenesProducto e ImagenProductoServlet.
+ *  - Tipo de bien (combo: CatalogoFACADE.ListaTipoBien = sp_ListaTipo_Bien) y Stock mínimo se graban
+ *    con sp_Insert_Productos / sp_Update_Productos (@TipoBien_ID, @StockMinimo).
+ *  - Estado del inventario (Productos.xhtml): cuenta los productos activos sin stock, con stock bajo
+ *    (StockFinal <= StockMinimo) y con stock, según el stock mínimo de cada producto.
  */
 @Named("catalogoBean")
 @SessionScoped
@@ -50,6 +54,14 @@ public class CatalogoBean implements Serializable {
     private List<CatalogoDTO> lista = new ArrayList<>();
     private List<CategoriaDTO> listaCategorias = new ArrayList<>();
     private List<MarcasDTO> listaMarcas = new ArrayList<>();
+    private List<CatalogoDTO> listaTiposBien = new ArrayList<>();
+
+    // Estado del inventario (productos activos de la empresa, sin aplicar el filtro de búsqueda)
+    private int resumenTotal;
+    private int resumenConStock;
+    private int resumenStockBajo;
+    private int resumenSinStock;
+    private double resumenUnidades;
 
     /** Condición marcada en la búsqueda: NOMBRE, BARRA, CATEGORIA o MARCA. */
     private String criterioBusqueda = FILTRO_NOMBRE;
@@ -99,6 +111,7 @@ public class CatalogoBean implements Serializable {
         CatalogoFACADE f = new CatalogoFACADE();
         listaCategorias = f.ListaCategorias();
         listaMarcas = f.ListaMarcas();
+        listaTiposBien = f.ListaTipoBien();
     }
 
     // ------------------------------------------------------------------ acciones
@@ -108,6 +121,9 @@ public class CatalogoBean implements Serializable {
         producto.setEstadoProducto("Activo");
         producto.setUnidadMedida("UND");
         producto.setTipoProd("V");
+        producto.setStockMinimo(0);
+        // Tipo de bien por defecto: el primero del combo
+        producto.setTipoBien_ID(listaTiposBien.isEmpty() ? null : listaTiposBien.get(0).getTipoBien_ID());
         CatalogoDTO cod = new CatalogoFACADE().AutogeneraProducto();
         producto.setProducto_ID(cod == null ? null : cod.getProducto_ID());
         edicion = false;
@@ -180,6 +196,8 @@ public class CatalogoBean implements Serializable {
         p.setImagen(fila.getImagen());
         p.setCodigoBarra(fila.getCodigoBarra());
         p.setTipoProd(fila.getTipoProd() == null || fila.getTipoProd().isBlank() ? "V" : fila.getTipoProd());
+        p.setStockMinimo(Math.max(0, fila.getStockMinimo()));
+        p.setTipoBien_ID(fila.getTipoBien_ID());
         producto = p;
         edicion = true;
         limpiarImagen();
@@ -350,6 +368,28 @@ public class CatalogoBean implements Serializable {
         } else {
             lista = f.ListaProductosActivos(emp);
         }
+        // El listado general ya trae todos los activos; con un filtro se consultan aparte
+        calcularResumen(FILTRO_GENERAL.equals(filtro) ? lista : f.ListaProductosActivos(emp));
+    }
+
+    /** Estado del inventario: sin stock (<= 0), stock bajo (<= stock mínimo) y con stock. */
+    private void calcularResumen(List<CatalogoDTO> activos) {
+        resumenTotal = activos.size();
+        resumenConStock = resumenStockBajo = resumenSinStock = 0;
+        resumenUnidades = 0;
+        for (CatalogoDTO p : activos) {
+            switch (p.getNivelStock()) {
+                case "agotado": resumenSinStock++; break;
+                case "bajo": resumenStockBajo++; break;
+                default: resumenConStock++;
+            }
+            if (p.getStockFinal() > 0) resumenUnidades += p.getStockFinal();
+        }
+    }
+
+    /** Ancho (%) de las barras del Estado del inventario. */
+    private int porcentaje(int cantidad) {
+        return resumenTotal == 0 ? 0 : (int) Math.round(cantidad * 100.0 / resumenTotal);
     }
 
     private String nombreCategoria(int id) {
@@ -386,9 +426,13 @@ public class CatalogoBean implements Serializable {
             error("Seleccione la marca del producto.");
             return false;
         }
-        if (producto.getPrecioCosto() < 0 || producto.getPrecioVenta() < 0
-                || producto.getPrecioLimite() < 0 || producto.getStockFinal() < 0 || producto.getPeso() < 0) {
-            error("Los precios, el stock y el peso no pueden ser negativos.");
+        if (vacio(producto.getTipoBien_ID())) {
+            error("Seleccione el tipo de bien del producto.");
+            return false;
+        }
+        if (producto.getPrecioCosto() < 0 || producto.getPrecioVenta() < 0 || producto.getPrecioLimite() < 0
+                || producto.getStockFinal() < 0 || producto.getStockMinimo() < 0 || producto.getPeso() < 0) {
+            error("Los precios, el stock, el stock mínimo y el peso no pueden ser negativos.");
             return false;
         }
         return true;
@@ -512,6 +556,16 @@ public class CatalogoBean implements Serializable {
     }
     public List<CategoriaDTO> getListaCategorias() { return listaCategorias; }
     public List<MarcasDTO> getListaMarcas() { return listaMarcas; }
+    public List<CatalogoDTO> getListaTiposBien() { return listaTiposBien; }
+
+    public int getResumenTotal() { return resumenTotal; }
+    public int getResumenConStock() { return resumenConStock; }
+    public int getResumenStockBajo() { return resumenStockBajo; }
+    public int getResumenSinStock() { return resumenSinStock; }
+    public double getResumenUnidades() { return resumenUnidades; }
+    public int getPorcConStock() { return porcentaje(resumenConStock); }
+    public int getPorcStockBajo() { return porcentaje(resumenStockBajo); }
+    public int getPorcSinStock() { return porcentaje(resumenSinStock); }
     public String getTextoBusqueda() { return textoBusqueda; }
     public void setTextoBusqueda(String textoBusqueda) { this.textoBusqueda = textoBusqueda; }
     public int getMarcaBusqueda() { return marcaBusqueda; }

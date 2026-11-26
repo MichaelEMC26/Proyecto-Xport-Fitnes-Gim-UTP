@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /** Restringe las vistas Facelets a usuarios autenticados. */
-@WebFilter(urlPatterns = {"*.xhtml", "/ClienteController", "/PersonalController", "/UsuarioController", "/reportes/*"})
+@WebFilter(urlPatterns = {"*.xhtml", "/ClienteController", "/PersonalController", "/UsuarioController", "/reportes/*", "/biometria/*"})
 public class AutenticacionFilter implements Filter {
     @Override public void init(FilterConfig filterConfig) {}
     @Override public void destroy() {}

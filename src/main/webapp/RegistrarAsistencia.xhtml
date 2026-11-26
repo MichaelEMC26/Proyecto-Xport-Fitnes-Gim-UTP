@@ -18,7 +18,7 @@
     </ui:define>
     <ui:define name="title">Registrar Asistencia | Xport Fitness Gym</ui:define>
     <ui:define name="styles">
-        <link rel="stylesheet" href="#{request.contextPath}/css/registrar-asistencia.css?v=4" />
+        <link rel="stylesheet" href="#{request.contextPath}/css/registrar-asistencia.css?v=5" />
     </ui:define>
     <ui:define name="content">
         <main class="ra-main">
@@ -37,9 +37,12 @@
                         <section class="ra-card ra-ingreso">
                             <h2 class="ra-card-titulo">Registro de ingreso</h2>
                             <div class="ra-ingreso-cuerpo">
-                                <div class="ra-huella">
+                                <!-- Lector ZK9500: lo maneja js/huella-zk.js con el agente local de recepción -->
+                                <div class="ra-huella" id="raHuella" data-estado="cargando"
+                                     data-contexto="#{request.contextPath}">
                                     <div class="ra-huella-caja"><i class="fa-solid fa-fingerprint"></i></div>
                                     <span>Huella digital</span>
+                                    <small class="ra-huella-estado" id="raHuellaEstado">Conectando con el lector...</small>
                                 </div>
 
                                 <div class="ra-ingreso-datos">
@@ -69,7 +72,7 @@
                                         </div>
                                     </div>
                                     <p class="ra-ayuda" id="raAyuda" data-bloqueado="#{asistenciaBean.controlesBloqueados}">
-                                        <span class="ra-ayuda-activo">Escanee su QR (lector o celular), o digite su código o DNI y presione Enter.</span>
+                                        <span class="ra-ayuda-activo">Coloque su dedo en el lector, escanee su QR (lector o celular), o digite su código o DNI y presione Enter.</span>
                                         <span class="ra-ayuda-bloqueado"><i class="fa-solid fa-lock"></i> Registro mostrado. Presione <strong>Nuevo [F2]</strong> para registrar a otro socio.</span>
                                     </p>
 
@@ -218,6 +221,7 @@
         </main>
     </ui:define>
     <ui:define name="scripts">
-        <script src="#{request.contextPath}/js/registrar-asistencia.js?v=4"></script>
+        <script src="#{request.contextPath}/js/huella-zk.js?v=1"></script>
+        <script src="#{request.contextPath}/js/registrar-asistencia.js?v=5"></script>
     </ui:define>
 </ui:composition>

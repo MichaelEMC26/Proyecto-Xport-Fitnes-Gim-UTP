@@ -65,11 +65,12 @@ public class LoginBean implements Serializable {
 
     /**
      * Acceso a todos los formularios (menús Personal y Catálogo, cambiar clave de otros, etc.):
-     * rol Administrador o personal del área de Sistemas.
+     * rol Administrador o Sistemas (Rol.nombre_rol, que devuelve sp_IngresoUsuarioSistema como "Rol")
+     * o personal del área de Sistemas.
      */
     public static boolean tieneAccesoTotal(UsuarioDTO dto) {
         if (dto == null) return false;
-        return esRolAdministrador(dto.getRol()) || esAreaSistemas(dto.getArea());
+        return esRolAccesoTotal(dto.getRol()) || esAreaSistemas(dto.getArea());
     }
 
     /** Área "Sistemas" sin importar mayúsculas ni espacios (Sistemas, SISTEMAS, Área de Sistemas...). */
@@ -78,11 +79,15 @@ public class LoginBean implements Serializable {
         return area.trim().toUpperCase(java.util.Locale.ROOT).contains("SISTEMA");
     }
 
-    /** Administrador sin importar mayúsculas ni espacios (ADMIN, Administrador, ADMINISTRADOR...). */
-    public static boolean esRolAdministrador(String rol) {
+    /**
+     * Roles de la tabla Rol con acceso total: Administrador y Sistemas, sin importar mayúsculas,
+     * tildes ni espacios (ADMIN, Administrador, ADMINISTRADOR, Sistemas, SISTEMA...).
+     */
+    public static boolean esRolAccesoTotal(String rol) {
         if (rol == null) return false;
-        String r = rol.trim().toUpperCase(java.util.Locale.ROOT);
-        return r.equals("ADMIN") || r.startsWith("ADMINISTRADOR");
+        String r = java.text.Normalizer.normalize(rol.trim(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toUpperCase(java.util.Locale.ROOT);
+        return r.equals("ADMIN") || r.startsWith("ADMINISTRADOR") || r.startsWith("SISTEMA");
     }
 
     public String cerrarSesion() {

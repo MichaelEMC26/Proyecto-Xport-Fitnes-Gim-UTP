@@ -11,7 +11,7 @@
         </f:metadata>
     </ui:define>
     <ui:define name="title">#{clienteBean.modo eq 'actualizar' ? 'Editar socio' : 'Registrar socio'} | Xport Fitness Gym</ui:define>
-    <ui:define name="styles"><link rel="stylesheet" href="#{request.contextPath}/css/socios.css?v=2" /></ui:define>
+    <ui:define name="styles"><link rel="stylesheet" href="#{request.contextPath}/css/socios.css?v=3" /></ui:define>
     <ui:define name="content">
         <main class="main-content">
             <section class="panel">
@@ -112,9 +112,21 @@
                             </div>
                             <p class="foto-nombre" id="fotoNombre">#{empty clienteBean.socio.foto ? 'Sin foto' : 'Foto guardada'}</p>
                             <p class="foto-ayuda">JPG, PNG, GIF o BMP de hasta 2 MB. Se guarda al presionar #{clienteBean.modo eq 'actualizar' ? 'Actualizar' : 'Grabar'}.</p>
+                            <!-- Huella con el lector ZK9500 (js/huella-zk.js + js/huella-socio.js); se graba al Grabar/Actualizar -->
                             <div class="huella-titulo">HUELLA DACTILAR</div>
-                            <div class="huella-box"><i class="fa-solid fa-fingerprint"></i></div>
-                            <p class="foto-ayuda">La captura de huella requiere un lector compatible.</p>
+                            <div class="huella-box" id="huellaBox" data-estado="#{clienteBean.tieneHuella ? 'guardada' : 'vacia'}">
+                                <img id="huellaImagen" alt="Huella capturada" hidden="hidden" />
+                                <i class="fa-solid fa-fingerprint"></i>
+                            </div>
+                            <h:inputHidden id="huellaCapturada" value="#{clienteBean.huellaCapturada}" />
+                            <div class="foto-botones huella-botones">
+                                <button type="button" class="btn-foto" id="btnCapturarHuella">
+                                    <i class="fa-solid fa-fingerprint"></i> <span>#{clienteBean.tieneHuella ? 'Volver a capturar' : 'Capturar huella'}</span>
+                                </button>
+                            </div>
+                            <p class="foto-ayuda" id="huellaEstado">#{clienteBean.tieneHuella
+                                ? 'Huella registrada.'
+                                : 'Sin huella. Presione Capturar huella y coloque el dedo 3 veces en el lector ZK9500.'}</p>
                         </aside>
                     </div>
                     <div class="botones-form">
@@ -127,6 +139,8 @@
         </main>
     </ui:define>
     <ui:define name="scripts">
+        <script src="#{request.contextPath}/js/huella-zk.js?v=1"></script>
+        <script src="#{request.contextPath}/js/huella-socio.js?v=1"></script>
         <script>
             // Fecha de cumpleaños: no se puede elegir una fecha posterior a hoy
             (function () {

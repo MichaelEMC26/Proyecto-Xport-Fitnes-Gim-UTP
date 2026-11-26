@@ -21,3 +21,4 @@ Thumbs.db
 
 # Credenciales de base de datos (nunca subir)
 gimnasio-bd.properties
+/agente-huella/target/
