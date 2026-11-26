@@ -583,13 +583,18 @@ public class SuscripcionMembresiaBean implements Serializable {
             mensaje(FacesMessage.SEVERITY_WARN, "No hay una membresía registrada, no se puede generar el Comprobante de Venta");
             return null;
         }
-        if (getFacade().Listasuscripciones_MembresiaXRegistroF(codEmpSesion(), nro.trim()) == null) {
+        MembresiaDTO reg = getFacade().Listasuscripciones_MembresiaXRegistroF(codEmpSesion(), nro.trim());
+        if (reg == null) {
             mensaje(FacesMessage.SEVERITY_WARN, "Primero registre la membresía [F3] para generar el Comprobante de Venta");
             return null;
         }
-        // frm_Facturacion todavía no existe en la versión web
-        mensaje(FacesMessage.SEVERITY_WARN, "La facturación (comprobante de venta) aún no está disponible en la versión web.");
-        return null;
+        String estado = reg.getEstadoSusc() == null ? "" : reg.getEstadoSusc().trim();
+        if (!estado.isEmpty() && !estado.equalsIgnoreCase("Pendiente")) {
+            mensaje(FacesMessage.SEVERITY_WARN, "La membresía N° " + nro.trim() + " ya no está pendiente de pago (estado: " + estado + ").");
+            return null;
+        }
+        // frm_Facturacion con OpcRegC = 1: el Punto de Venta abre con la membresía en el detalle y los datos del socio
+        return "/PuntoVenta.xhtml?faces-redirect=true&suscripcion=" + nro.trim();
     }
 
     public String imprimir() {

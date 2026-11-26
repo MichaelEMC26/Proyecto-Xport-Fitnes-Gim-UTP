@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
-    xmlns:pt="jakarta.faces.passthrough" xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
+    xmlns:pt="jakarta.faces.passthrough"
+    xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="nuevaMarca" />
     <ui:param name="menuSubmenu" value="catalogo" />
     <ui:define name="metadata">
@@ -300,19 +301,59 @@
                     min-width: 0;
                 }
             }
+        
+        /* Mensajes de grabar / actualizar / eliminar (h:messages) */
+        .mensajes-catalogo { list-style: none; margin: 0 0 14px; padding: 0; font-size: 13px; }
+        .mensajes-catalogo li { padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; }
+        .mensajes-catalogo .msj-info { background: #ECFDF3; color: #067647; border: 1px solid #A6E3BD; }
+        .mensajes-catalogo .msj-error { background: #FFF1F1; color: #B42318; border: 1px solid #F3B4B4; }
+        input[type="submit"].catalogo-buscar { cursor: pointer; }
+    
+            /* Código angosto (solo número), Estado a su lado, Nombre a todo el ancho */
+            .registro-marca-card .registro-marca-campos {
+                grid-template-columns: 130px minmax(0, 220px) !important;
+            }
+            .registro-marca-card .campo-codigo input {
+                background: #F4F7FB !important;
+                color: #41516B !important;
+                text-align: center;
+                font-weight: 700 !important;
+                cursor: default;
+            }
+            .registro-marca-card .registro-marca-campo select {
+                display: block;
+                width: 100%;
+                min-height: 44px;
+                padding: 11px 13px;
+                border: 1px solid #D6E1F2;
+                border-radius: 8px;
+                background: #FFFFFF;
+                color: #102653;
+                font-size: 13px;
+                box-sizing: border-box;
+            }
+            .registro-marca-card .registro-marca-campo select:disabled { background: #F4F7FB; color: #41516B; }
+            @media (max-width: 520px) {
+                .registro-marca-card .registro-marca-campos { grid-template-columns: minmax(0, 1fr) !important; }
+            }
         </style>
 
     </ui:define>
     <ui:define name="content">
+<!-- CONTENIDO PRINCIPAL (marcaBean: grabar = sp_Mante_marcas, nuevo código = sp_max_marc) -->
     <main class="gastos-main catalogo-main">
 
-        <!-- CABECERA -->
+        <!-- CABECERA: cambia según se registre o se edite (?modo=editar desde Marcas.xhtml) -->
         <header class="gastos-header">
             <div>
                 <p class="gastos-eyebrow">CONTROL DE INVENTARIO</p>
+
                 <h1 id="tituloPagina">#{marcaBean.edicion ? 'Editar Marca' : 'Registrar Marca'}</h1>
+
                 <p class="gastos-subtitle">
-                    Registra una marca para identificar los productos del catálogo del gimnasio.
+                    #{marcaBean.edicion
+                      ? 'Modifica los datos de la marca seleccionada.'
+                      : 'Registra una marca para identificar los productos del catálogo del gimnasio.'}
                 </p>
             </div>
 
@@ -324,7 +365,8 @@
         </header>
 
         <!-- FORMULARIO -->
-        <section class="contenido-card registro-marca-card" id="formulario">
+        <section class="contenido-card registro-marca-card"
+                 id="formulario">
 
             <div class="card-heading">
                 <div>
@@ -332,33 +374,73 @@
                         <i class="fa-solid fa-tag"></i>
                         Datos de la marca
                     </h2>
-                    <p>Los campos marcados con * son obligatorios.</p>
+
+                    <p>
+                        Los campos marcados con * son obligatorios.
+                    </p>
                 </div>
 
                 <i class="fa-solid fa-copyright heading-icon"></i>
             </div>
 
-            <h:messages globalOnly="true" layout="list"
-                        styleClass="mensajes-productos"
+            <!-- Validaciones y errores de grabación del bean -->
+            <h:messages globalOnly="true" layout="list" styleClass="mensajes-catalogo"
                         infoClass="msj-info" errorClass="msj-error" />
 
-            <h:form id="formRegistrarMarca" prependId="false" styleClass="registro-marca-form">
+            <h:form id="formRegistrarMarca" prependId="false"
+                    styleClass="registro-marca-form">
 
                 <div class="registro-marca-campos">
 
+                    <!-- CÓDIGO (autogenerado con sp_max_marc; no editable) -->
+                    <div class="registro-marca-campo campo-codigo">
+                        <label for="codigoMarca">
+                            <i class="fa-solid fa-hashtag"></i>
+                            Código
+                        </label>
+
+                        <input type="text" id="codigoMarca" readonly="readonly"
+                               value="#{marcaBean.codigo(marcaBean.marca)}" />
+
+                    </div>
+
+                    <!-- ESTADO: en edición se puede activar / inactivar (sp_Mante_marcas actualiza EstadoMarca) -->
                     <div class="registro-marca-campo">
+                        <label for="estadoMarca">
+                            <i class="fa-solid fa-circle-check"></i>
+                            Estado
+                        </label>
+
+                        <h:selectOneMenu id="estadoMarca"
+                                         value="#{marcaBean.marca.estadoMarca}"
+                                         disabled="#{not marcaBean.edicion}">
+                            <f:selectItem itemLabel="Activo" itemValue="Activo" />
+                            <f:selectItem itemLabel="Inactivo" itemValue="Inactivo" />
+                        </h:selectOneMenu>
+
+                        <span class="registro-marca-ayuda">
+                            Las marcas nuevas se registran como Activo. Una marca Inactiva no aparece en el listado.
+                        </span>
+                    </div>
+
+                    <!-- NOMBRE -->
+                    <div class="registro-marca-campo registro-marca-campo-completo">
                         <label for="nombreMarca">
                             <i class="fa-solid fa-tag"></i>
                             Nombre de la marca *
                         </label>
 
-                        <h:inputText id="nombreMarca" value="#{marcaBean.marca.nombre}"
-                                     maxlength="100"
-                                     pt:placeholder="Ej. Nike"
-                                     pt:autocomplete="off" />
+                        <h:inputText id="nombreMarca"
+                                     value="#{marcaBean.marca.nombre}"
+                                     maxlength="50"
+                                     pt:required="required"
+                                     pt:autocomplete="off"
+                                     pt:autofocus="autofocus"
+                                     pt:placeholder="Ej. Nike" />
 
                         <span class="registro-marca-ayuda">
-                            Máximo 100 caracteres. No se admiten nombres repetidos.
+                            Introduce el nombre con el que se identifica la marca. Máximo 50 caracteres.
+                            #{marcaBean.edicion ? '' : 'El código se asigna automáticamente al grabar.'}
                         </span>
                     </div>
 
@@ -367,16 +449,20 @@
                 <!-- BOTONES -->
                 <div class="registro-marca-botones">
 
-                    <h:commandLink id="btnGuardarMarca" action="#{marcaBean.grabar}"
+                    <h:commandLink id="btnGuardarMarca"
+                                   action="#{marcaBean.grabar}"
                                    styleClass="btn-registrar-marca">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        <span>#{marcaBean.edicion ? 'Guardar cambios' : 'Registrar marca'}</span>
+                        <span id="textoGuardar">#{marcaBean.edicion ? 'Guardar cambios' : 'Registrar marca'}</span>
                     </h:commandLink>
 
-                    <h:commandLink id="btnLimpiarMarca" action="#{marcaBean.nuevo}" immediate="true"
+                    <!-- Nuevo: sale del modo edición, limpia y autogenera un código -->
+                    <h:commandLink id="btnLimpiarMarca"
+                                   action="#{marcaBean.nuevo}"
+                                   immediate="true"
                                    styleClass="btn-limpiar-marca">
                         <i class="fa-solid fa-eraser"></i>
-                        Limpiar
+                        #{marcaBean.edicion ? 'Nueva marca' : 'Limpiar'}
                     </h:commandLink>
 
                     <a class="btn-volver-marcas"
@@ -391,10 +477,49 @@
 
         </section>
 
-        <p class="nota-demo" style="margin-top:18px;">
-            <i class="fa-solid fa-circle-info"></i>
-            Los datos se guardan en SQL Server (sp_Mante_marcas).
-        </p>
+        <!-- INFORMACIÓN COMPLEMENTARIA -->
+        <section class="registro-marca-pasos">
+
+            <article class="registro-marca-paso">
+                <i class="fa-solid fa-tag"></i>
+
+                <div>
+                    <strong>Nombre identificable</strong>
+
+                    <p>
+                        Registra un nombre claro para encontrar
+                        fácilmente la marca en el catálogo.
+                    </p>
+                </div>
+            </article>
+
+            <article class="registro-marca-paso">
+                <i class="fa-solid fa-ban"></i>
+
+                <div>
+                    <strong>Sin duplicados</strong>
+
+                    <p>
+                        No se permite grabar dos marcas
+                        con el mismo nombre.
+                    </p>
+                </div>
+            </article>
+
+            <article class="registro-marca-paso">
+                <i class="fa-solid fa-boxes-stacked"></i>
+
+                <div>
+                    <strong>Organización del catálogo</strong>
+
+                    <p>
+                        Las marcas ayudan a identificar y organizar
+                        los productos del gimnasio.
+                    </p>
+                </div>
+            </article>
+
+        </section>
 
     </main>
     </ui:define>

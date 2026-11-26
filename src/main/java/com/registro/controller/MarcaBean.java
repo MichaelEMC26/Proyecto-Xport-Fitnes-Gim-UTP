@@ -1,7 +1,11 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
+ */
 package com.registro.controller;
 
 import com.registro.dto.MarcasDTO;
-import com.registro.facade.ProductosFACADE;
+import com.registro.facade.CatalogoFACADE;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -24,7 +28,9 @@ public class MarcaBean implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final String ESTADO_ACTIVO = "Activo";
-    private static final int MAX_NOMBRE = 100;
+    private static final String CRITERIO_NOMBRE = "NOMBRE";
+    private static final String CRITERIO_CODIGO = "CODIGO";
+    private static final int MAX_NOMBRE = 50;  // @Nombre varchar(50) en sp_Mante_marcas
 
     private MarcasDTO marca;
     private boolean edicion;
@@ -32,6 +38,8 @@ public class MarcaBean implements Serializable {
     private List<MarcasDTO> listaCompleta = new ArrayList<>();
     private List<MarcasDTO> lista = new ArrayList<>();
     private String textoBusqueda;
+    /** Condición del filtro (chips de la plantilla): NOMBRE o CODIGO. */
+    private String criterioBusqueda = CRITERIO_NOMBRE;
 
     @PostConstruct
     public void init() {
@@ -69,7 +77,7 @@ public class MarcaBean implements Serializable {
             marca.setMarca_ID(siguienteId());
             marca.setEstadoMarca(ESTADO_ACTIVO);
         }
-        if (new ProductosFACADE().Mante_Marcas(marca)) {
+        if (new CatalogoFACADE().Mante_Marcas(marca)) {
             info((edicion ? "Se actualizó la marca " : "Se registró la marca ") + marca.getNombre() + ".");
             nuevo();
             return "/Marcas.xhtml?faces-redirect=true";
@@ -90,17 +98,18 @@ public class MarcaBean implements Serializable {
     }
 
     public String eliminar(MarcasDTO fila) {
-        if (new ProductosFACADE().Elim_MarcaPro(fila)) {
-            info("Se eliminó la marca " + (fila.getNombre() == null ? "" : fila.getNombre().trim()) + ".");
+        if (new CatalogoFACADE().Elim_MarcaPro(fila)) {
+            info("Se eliminó la marca " + (fila.getNombre() == null ? "" : fila.getNombre().trim())
+                    + ". Si tenía productos asociados, quedó Inactiva.");
             if (edicion && marca.getMarca_ID() == fila.getMarca_ID()) nuevo();
             consultar();
         } else {
-            error("No se pudo eliminar la marca (puede tener productos asociados).");
+            error("No se pudo eliminar la marca.");
         }
         return null;
     }
 
-    /** Buscar: filtra por nombre el listado consultado a la BD. */
+    /** Buscar: filtra por nombre o código el listado consultado a la BD. */
     public String buscar() {
         consultar();
         return null;
@@ -109,6 +118,7 @@ public class MarcaBean implements Serializable {
     /** Listar: borra el filtro y muestra todas las marcas. */
     public String listar() {
         textoBusqueda = null;
+        criterioBusqueda = CRITERIO_NOMBRE;
         consultar();
         return null;
     }
@@ -116,18 +126,25 @@ public class MarcaBean implements Serializable {
     // ------------------------------------------------------------------ internos
 
     private void consultar() {
-        List<MarcasDTO> datos = new ProductosFACADE().ListaMarcas();
+        List<MarcasDTO> datos = new CatalogoFACADE().ListaMarcas();
         listaCompleta = datos == null ? new ArrayList<>() : datos;
         String t = textoBusqueda == null ? "" : textoBusqueda.trim().toLowerCase();
+        boolean porCodigo = CRITERIO_CODIGO.equals(criterioBusqueda);
         lista = new ArrayList<>();
         for (MarcasDTO m : listaCompleta) {
-            String n = m.getNombre() == null ? "" : m.getNombre().trim().toLowerCase();
-            if (t.isEmpty() || n.contains(t)) lista.add(m);
+            if (t.isEmpty() || coincide(m, t, porCodigo)) lista.add(m);
         }
     }
 
+    /** Código: el número debe empezar con lo escrito (12 encuentra 12, 120...). Nombre: contiene el texto. */
+    private static boolean coincide(MarcasDTO m, String t, boolean porCodigo) {
+        if (porCodigo) return String.valueOf(m.getMarca_ID()).startsWith(t);
+        String n = m.getNombre() == null ? "" : m.getNombre().trim().toLowerCase();
+        return n.contains(t);
+    }
+
     private int siguienteId() {
-        MarcasDTO m = new ProductosFACADE().AutogeneraMarca();
+        MarcasDTO m = new CatalogoFACADE().AutogeneraMarca();
         return m == null ? 0 : m.getMarca_ID();
     }
 
@@ -141,7 +158,7 @@ public class MarcaBean implements Serializable {
             error("El nombre de la marca no puede superar los " + MAX_NOMBRE + " caracteres.");
             return false;
         }
-        for (MarcasDTO m : new ProductosFACADE().ListaMarcas()) {
+        for (MarcasDTO m : new CatalogoFACADE().ListaMarcas()) {
             boolean otra = m.getMarca_ID() != marca.getMarca_ID();
             if (otra && m.getNombre() != null && m.getNombre().trim().equalsIgnoreCase(nombre)) {
                 error("Ya existe una marca con ese nombre.");
@@ -173,6 +190,10 @@ public class MarcaBean implements Serializable {
     public int getTotalResultados() { return lista.size(); }
     public String getTextoBusqueda() { return textoBusqueda; }
     public void setTextoBusqueda(String textoBusqueda) { this.textoBusqueda = textoBusqueda; }
+    public String getCriterioBusqueda() { return criterioBusqueda; }
+    public void setCriterioBusqueda(String criterioBusqueda) {
+        this.criterioBusqueda = CRITERIO_CODIGO.equals(criterioBusqueda) ? CRITERIO_CODIGO : CRITERIO_NOMBRE;
+    }
 
     public int getTotalActivas() {
         int n = 0;
@@ -183,6 +204,6 @@ public class MarcaBean implements Serializable {
     }
 
     public String codigo(MarcasDTO m) {
-        return String.format("MAR-%03d", m.getMarca_ID());
+        return String.valueOf(m.getMarca_ID());   // código numérico, tal como está en la BD
     }
 }

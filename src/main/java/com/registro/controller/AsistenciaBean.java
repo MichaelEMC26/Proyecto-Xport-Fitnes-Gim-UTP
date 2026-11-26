@@ -296,6 +296,21 @@ public class AsistenciaBean implements Serializable {
     public String getDeudaTexto() { return deudaTexto; }
 
     /** Periodo (o, si el SP no lo trae, el nombre de la membresía). */
+    /**
+     * Duración del periodo. El procedimiento devuelve Duracion = Duracion_Dias del plan, que vale 0 en los
+     * planes por semanas, meses o años (p. ej. "1 MES BASICO"): en ese caso se calcula con las fechas del
+     * periodo (fin - inicio), sin otra consulta.
+     */
+    public String getDuracionTexto() {
+        if (periodo == null) return "";
+        long dias = periodo.getDuracion();
+        if (dias <= 0 && periodo.getFechaInicio() != null && periodo.getFechaFin() != null) {
+            dias = java.time.temporal.ChronoUnit.DAYS.between(periodo.getFechaInicio(), periodo.getFechaFin().toLocalDate());
+        }
+        if (dias <= 0) return "-";
+        return dias + (dias == 1 ? " día" : " días");
+    }
+
     public String getPeriodoTexto() {
         if (periodo == null) return "";
         return periodo.getPeriodo() != null ? periodo.getPeriodo() : (periodo.getMembresia() == null ? "" : periodo.getMembresia());

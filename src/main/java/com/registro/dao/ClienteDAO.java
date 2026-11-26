@@ -2,7 +2,7 @@ package com.registro.dao;
 
 import com.registro.config.ConexionBD;
 import com.registro.dto.ClienteDTO;
-import com.registro.dto.ProductosDTO;
+import com.registro.dto.CatalogoDTO;
 import java.sql.*;
 import java.util.ArrayList;
 

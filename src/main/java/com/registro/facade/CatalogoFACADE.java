@@ -4,8 +4,8 @@
  */
 package com.registro.facade;
 
-import com.registro.dao.ProductosDAO;
-import com.registro.dto.ProductosDTO;
+import com.registro.dao.CatalogoDAO;
+import com.registro.dto.CatalogoDTO;
 import com.registro.dto.CategoriaDTO;
 import com.registro.dto.MarcasDTO;
 import java.util.List;
@@ -13,9 +13,9 @@ import java.util.List;
  *
  * @author Ing
  */
-public class ProductosFACADE {
+public class CatalogoFACADE {
 
-    private final ProductosDAO dao = new ProductosDAO();
+    private final CatalogoDAO dao = new CatalogoDAO();
 
     public CategoriaDTO autogeneraCategoria() {
     return dao.AutogeneraCategoria();
@@ -23,6 +23,10 @@ public class ProductosFACADE {
     public boolean Mante_Categorias(CategoriaDTO categoria)
     {
         return dao.Mante_Categorias(categoria);
+    }
+    public String RutaImagenCategoria(int categoriaId)
+    {
+        return dao.RutaImagenCategoria(categoriaId);
     }
     public boolean Elimina_Categorias(CategoriaDTO categoria)
     {
@@ -51,15 +55,15 @@ public class ProductosFACADE {
         return dao.ListaMarcas();
     }
 
-    public List<ProductosDTO> ListaProductosActivos(String codEmp)
+    public List<CatalogoDTO> ListaProductosActivos(String codEmp)
     {
         return dao.ListaProductosActivos(codEmp);
     }
-    public List<ProductosDTO> BuscaProductosXNombre(String codEmp, String texto)
+    public List<CatalogoDTO> BuscaProductosXNombre(String codEmp, String texto)
     {
         return dao.BuscaProductosXNombre(codEmp, texto);
     }
-    public List<ProductosDTO> BuscaProductosXMarca(String codEmp, int marcaId)
+    public List<CatalogoDTO> BuscaProductosXMarca(String codEmp, int marcaId)
     {
         return dao.BuscaProductosXMarca(codEmp, marcaId);
     }
@@ -68,15 +72,15 @@ public class ProductosFACADE {
         return dao.TieneVentas(productoId);
     }
 
-    public ProductosDTO AutogeneraProducto()
+    public CatalogoDTO AutogeneraProducto()
     {
         return dao.Autogenera_codprod();
     }
-    public boolean Insert_ProductosD(ProductosDTO productos)
+    public boolean Insert_ProductosD(CatalogoDTO productos)
     {
         return dao.Insert_ProductosD(productos);
     }
-    public boolean Update_Productos(ProductosDTO productos, boolean incluyeStock)
+    public boolean Update_Productos(CatalogoDTO productos, boolean incluyeStock)
     {
         return dao.Update_Productos(productos, incluyeStock);
     }
@@ -85,7 +89,7 @@ public class ProductosFACADE {
         return dao.Update_Estado_Producto(productoId, estado, codEmp);
     }
 
-    public boolean Elimina_Producto(ProductosDTO productos)
+    public boolean Elimina_Producto(CatalogoDTO productos)
     {
         return dao.Elim_Producto(productos);
     }

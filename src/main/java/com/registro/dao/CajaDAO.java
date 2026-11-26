@@ -1,7 +1,7 @@
 package com.registro.dao;
 
 import com.registro.config.ConexionBD;
-import com.registro.dto.AperturaCierreCajaDTO;
+import com.registro.dto.CajaDTO;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -18,7 +18,7 @@ import java.util.List;
  *
  * @author Ing
  */
-public class AperturaCierreCajaDAO {
+public class CajaDAO {
 
     // ---------------------------------------------------------
     // Utilitarios
@@ -63,7 +63,7 @@ public class AperturaCierreCajaDAO {
     // ---------------------------------------------------------
 
     /** sp_ListaAcuentaPagoXFechasXTurno: monto cobrado a cuenta entre fechas y por turno. */
-    public AperturaCierreCajaDTO ListaAcuentaPagoXFechasXTurno(String CodEmp, LocalDateTime FechaIni, LocalDateTime FechaFin, String Turno) {
+    public CajaDTO ListaAcuentaPagoXFechasXTurno(String CodEmp, LocalDateTime FechaIni, LocalDateTime FechaFin, String Turno) {
         String sql = "{call sp_ListaAcuentaPagoXFechasXTurno(?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -73,7 +73,7 @@ public class AperturaCierreCajaDAO {
             cs.setString(4, Turno);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setAcuentaPago(texto(rs, "AcuentaPago"));
                     return item;
                 }
@@ -85,15 +85,15 @@ public class AperturaCierreCajaDAO {
     }
 
     /** sp_ListaAperturaCierreCajaAbierto: caja(s) con EstadoCaja = 'A'. */
-    public List<AperturaCierreCajaDTO> ListaAperturaCierreCajaAbierto(String CodEmp) {
-        List<AperturaCierreCajaDTO> lista = new ArrayList<>();
+    public List<CajaDTO> ListaAperturaCierreCajaAbierto(String CodEmp) {
+        List<CajaDTO> lista = new ArrayList<>();
         String sql = "{call sp_ListaAperturaCierreCajaAbierto(?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
             cs.setString(1, CodEmp);
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setidAperturaCierre(rs.getInt("idAperturaCierre"));
                     item.setFechaTurno(fecha(rs, "FechaTurno"));
                     item.setFechaCaja(fecha(rs, "FechaCaja"));
@@ -123,7 +123,7 @@ public class AperturaCierreCajaDAO {
     }
 
     /** sp_ListaAperturaCierreCajaXFechaTurno: responsables y turnos de una fecha. */
-    public AperturaCierreCajaDTO ListaAperturaCierreCajaXFechaTurno(String CodEmp, LocalDateTime FechaTurno) {
+    public CajaDTO ListaAperturaCierreCajaXFechaTurno(String CodEmp, LocalDateTime FechaTurno) {
         String sql = "{call sp_ListaAperturaCierreCajaXFechaTurno(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -131,7 +131,7 @@ public class AperturaCierreCajaDAO {
             cs.setTimestamp(2, ts(FechaTurno));
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setCodResp(rs.getInt("CodResp"));
                     item.setNombres(texto(rs, "Nombres"));
                     item.setTurno(texto(rs, "Turno"));
@@ -146,8 +146,8 @@ public class AperturaCierreCajaDAO {
     }
 
     /** sp_ListaCtasXCobrarAmortizadosXRangoFechasXTurno. */
-    public List<AperturaCierreCajaDTO> ListaCtasXCobrarAmortizadosXRangoFechasXTurno(String CodEmp, LocalDateTime FechaIni, LocalDateTime FechaFin, String Turno) {
-        List<AperturaCierreCajaDTO> lista = new ArrayList<>();
+    public List<CajaDTO> ListaCtasXCobrarAmortizadosXRangoFechasXTurno(String CodEmp, LocalDateTime FechaIni, LocalDateTime FechaFin, String Turno) {
+        List<CajaDTO> lista = new ArrayList<>();
         String sql = "{call sp_ListaCtasXCobrarAmortizadosXRangoFechasXTurno(?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -157,7 +157,7 @@ public class AperturaCierreCajaDAO {
             cs.setString(4, Turno);
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setCobro_ID(texto(rs, "Cobro_ID"));
                     item.setCliente_ID(texto(rs, "Cliente_ID"));
                     item.setRazonSocial(texto(rs, "RazonSocial"));
@@ -181,21 +181,21 @@ public class AperturaCierreCajaDAO {
     }
 
     /** sp_ListaCobrosDiaXTurno(@FechaTurno, @idAperturaCierre, @CodEmp): total cobranza del turno. */
-    public AperturaCierreCajaDTO ListaCobrosDiaXTurno(String CodEmp, LocalDateTime FechaTurno, int idAperturaCierre) {
-        AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+    public CajaDTO ListaCobrosDiaXTurno(String CodEmp, LocalDateTime FechaTurno, int idAperturaCierre) {
+        CajaDTO item = new CajaDTO();
         item.setMonto(monto("sp_ListaCobrosDiaXTurno", FechaTurno, idAperturaCierre, CodEmp));
         return item;
     }
 
     /** sp_ListaGastosDiaXTurno(@FechaTurno, @idAperturaCierre, @CodEmp): total gastos del turno. */
-    public AperturaCierreCajaDTO ListaGastosDiaXTurno(String CodEmp, LocalDateTime FechaTurno, int idAperturaCierre) {
-        AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+    public CajaDTO ListaGastosDiaXTurno(String CodEmp, LocalDateTime FechaTurno, int idAperturaCierre) {
+        CajaDTO item = new CajaDTO();
         item.setMonto(monto("sp_ListaGastosDiaXTurno", FechaTurno, idAperturaCierre, CodEmp));
         return item;
     }
 
     /** sp_ListaTurnoAbierto: turno abierto hasta la fecha indicada. */
-    public AperturaCierreCajaDTO ListaTurnoAbierto(String CodEmp, LocalDateTime FechaTurno) {
+    public CajaDTO ListaTurnoAbierto(String CodEmp, LocalDateTime FechaTurno) {
         String sql = "{call sp_ListaTurnoAbierto(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -203,7 +203,7 @@ public class AperturaCierreCajaDAO {
             cs.setTimestamp(2, ts(FechaTurno));
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setidAperturaCierre(rs.getInt("idAperturaCierre"));
                     item.setFechaTurno(fecha(rs, "FechaTurno"));
                     item.setFechaCaja(fecha(rs, "FechaCaja"));
@@ -228,7 +228,7 @@ public class AperturaCierreCajaDAO {
     }
 
     /** sp_ListaTurnoDia: siguiente número de turno del día (MAX(Turno)+1, o '1'). */
-    public AperturaCierreCajaDTO ListaTurnoDia(String CodEmp, LocalDateTime FechaTurno) {
+    public CajaDTO ListaTurnoDia(String CodEmp, LocalDateTime FechaTurno) {
         String sql = "{call sp_ListaTurnoDia(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -236,7 +236,7 @@ public class AperturaCierreCajaDAO {
             cs.setTimestamp(2, ts(FechaTurno));
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setTurno(texto(rs, "Turno"));
                     return item;
                 }
@@ -281,7 +281,7 @@ public class AperturaCierreCajaDAO {
     // ---------------------------------------------------------
 
     /** sp_InsertAperturaCierreCaja (19 parámetros). El SP devuelve SELECT 0 AS RESULT. */
-    public boolean InsertAperturaCierreCaja(AperturaCierreCajaDTO a) {
+    public boolean InsertAperturaCierreCaja(CajaDTO a) {
         String sql = "{call sp_InsertAperturaCierreCaja(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -316,7 +316,7 @@ public class AperturaCierreCajaDAO {
      * sp_UpdateAperturaCierreCaja (19 parámetros, sin HoraIni): cierra el turno y marca Dia='C'
      * en ventas, compras y gastos. El SP hace RETURN 0 / -1.
      */
-    public boolean UpdateAperturaCierreCaja(AperturaCierreCajaDTO a) {
+    public boolean UpdateAperturaCierreCaja(CajaDTO a) {
         String sql = "{? = call sp_UpdateAperturaCierreCaja(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -353,8 +353,8 @@ public class AperturaCierreCajaDAO {
     // ---------------------------------------------------------
 
     /** sp_Reporte_TicketCierreCaja: datos del ticket de cierre. */
-    public List<AperturaCierreCajaDTO> Reporte_TicketCierreCaja(String CodEmp, int idAperturaCierre) {
-        List<AperturaCierreCajaDTO> lista = new ArrayList<>();
+    public List<CajaDTO> Reporte_TicketCierreCaja(String CodEmp, int idAperturaCierre) {
+        List<CajaDTO> lista = new ArrayList<>();
         String sql = "{call sp_Reporte_TicketCierreCaja(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
@@ -362,7 +362,7 @@ public class AperturaCierreCajaDAO {
             cs.setInt(2, idAperturaCierre);
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
-                    AperturaCierreCajaDTO item = new AperturaCierreCajaDTO();
+                    CajaDTO item = new CajaDTO();
                     item.setRazonSocial(texto(rs, "EmpresaRazon"));
                     item.setEmpresaComercial(texto(rs, "EmpresaComercial"));
                     item.setEmpresaRuc(texto(rs, "EmpresaRuc"));

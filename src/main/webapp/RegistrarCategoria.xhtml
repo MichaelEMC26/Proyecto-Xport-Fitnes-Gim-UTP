@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
-    xmlns:pt="jakarta.faces.passthrough" xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
+    xmlns:pt="jakarta.faces.passthrough"
+    xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="nuevaCategoria" />
     <ui:param name="menuSubmenu" value="catalogo" />
     <ui:define name="metadata">
@@ -25,18 +26,114 @@
         <link rel="stylesheet"
               href="#{request.contextPath}/css/registrar-categoria.css" />
 
+        <style type="text/css">
+        /* Mensajes de grabar / actualizar / eliminar (h:messages) */
+        .mensajes-catalogo { list-style: none; margin: 0 0 14px; padding: 0; font-size: 13px; }
+        .mensajes-catalogo li { padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; }
+        .mensajes-catalogo .msj-info { background: #ECFDF3; color: #067647; border: 1px solid #A6E3BD; }
+        .mensajes-catalogo .msj-error { background: #FFF1F1; color: #B42318; border: 1px solid #F3B4B4; }
+        input[type="submit"].catalogo-buscar { cursor: pointer; }
+        
+        /* ---------- Distribución: campos a la izquierda, imagen a la derecha ---------- */
+        .categoria-contenido {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 240px;
+            gap: 24px;
+            align-items: start;
+        }
+        /* Código angosto (solo número), Estado a su lado, Nombre a todo el ancho */
+        .registro-categoria-card .registro-categoria-campos {
+            grid-template-columns: 130px minmax(0, 220px) !important;
+            gap: 18px 20px;
+        }
+        .registro-categoria-card .campo-completo { grid-column: 1 / -1; }
+        .registro-categoria-card .campo-codigo input,
+        .registro-categoria-card .campo-estado input {
+            background: #F4F7FB;
+            color: #41516B;
+            cursor: default;
+        }
+        .registro-categoria-card .campo-codigo input { text-align: center; font-weight: 700; }
+
+        /* ---------- Tarjeta de imagen (modelo de RegistrarProducto.xhtml / socios.css) ---------- */
+        .foto-card {
+            min-width: 0;
+            padding: 18px 14px;
+            border: 1px solid #E0E6EF;
+            border-radius: 11px;
+            background: #F8FAFD;
+            text-align: center;
+        }
+        .foto-titulo { font-size: 11px; font-weight: 700; letter-spacing: .4px; color: #102653; }
+        .foto-avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 130px;
+            height: 130px;
+            margin: 15px auto 14px;
+            overflow: hidden;
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            background: #F1F5F9;
+            color: #94A3B8;
+        }
+        .foto-avatar i { font-size: 54px; }
+        .foto-avatar img { width: 100%; height: 100%; object-fit: contain; background: #FFFFFF; }
+        .imagen-botones { display: flex; gap: 6px; justify-content: center; }
+        .btn-subir {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: 0;
+            border-radius: 7px;
+            background: #2864F0;
+            color: #FFFFFF;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-subir:hover { background: #174CC5; }
+        .btn-quitar-imagen { background: #FEE2E2; color: #B42318; }
+        .btn-quitar-imagen:hover { background: #FECACA; }
+        .imagen-url { margin-top: 12px; text-align: left; }
+        .imagen-url label { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; color: #334155; }
+        .imagen-url input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 9px;
+            border: 1px solid #CBD5E1;
+            border-radius: 7px;
+            background: #FFFFFF;
+            font-size: 12px;
+        }
+        .imagen-url input:focus { outline: none; border-color: #275EF5; box-shadow: 0 0 0 2px rgba(39, 94, 245, .12); }
+        .foto-ayuda { margin: 10px 0 0; font-size: 10px; line-height: 1.4; color: #718096; }
+
+        @media (max-width: 900px) {
+            .categoria-contenido { grid-template-columns: minmax(0, 1fr); }
+            .foto-card { justify-self: center; width: 100%; max-width: 300px; }
+        }
+        @media (max-width: 520px) {
+            .registro-categoria-card .registro-categoria-campos { grid-template-columns: minmax(0, 1fr) !important; }
+        }
+        </style>
     </ui:define>
 
     <ui:define name="content">
+<!-- CONTENIDO PRINCIPAL (categoriaBean: grabar = sp_Mante_Categorias, nuevo código = sp_max_cod_categoria) -->
     <main class="gastos-main catalogo-main">
 
-        <!-- CABECERA -->
+        <!-- CABECERA: cambia según se registre o se edite (?modo=editar desde Categorias.xhtml) -->
         <header class="gastos-header">
             <div>
                 <p class="gastos-eyebrow">CONTROL DE INVENTARIO</p>
-                <h1 id="tituloPagina">#{categoriaBean.edicion ? 'Editar Categoria' : 'Registrar Categoría'}</h1>
+                <h1>#{categoriaBean.edicion ? 'Editar Categoría' : 'Registrar Categoría'}</h1>
                 <p class="gastos-subtitle">
-                    Registra una nueva categoría para organizar los productos del gimnasio.
+                    #{categoriaBean.edicion
+                      ? 'Modifica los datos de la categoría seleccionada.'
+                      : 'Registra una nueva categoría para organizar los productos del gimnasio.'}
                 </p>
             </div>
 
@@ -47,8 +144,9 @@
             </a>
         </header>
 
-        <!-- FORMULARIO -->
-        <section class="contenido-card registro-categoria-card" id="formulario">
+        <!-- FORMULARIO DE REGISTRO / EDICIÓN -->
+        <section class="contenido-card registro-categoria-card"
+                 id="formulario">
 
             <div class="card-heading">
                 <div>
@@ -56,51 +154,134 @@
                         <i class="fa-solid fa-tags"></i>
                         Datos de la categoría
                     </h2>
-                    <p>Los campos marcados con * son obligatorios.</p>
+                    <p>
+                        Los campos marcados con * son obligatorios.
+                    </p>
                 </div>
 
-                <i class="fa-solid fa-folder-plus heading-icon"></i>
+                <i class="fa-solid #{categoriaBean.edicion ? 'fa-pen-to-square' : 'fa-folder-plus'} heading-icon"></i>
             </div>
 
-            <h:messages globalOnly="true" layout="list"
-                        styleClass="mensajes-productos"
+            <!-- Validaciones y errores de grabación del bean -->
+            <h:messages globalOnly="true" layout="list" styleClass="mensajes-catalogo"
                         infoClass="msj-info" errorClass="msj-error" />
 
-            <h:form id="formRegistrarCategoria" prependId="false" styleClass="registro-categoria-form">
+            <!-- multipart: el archivo de imagen viaja con el formulario (como RegistrarProducto.xhtml) -->
+            <h:form id="formRegistrarCategoria" prependId="false"
+                    enctype="multipart/form-data"
+                    styleClass="registro-categoria-form">
 
-                <div class="registro-categoria-campos">
+                <div class="categoria-contenido">
 
-                    <div class="registro-categoria-campo">
-                        <label for="nombreCategoria">
-                            <i class="fa-solid fa-tag"></i>
-                            Nombre de la categoría *
-                        </label>
+                    <div class="registro-categoria-campos">
 
-                        <h:inputText id="nombreCategoria" value="#{categoriaBean.categoria.nombre}"
-                                     maxlength="60"
-                                     pt:placeholder="Ej. Suplementos"
-                                     pt:autocomplete="off" />
+                        <!-- CÓDIGO (numérico, autogenerado con sp_max_cod_categoria; no editable) -->
+                        <div class="registro-categoria-campo campo-codigo">
+                            <label for="codigoCategoria">
+                                <i class="fa-solid fa-hashtag"></i>
+                                Código
+                            </label>
 
-                        <span class="registro-categoria-ayuda">
-                            Máximo 60 caracteres. No se admiten nombres repetidos.
-                        </span>
+                            <input type="text" id="codigoCategoria" readonly="readonly"
+                                   value="#{categoriaBean.codigo(categoriaBean.categoria)}" />
+                        </div>
+
+                        <!-- ESTADO (informativo: sp_Mante_Categorias no modifica el estado al actualizar) -->
+                        <div class="registro-categoria-campo campo-estado">
+                            <label for="estadoCategoria">
+                                <i class="fa-solid fa-circle-check"></i>
+                                Estado
+                            </label>
+
+                            <input type="text" id="estadoCategoria" readonly="readonly"
+                                   value="#{categoriaBean.categoria.estado}" />
+                        </div>
+
+                        <!-- NOMBRE -->
+                        <div class="registro-categoria-campo campo-completo">
+                            <label for="nombreCategoria">
+                                <i class="fa-solid fa-tag"></i>
+                                Nombre de la categoría *
+                            </label>
+
+                            <h:inputText id="nombreCategoria"
+                                         value="#{categoriaBean.categoria.nombre}"
+                                         maxlength="50"
+                                         pt:required="required"
+                                         pt:autocomplete="off"
+                                         pt:autofocus="autofocus"
+                                         pt:placeholder="Ej. Suplementos" />
+
+                            <span class="registro-categoria-ayuda">
+                                Utiliza un nombre breve y fácil de identificar. Máximo 50 caracteres.
+                                #{categoriaBean.edicion ? '' : 'El código se asigna automáticamente al grabar.'}
+                            </span>
+                        </div>
+
                     </div>
+
+                    <!-- IMAGEN DE LA CATEGORÍA (mismo modelo que la foto de RegistrarProducto.xhtml) -->
+                    <aside class="foto-card">
+                        <div class="foto-titulo">IMAGEN DE LA CATEGORÍA</div>
+
+                        <!-- Vista previa: la imagen guardada (archivo subido o URL externa) -->
+                        <div class="foto-avatar foto-categoria-avatar" id="fotoCategoriaAvatar">
+                            <ui:fragment rendered="#{not empty categoriaBean.urlImagenActual}">
+                                <img alt="Imagen de la categoría" src="#{categoriaBean.urlImagenActual}" />
+                            </ui:fragment>
+                            <ui:fragment rendered="#{empty categoriaBean.urlImagenActual}">
+                                <i class="fa-solid fa-image"></i>
+                            </ui:fragment>
+                        </div>
+
+                        <!-- Opción 1: subir un archivo (se guarda en el servidor al grabar) -->
+                        <h:inputFile id="imagenCategoria" value="#{categoriaBean.archivoImagen}" style="display:none"
+                                     pt:accept="image/jpeg,image/png,image/gif,image/bmp" />
+                        <h:inputHidden id="quitarImagen" value="#{categoriaBean.quitarImagen}" />
+
+                        <div class="imagen-botones">
+                            <button type="button" class="btn-subir" id="btnSubirImagen">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                Subir Imagen
+                            </button>
+                            <button type="button" class="btn-subir btn-quitar-imagen" id="btnQuitarImagen" title="Quitar imagen">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                        <!-- Opción 2: URL externa (se graba la dirección en Categoria.rutaimagen) -->
+                        <div class="imagen-url">
+                            <label for="urlImagen"><i class="fa-solid fa-link"></i> o pegue la URL de la imagen</label>
+                            <h:inputText id="urlImagen" value="#{categoriaBean.urlImagen}" maxlength="150"
+                                         pt:type="url" pt:placeholder="https://..." pt:autocomplete="off" />
+                        </div>
+
+                        <p class="foto-ayuda" id="nombreImagen">
+                            #{empty categoriaBean.urlImagenActual ? 'Sin imagen.' : 'Imagen guardada.'}
+                            JPG, PNG, GIF o BMP de hasta 2 MB, o una URL https://. Se guarda al presionar
+                            #{categoriaBean.edicion ? 'Guardar cambios' : 'Registrar categoría'}.
+                        </p>
+                    </aside>
 
                 </div>
 
                 <!-- BOTONES -->
                 <div class="registro-categoria-botones">
 
-                    <h:commandLink id="btnGuardarCategoria" action="#{categoriaBean.grabar}"
+                    <h:commandLink id="btnGrabarCategoria"
+                                   action="#{categoriaBean.grabar}"
                                    styleClass="btn-registrar-categoria">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        <span>#{categoriaBean.edicion ? 'Guardar cambios' : 'Registrar categoria'}</span>
+                        #{categoriaBean.edicion ? 'Guardar cambios' : 'Registrar categoría'}
                     </h:commandLink>
 
-                    <h:commandLink id="btnLimpiarCategoria" action="#{categoriaBean.nuevo}" immediate="true"
+                    <!-- Nuevo: sale del modo edición, limpia y autogenera un código -->
+                    <h:commandLink id="btnLimpiarCategoria"
+                                   action="#{categoriaBean.nuevo}"
+                                   immediate="true"
                                    styleClass="btn-limpiar-categoria">
                         <i class="fa-solid fa-eraser"></i>
-                        Limpiar
+                        #{categoriaBean.edicion ? 'Nueva categoría' : 'Limpiar'}
                     </h:commandLink>
 
                     <a class="btn-volver-categorias"
@@ -115,11 +296,121 @@
 
         </section>
 
-        <p class="nota-demo" style="margin-top:18px;">
-            <i class="fa-solid fa-circle-info"></i>
-            Los datos se guardan en SQL Server (sp_Mante_Categorias).
-        </p>
+        <!-- INFORMACION COMPLEMENTARIA -->
+        <section class="registro-categoria-pasos">
+
+            <article class="registro-categoria-paso">
+                <i class="fa-solid fa-tag"></i>
+                <div>
+                    <strong>Nombre identificable</strong>
+                    <p>Usa nombres como Suplementos, Accesorios, Ropa Deportiva o Bebidas.</p>
+                </div>
+            </article>
+
+            <article class="registro-categoria-paso">
+                <i class="fa-solid fa-image"></i>
+                <div>
+                    <strong>Imagen representativa</strong>
+                    <p>Sube un archivo o pega la URL de una imagen que identifique la categoría.</p>
+                </div>
+            </article>
+
+            <article class="registro-categoria-paso">
+                <i class="fa-solid fa-ban"></i>
+                <div>
+                    <strong>Sin duplicados</strong>
+                    <p>No se permite grabar dos categorías con el mismo nombre.</p>
+                </div>
+            </article>
+
+        </section>
 
     </main>
+    </ui:define>
+    <ui:define name="scripts">
+<script type="text/javascript">
+document.addEventListener("DOMContentLoaded", function () {
+    "use strict";
+
+    // Imagen de la categoría: vista previa al instante; el archivo o la URL se guardan al grabar
+    const inputImagen = document.getElementById("imagenCategoria");
+    const botonImagen = document.getElementById("btnSubirImagen");
+    const botonQuitar = document.getElementById("btnQuitarImagen");
+    const avatar = document.getElementById("fotoCategoriaAvatar");
+    const nombreImagen = document.getElementById("nombreImagen");
+    const quitarImagen = document.getElementById("quitarImagen");
+    const urlImagen = document.getElementById("urlImagen");
+    const MAX_IMAGEN = 2 * 1024 * 1024;
+
+    function mostrarImagen(src) {
+        avatar.replaceChildren();
+        if (src) {
+            const img = document.createElement("img");
+            img.alt = "Imagen de la categoría";
+            img.src = src;
+            img.onerror = function () {
+                avatar.replaceChildren();
+                const i = document.createElement("i");
+                i.className = "fa-solid fa-triangle-exclamation";
+                avatar.appendChild(i);
+                nombreImagen.textContent = "No se pudo cargar la imagen de esa dirección.";
+            };
+            avatar.appendChild(img);
+        } else {
+            const i = document.createElement("i");
+            i.className = "fa-solid fa-image";
+            avatar.appendChild(i);
+        }
+    }
+
+    botonImagen.addEventListener("click", function () {
+        inputImagen.click();
+    });
+
+    inputImagen.addEventListener("change", function () {
+        const archivo = inputImagen.files[0];
+        if (!archivo) return;
+
+        if (!/^image\/(jpeg|png|gif|bmp)$/.test(archivo.type)) {
+            alert("Selecciona una imagen JPG, PNG, GIF o BMP.");
+            inputImagen.value = "";
+            return;
+        }
+        if (archivo.size > MAX_IMAGEN) {
+            alert("La imagen no debe pesar más de 2 MB.");
+            inputImagen.value = "";
+            return;
+        }
+        // El archivo reemplaza a la URL
+        urlImagen.value = "";
+        quitarImagen.value = "false";
+        nombreImagen.textContent = archivo.name + " · se guardará al grabar.";
+        mostrarImagen(URL.createObjectURL(archivo));
+    });
+
+    urlImagen.addEventListener("change", function () {
+        const url = urlImagen.value.trim();
+        if (url) {
+            if (!/^https?:\/\/\S+$/i.test(url)) {
+                alert("La URL debe empezar con http:// o https:// y no llevar espacios.");
+                return;
+            }
+            // La URL reemplaza al archivo elegido
+            inputImagen.value = "";
+            quitarImagen.value = "false";
+            nombreImagen.textContent = "URL externa · se guardará al grabar.";
+        }
+        mostrarImagen(url);
+    });
+
+    botonQuitar.addEventListener("click", function () {
+        inputImagen.value = "";
+        urlImagen.value = "";
+        quitarImagen.value = "true";
+        nombreImagen.textContent = "Sin imagen · se quitará al grabar.";
+        mostrarImagen("");
+    });
+});
+</script>
     </ui:define>
 </ui:composition>

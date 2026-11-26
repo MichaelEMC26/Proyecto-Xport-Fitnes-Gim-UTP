@@ -11,18 +11,18 @@ import java.util.List;
 import com.registro.config.ConexionBD;
 import com.registro.dto.CategoriaDTO;
 import com.registro.dto.MarcasDTO;
-import com.registro.dto.ProductosDTO;
+import com.registro.dto.CatalogoDTO;
 import com.registro.dto.UsuarioDTO;
 
 /**
  *
  * @author Ing
  */
-public class ProductosDAO {
+public class CatalogoDAO {
     
-  public ProductosDTO ListaTipoBien()
+  public CatalogoDTO ListaTipoBien()
   {
-      ProductosDTO TipoBien = null;
+      CatalogoDTO TipoBien = null;
       Connection cn = null;
       CallableStatement cs = null;
       ResultSet rs = null;
@@ -37,7 +37,7 @@ public class ProductosDAO {
 
           if(rs.next())
           {
-              TipoBien = new ProductosDTO();
+              TipoBien = new CatalogoDTO();
               
               TipoBien.setTipoBien_ID(rs.getString("TipoBien"));
               
@@ -88,8 +88,9 @@ public class ProductosDAO {
               categoria.setCategoria_ID(rs.getInt("Categoria_ID"));
               categoria.setNombre(rs.getString("Nombre"));
               categoria.setEstado(rs.getString("Estado"));
-               // Mante_Categorias reenvia rutaimagen al editar: se lee si el SP la devuelve (si no, queda null).
-               try { categoria.setrutaimagen(rs.getString("rutaimagen")); } catch(SQLException ignorar) { }
+              // rutaimagen solo si el SP la devuelve: al editar se reenvía tal cual
+              // a sp_Mante_Categorias para no borrar la imagen de la categoría.
+              categoria.setrutaimagen(columnaOpcional(rs, "rutaimagen"));
               
               listaCat.add(categoria);
           }
@@ -170,246 +171,181 @@ public class ProductosDAO {
      * MANTENIMIENTO DE CATEGORIAS DE PRODUCTOS
      * 
      * */
+  /** sp_max_cod_categoria: siguiente Categoria_ID (la columna no tiene nombre, se lee la primera). */
   public CategoriaDTO AutogeneraCategoria()
   {
-        CategoriaDTO autogeneraCategoria = null;
-        Connection cnn = null;
-        CallableStatement cs = null;
-        ResultSet rs = null;
-        
-        try
+        CategoriaDTO autogeneraCategoria = new CategoriaDTO();
+        String sql = "{call sp_max_cod_categoria}";
+        try (Connection cnn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cnn.prepareCall(sql);
+             ResultSet rs = cs.executeQuery())
         {
-            cnn = ConexionBD.obtenerConexion();
-            String sql = "{call sp_max_cod_categoria}";
-            
-            cs = cnn.prepareCall(sql);
-            rs = cs.executeQuery();
-            
-            autogeneraCategoria = new CategoriaDTO();
-            
             if(rs.next())
             {
-                autogeneraCategoria.setCategoria_ID(rs.getInt("Categoria_ID"));
+                autogeneraCategoria.setCategoria_ID(rs.getInt(1));
             }
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
         }
-        finally
-        {
-            try
-            {
-                if(cnn != null){cnn.close();}
-                if(cs != null){cs.close();}
-                if(rs != null){rs.close();}
-            }
-            catch(SQLException ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-        
         return autogeneraCategoria;
     }
     
+    /**
+     * sp_Mante_Categorias: inserta si el Categoria_ID no existe, si existe actualiza Nombre y rutaimagen.
+     * El SP usa SET NOCOUNT ON (executeUpdate no informa filas) y captura sus errores con
+     * RETURN 0 / RETURN -1, por eso el resultado se toma del valor de retorno.
+     */
     public boolean Mante_Categorias(CategoriaDTO Categorias)
     {
-        Connection cnn = null;
-        CallableStatement cs = null;
-        boolean registroExitoso = false;
-        try
+        String sql = "{? = call sp_Mante_Categorias(?,?,?,?)}";
+        try (Connection cnn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cnn.prepareCall(sql))
         {
-            cnn = ConexionBD.obtenerConexion();
-            String sql ="{call sp_Mante_Categorias(?,?,?,?)}";
-            cs = cnn.prepareCall(sql);
-
-            cs.setInt(1, Categorias.getCategoria_ID());
-            cs.setString(2, Categorias.getNombre());
-            cs.setString(3, Categorias.getEstado());
-            cs.setString(4, Categorias.getrutaimagen());
-
-            int filasAfectadas = cs.executeUpdate();
-            if(filasAfectadas > 0){ registroExitoso = true;}
+            cs.registerOutParameter(1, Types.INTEGER);
+            cs.setInt(2, Categorias.getCategoria_ID());
+            cs.setString(3, Categorias.getNombre());
+            cs.setString(4, Categorias.getEstado());
+            cs.setString(5, Categorias.getrutaimagen());
+            cs.execute();
+            return cs.getInt(1) == 0;
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
+            return false;
         }
-        finally
-        {
-            try
-            {
-                if(cnn != null){cnn.close();}
-                if(cs != null){cs.close();}
-
-            }
-            catch(Exception ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-
-        return registroExitoso;
     }
     
+    /**
+     * sp_Elimina_Categorias: si la categoría tiene productos la deja INACTIVO, si no la borra.
+     * Éxito cuando el SP devuelve RETURN 0.
+     */
     public boolean Elimina_Categorias(CategoriaDTO Categorias)
     {
-        Connection cnn = null;
-        CallableStatement cs = null;
-        boolean categoriaEliminado = false;
-        try
+        String sql = "{? = call sp_Elimina_Categorias(?)}";
+        try (Connection cnn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cnn.prepareCall(sql))
         {
-            cnn = ConexionBD.obtenerConexion();
-            String sql ="{call sp_Elimina_Categorias(?)}";
-            cs = cnn.prepareCall(sql);
-
-            cs.setInt(1, Categorias.getCategoria_ID());
-            
-            int filasAfectadas = cs.executeUpdate();
-            if(filasAfectadas > 0){ categoriaEliminado = true;}
+            cs.registerOutParameter(1, Types.INTEGER);
+            cs.setInt(2, Categorias.getCategoria_ID());
+            cs.execute();
+            return cs.getInt(1) == 0;
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
+            return false;
         }
-        finally
-        {
-            try
-            {
-                if(cnn != null){cnn.close();}
-                if(cs != null){cs.close();}
-
-            }
-            catch(Exception ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-
-        return categoriaEliminado;
     }
     
   /**
      * MANTENIMIENTO DE MARCAS DE PRODUCTOS
      * 
      * */    
+    /** sp_max_marc: siguiente MarcaProducto_ID (la columna no tiene nombre, se lee la primera). */
     public MarcasDTO AutogeneraMarca()
     {
-        MarcasDTO autogeneraMarca = null;
-        Connection cnn = null;
-        CallableStatement cs = null;
-        ResultSet rs = null;
-        
-        try
+        MarcasDTO autogeneraMarca = new MarcasDTO();
+        String sql = "{call sp_max_marc}";
+        try (Connection cnn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cnn.prepareCall(sql);
+             ResultSet rs = cs.executeQuery())
         {
-            cnn = ConexionBD.obtenerConexion();
-            String sql = "{call sp_max_marc}";
-            
-            cs = cnn.prepareCall(sql);
-            rs = cs.executeQuery();
-            
-            autogeneraMarca = new MarcasDTO();
-            
             if(rs.next())
             {
-                autogeneraMarca.setMarca_ID(rs.getInt("Marca_ID"));
+                autogeneraMarca.setMarca_ID(rs.getInt(1));
             }
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
         }
-        finally
-        {
-            try
-            {
-                if(cnn != null){cnn.close();}
-                if(cs != null){cs.close();}
-                if(rs != null){rs.close();}
-            }
-            catch(SQLException ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-        
         return autogeneraMarca;
     }
     
+    /**
+     * sp_Mante_marcas: inserta si el MarcaProducto_ID no existe, si existe actualiza Nombre y EstadoMarca.
+     * Igual que en categorías, el éxito se toma del RETURN 0 / -1 del SP.
+     */
     public boolean Mante_Marcas(MarcasDTO marcas)
     {
-        Connection cnn = null;
-        CallableStatement cs = null;
-        boolean registroExitoso = false;
-        try
+        String sql = "{? = call sp_Mante_marcas(?,?,?)}";
+        try (Connection cnn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cnn.prepareCall(sql))
         {
-            cnn = ConexionBD.obtenerConexion();
-            String sql ="{call sp_Mante_marcas(?,?,?)}";
-            cs = cnn.prepareCall(sql);
-
-            cs.setInt(1, marcas.getMarca_ID());
-            cs.setString(2, marcas.getNombre());
-            cs.setString(3, marcas.getEstadoMarca());
-
-            int filasAfectadas = cs.executeUpdate();
-            if(filasAfectadas > 0){ registroExitoso = true;}
+            cs.registerOutParameter(1, Types.INTEGER);
+            cs.setInt(2, marcas.getMarca_ID());
+            cs.setString(3, marcas.getNombre());
+            cs.setString(4, marcas.getEstadoMarca());
+            cs.execute();
+            return cs.getInt(1) == 0;
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
+            return false;
         }
-        finally
-        {
-            try
-            {
-                if(cnn != null){cnn.close();}
-                if(cs != null){cs.close();}
-
-            }
-            catch(Exception ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-
-        return registroExitoso;
     }
+    /**
+     * sp_Elim_MarcaPro: si la marca tiene productos la deja INACTIVO, si no la borra.
+     * Éxito cuando el SP devuelve RETURN 0.
+     */
     public boolean Elim_MarcaPro(MarcasDTO marcas)
     {
-        Connection cnn = null;
-        CallableStatement cs = null;
-        boolean marcaEliminado = false;
-        try
+        String sql = "{? = call sp_Elim_MarcaPro(?)}";
+        try (Connection cnn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cnn.prepareCall(sql))
         {
-            cnn = ConexionBD.obtenerConexion();
-            String sql ="{call sp_Elim_MarcaPro(?)}";
-            cs = cnn.prepareCall(sql);
-
-            cs.setInt(1, marcas.getMarca_ID());
-            
-            int filasAfectadas = cs.executeUpdate();
-            if(filasAfectadas > 0){ marcaEliminado = true;}
+            cs.registerOutParameter(1, Types.INTEGER);
+            cs.setInt(2, marcas.getMarca_ID());
+            cs.execute();
+            return cs.getInt(1) == 0;
         }
         catch(SQLException ex)
         {
             ex.printStackTrace();
+            return false;
         }
-        finally
+    }
+
+    /**
+     * Categoria.rutaimagen de una categoría (null si no tiene o no existe).
+     * Se usa al editar cuando sp_lista_categoriasAct no devuelve esa columna, para que
+     * sp_Mante_Categorias no borre la imagen al actualizar solo el nombre.
+     */
+    public String RutaImagenCategoria(int categoriaId)
+    {
+        String sql = "SELECT rutaimagen FROM Categoria WHERE Categoria_ID = ?";
+        try (Connection cn = ConexionBD.obtenerConexion();
+             PreparedStatement ps = cn.prepareStatement(sql))
         {
-            try
+            ps.setInt(1, categoriaId);
+            try (ResultSet rs = ps.executeQuery())
             {
-                if(cnn != null){cnn.close();}
-                if(cs != null){cs.close();}
-
-            }
-            catch(Exception ex)
-            {
-                ex.printStackTrace();
+                return rs.next() ? rs.getString(1) : null;
             }
         }
+        catch (SQLException ex)
+        {
+            ex.printStackTrace();
+            return null;
+        }
+    }
 
-        return marcaEliminado;
+    /** Valor de una columna que puede no venir en el SELECT del procedimiento (null si no existe). */
+    private static String columnaOpcional(ResultSet rs, String columna) throws SQLException
+    {
+        ResultSetMetaData md = rs.getMetaData();
+        for (int i = 1; i <= md.getColumnCount(); i++)
+        {
+            if (md.getColumnLabel(i).equalsIgnoreCase(columna))
+            {
+                return rs.getString(i);
+            }
+        }
+        return null;
     }
 
   /**
@@ -417,9 +353,9 @@ public class ProductosDAO {
      * */
 
     /** sp_Lista_ProductosGral_Activos @CodEmp: productos activos de la empresa. */
-    public List<ProductosDTO> ListaProductosActivos(String codEmp)
+    public List<CatalogoDTO> ListaProductosActivos(String codEmp)
     {
-        List<ProductosDTO> lista = new ArrayList<>();
+        List<CatalogoDTO> lista = new ArrayList<>();
         String sql = "{call sp_Lista_ProductosGral_Activos(?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
@@ -435,9 +371,9 @@ public class ProductosDAO {
     }
 
     /** sp_buscaProdxNomTotAct @CodEmp, @descprod: búsqueda por nombre/descripción (frm_BusquedaProd). */
-    public List<ProductosDTO> BuscaProductosXNombre(String codEmp, String texto)
+    public List<CatalogoDTO> BuscaProductosXNombre(String codEmp, String texto)
     {
-        List<ProductosDTO> lista = new ArrayList<>();
+        List<CatalogoDTO> lista = new ArrayList<>();
         String sql = "{call sp_buscaProdxNomTotAct(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
@@ -454,9 +390,9 @@ public class ProductosDAO {
     }
 
     /** sp_buscaProdxMarcaActivo @CodEmp, @MarcaProducto_ID: productos activos de una marca. */
-    public List<ProductosDTO> BuscaProductosXMarca(String codEmp, int marcaId)
+    public List<CatalogoDTO> BuscaProductosXMarca(String codEmp, int marcaId)
     {
-        List<ProductosDTO> lista = new ArrayList<>();
+        List<CatalogoDTO> lista = new ArrayList<>();
         String sql = "{call sp_buscaProdxMarcaActivo(?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
@@ -473,13 +409,13 @@ public class ProductosDAO {
     }
 
     /** Columnas comunes de los listados: las mismas que ordena frm_Productos.OrdenaGrid(). */
-    private void leerListado(CallableStatement cs, List<ProductosDTO> lista) throws SQLException
+    private void leerListado(CallableStatement cs, List<CatalogoDTO> lista) throws SQLException
     {
         try (ResultSet rs = cs.executeQuery())
         {
             while (rs.next())
             {
-                ProductosDTO p = new ProductosDTO();
+                CatalogoDTO p = new CatalogoDTO();
                 p.setProducto_ID(recortar(rs.getString("Producto_ID")));
                 p.setDescripcion(rs.getString("Descripcion"));
                 p.setEstadoProducto(recortar(rs.getString("EstadoProducto")));
@@ -507,9 +443,9 @@ public class ProductosDAO {
     }
 
     /** sp_autogenera_codprod: siguiente código de 6 dígitos (columna NuevoID; se lee la primera columna). */
-    public ProductosDTO Autogenera_codprod()
+    public CatalogoDTO Autogenera_codprod()
     {
-        ProductosDTO autogenera = new ProductosDTO();
+        CatalogoDTO autogenera = new CatalogoDTO();
         String sql = "{call sp_autogenera_codprod}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql);
@@ -551,7 +487,7 @@ public class ProductosDAO {
     }
 
     /** sp_Insert_Productos. Devuelve true si el procedimiento terminó sin error. */
-    public boolean Insert_ProductosD(ProductosDTO p)
+    public boolean Insert_ProductosD(CatalogoDTO p)
     {
         String sql = "{call sp_Insert_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
@@ -572,7 +508,7 @@ public class ProductosDAO {
      * Actualiza el producto.si el stock se puede editar (sin ventas) usa
      * sp_Update_Productos; si ya tiene ventas usa sp_Update_Productos2, que no recibe StockFinal.
      */
-    public boolean Update_Productos(ProductosDTO p, boolean incluyeStock)
+    public boolean Update_Productos(CatalogoDTO p, boolean incluyeStock)
     {
         String sql = incluyeStock
                 ? "{call sp_Update_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}"
@@ -592,7 +528,7 @@ public class ProductosDAO {
     }
 
     /** Parámetros que envía Alm_Mante_ProductosD (Insert / Update / Update2). */
-    private void asignarComunes(CallableStatement cs, ProductosDTO p, boolean incluyeStock) throws SQLException
+    private void asignarComunes(CallableStatement cs, CatalogoDTO p, boolean incluyeStock) throws SQLException
     {
         cs.setString("Producto_ID", p.getProducto_ID());
         cs.setString("NombreProducto", p.getNombreProducto());
@@ -645,7 +581,7 @@ public class ProductosDAO {
     }
 
     /** sp_Elim_Producto: borrado físico (no lo usa frm_Productos; se conserva por compatibilidad). */
-    public boolean Elim_Producto(ProductosDTO producto)
+    public boolean Elim_Producto(CatalogoDTO producto)
     {
         String sql = "{call sp_Elim_Producto(?)}";
         try (Connection cn = ConexionBD.obtenerConexion();

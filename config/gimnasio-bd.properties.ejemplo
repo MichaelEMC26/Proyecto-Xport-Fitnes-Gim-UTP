@@ -29,3 +29,8 @@ gym.apisperu.token=TOKEN_DE_APISPERU
 # La ruta completa de cada foto se graba en Cliente.Foto (máx. 100 caracteres): use una ruta corta.
 # Si no se indica: <carpeta de Tomcat>/fotos-socios
 #gym.fotos.dir=D:/XportFitnessGym/fotos
+
+# Carpeta del servidor donde se guardan las imágenes de los productos ("Subir Imagen" en Registrar Producto).
+# En Productos.Imagen se graba solo el nombre del archivo ({Producto_ID}_{version}.jpg) o una URL https:// externa.
+# Si no se indica: <carpeta de Tomcat>/fotos-productos
+#gym.productos.dir=D:/XportFitnessGym/productos

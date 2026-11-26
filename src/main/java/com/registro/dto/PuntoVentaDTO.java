@@ -13,7 +13,7 @@ import java.io.Serializable;
  *
  * @author Ing
  */
-public class FacturacionDTO implements Serializable {
+public class PuntoVentaDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
     
@@ -181,7 +181,7 @@ public class FacturacionDTO implements Serializable {
     /********* Cabecera_Ventas ******/
     private String Impreso;           // "SI" si el comprobante ya se imprimió
 
-    public FacturacionDTO()
+    public PuntoVentaDTO()
     {
         
     }

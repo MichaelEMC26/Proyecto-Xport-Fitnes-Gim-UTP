@@ -281,6 +281,10 @@
                 font-weight: 700;
             }
             .planes-main .estado-pendiente { background: #dc2626; color: #fff; }
+            .planes-main a.estado-cobrar { text-decoration: none; cursor: pointer; transition: background .15s; }
+            .planes-main a.estado-cobrar:hover,
+            .planes-main a.estado-cobrar:focus-visible { background: #b91c1c; box-shadow: 0 0 0 2px #fecaca; outline: none; }
+            .planes-main a.estado-cobrar i { margin-right: 4px; }
             .planes-main .estado-susc { background: #e0e7ff; color: #1e3a8a; }
 
             .planes-main .busqueda-fecha select {
@@ -475,7 +479,16 @@
                                     <td><span class="#{s.vigente eq 'SI' ? 'vigente-si' : 'vigente-no'}">#{s.vigente}</span></td>
                                     <td><strong>#{consultaSuscripcionesBean.soles(s.total)}</strong></td>
                                     <td>#{s.condicion}</td>
-                                    <td><span class="#{consultaSuscripcionesBean.pendiente(s) ? 'estado-pendiente' : 'estado-susc'}" title="#{consultaSuscripcionesBean.pendiente(s) ? 'Pendiente de pago' : ''}">#{empty s.estadoSusc ? '-' : s.estadoSusc}</span></td>
+                                    <td>
+                                        <!-- Pendiente de pago: enlace directo al Punto de Venta con la membresía lista para cobrar -->
+                                        <h:link outcome="/PuntoVenta.xhtml" rendered="#{consultaSuscripcionesBean.pendiente(s)}"
+                                                styleClass="estado-pendiente estado-cobrar" title="Pendiente de pago: clic para cobrar en el Punto de Venta">
+                                            <f:param name="suscripcion" value="#{s.registro}" />
+                                            <i class="fa-solid fa-cash-register"></i> #{s.estadoSusc}
+                                        </h:link>
+                                        <h:outputText rendered="#{not consultaSuscripcionesBean.pendiente(s)}" styleClass="estado-susc"
+                                                      value="#{empty s.estadoSusc ? '-' : s.estadoSusc}" />
+                                    </td>
                                     <td>#{s.vendedor}</td>
                                     <td class="acciones">
                                         <h:link outcome="/membresias.xhtml" styleClass="accion-btn editar-btn" title="Ver / modificar">

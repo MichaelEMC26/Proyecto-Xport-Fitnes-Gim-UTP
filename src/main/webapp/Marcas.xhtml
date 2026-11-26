@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
-    xmlns:pt="jakarta.faces.passthrough" xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
+    xmlns:pt="jakarta.faces.passthrough"
+    xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="listarMarcas" />
     <ui:param name="menuSubmenu" value="catalogo" />
     <ui:define name="metadata">
@@ -126,15 +127,180 @@
                 flex-wrap: wrap;
             }
         }
+    
+        /* Mensajes de grabar / actualizar / eliminar (h:messages) */
+        .mensajes-catalogo { list-style: none; margin: 0 0 14px; padding: 0; font-size: 13px; }
+        .mensajes-catalogo li { padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; }
+        .mensajes-catalogo .msj-info { background: #ECFDF3; color: #067647; border: 1px solid #A6E3BD; }
+        .mensajes-catalogo .msj-error { background: #FFF1F1; color: #B42318; border: 1px solid #F3B4B4; }
+        input[type="submit"].catalogo-buscar { cursor: pointer; }
+    
+        /* Botón superior derecho: mismo azul que Productos.xhtml (productos-dashboard.css, --prod-azul) */
+        .catalogo-main .productos-nuevo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            flex-shrink: 0;
+            padding: 12px 17px;
+            border: 1px solid #2864F5;
+            border-radius: 12px;
+            background: #2864F5;
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .catalogo-main .productos-nuevo i { color: #FFFFFF; }
+        .catalogo-main .productos-nuevo:hover { background: #1749D1; transform: translateY(-1px); }
+
+        /* Anchos de columna: código angosto, nombre ocupa el resto, acciones siempre visibles.
+           gastos.css fija min-width: 220px a la primera celda; aquí se anula. */
+        .catalogo-tabla { table-layout: fixed; }
+        .catalogo-tabla .col-codigo { width: 80px; }
+        .catalogo-tabla .col-estado { width: 130px; }
+        .catalogo-tabla .col-acciones { width: 120px; }
+        .catalogo-tabla td:first-child { min-width: 0; font-weight: 700; color: #10234D; }
+        .catalogo-tabla td { overflow-wrap: anywhere; }
+        .catalogo-tabla td.acciones { white-space: nowrap; }
+    
+        /* ---------- Filtro de búsqueda (mismo diseño que Productos.xhtml) ---------- */
+        .catalogo-main .criterios-busqueda {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 12.5px;
+            color: #17233C;
+        }
+        .catalogo-main .criterios-titulo {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            color: #10234D;
+        }
+        .catalogo-main .criterios-opciones,
+        .catalogo-main .criterios-opciones tbody,
+        .catalogo-main .criterios-opciones tr {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border: 0;
+            margin: 0;
+        }
+        .catalogo-main .criterios-opciones td {
+            display: inline-flex;
+            align-items: center;
+            padding: 0;
+            border: 0;
+        }
+        .catalogo-main .criterios-opciones input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+        }
+        .catalogo-main .criterios-opciones label {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border: 1px solid #D8DFEA;
+            border-radius: 999px;
+            background: #FFFFFF;
+            color: #475569;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .catalogo-main .criterios-opciones label:hover { border-color: #2864F0; color: #2864F0; }
+        .catalogo-main .criterios-opciones input[type="radio"]:checked + label {
+            background: #2864F0;
+            border-color: #2864F0;
+            color: #FFFFFF;
+        }
+        .catalogo-main .criterios-opciones input[type="radio"]:focus-visible + label {
+            outline: 2px solid #2864F0;
+            outline-offset: 2px;
+        }
+
+        .catalogo-main .productos-toolbar.toolbar-busqueda {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        .catalogo-main .toolbar-busqueda .busqueda-productos {
+            display: flex;
+            flex: 0 1 380px;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            min-height: 43px;
+            padding: 0 12px;
+            border: 1px solid #DFE6F2;
+            border-radius: 10px;
+            background: #FFFFFF;
+            color: #98A2B3;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .catalogo-main .toolbar-busqueda .busqueda-productos:focus-within {
+            border-color: #2864F5;
+            box-shadow: 0 0 0 3px rgba(40, 100, 245, 0.08);
+        }
+        .catalogo-main .toolbar-busqueda .busqueda-productos > i { flex-shrink: 0; }
+        .catalogo-main .toolbar-busqueda .busqueda-productos input {
+            width: 100%;
+            min-width: 0;
+            min-height: 40px;
+            padding: 0;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #39465C;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        .catalogo-main .toolbar-busqueda .busqueda-productos input::placeholder { color: #98A2B3; }
+
+        .catalogo-main .btn-toolbar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .catalogo-main .btn-toolbar.btn-buscar { background: #2864F0; border: 1px solid #2864F0; color: #FFFFFF; }
+        .catalogo-main .btn-toolbar.btn-buscar:hover { background: #174CC5; }
+        .catalogo-main .btn-toolbar.btn-listar { background: #FFFFFF; border: 1px solid #2864F0; color: #2864F0; }
+        .catalogo-main .btn-toolbar.btn-listar:hover { background: #EAF0FF; }
+
+        @media (max-width: 760px) {
+            .catalogo-main .toolbar-busqueda .busqueda-productos { flex: 1 1 100%; }
+        }
     </style>
     </ui:define>
     <ui:define name="content">
+<!-- CONTENIDO PRINCIPAL (datos reales: marcaBean -> CatalogoFACADE -> CatalogoDAO) -->
     <main class="gastos-main catalogo-main">
 
         <header class="gastos-header">
             <div>
                 <p class="gastos-eyebrow">CONTROL DE INVENTARIO</p>
-                <h1 id="tituloPagina">Marcas de productos</h1>
+
+                <h1>Marcas de productos</h1>
+
                 <p class="gastos-subtitle">
                     Organiza y administra las marcas del catálogo del gimnasio.
                 </p>
@@ -147,20 +313,20 @@
             </a>
         </header>
 
-        <h:messages globalOnly="true" layout="list" styleClass="mensajes-productos"
-                    infoClass="msj-info" errorClass="msj-error" />
-
-        <!-- RESUMEN -->
+        <!-- TARJETAS DE RESUMEN -->
         <section class="resumen-grid catalogo-resumen">
 
             <article class="resumen-card">
                 <div class="resumen-icon">
                     <i class="fa-solid fa-copyright"></i>
                 </div>
+
                 <p class="resumen-label">Marcas registradas</p>
+
                 <p class="resumen-value" id="totalMarcas">#{marcaBean.total}</p>
+
                 <span class="resumen-foot">
-                    <i class="fa-solid fa-layer-group"></i>
+                    <i class="fa-solid fa-tags"></i>
                     En el catálogo
                 </span>
             </article>
@@ -169,8 +335,11 @@
                 <div class="resumen-icon catalogo-icon-green">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
+
                 <p class="resumen-label">Marcas activas</p>
+
                 <p class="resumen-value" id="totalActivas">#{marcaBean.totalActivas}</p>
+
                 <span class="resumen-foot">
                     <i class="fa-solid fa-shield-halved"></i>
                     Disponibles en el catálogo
@@ -181,23 +350,26 @@
                 <div class="resumen-icon catalogo-icon-purple">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
+
                 <p class="resumen-label">Búsqueda</p>
+
                 <p class="resumen-value catalogo-value-label">Rápida</p>
+
                 <span class="resumen-foot">
                     <i class="fa-solid fa-filter"></i>
-                    Por nombre
+                    Por nombre y código
                 </span>
             </article>
 
         </section>
 
-        <!-- LISTADO -->
+        <!-- LISTADO DE MARCAS -->
         <section class="contenido-card catalogo-listado">
 
             <div class="card-heading movimientos-heading">
                 <div>
                     <h2>Lista de marcas</h2>
-                    <p>Busca y administra las marcas del catálogo</p>
+                    <p>Busca, edita y administra las marcas del catálogo.</p>
                 </div>
 
                 <span class="movimientos-count" id="cantidadResultados">
@@ -205,31 +377,56 @@
                 </span>
             </div>
 
-            <h:form id="frmListaMarca" prependId="false">
+            <!-- Mensajes del bean (grabar / actualizar / eliminar); se conservan tras la redirección -->
+            <h:messages globalOnly="true" layout="list" styleClass="mensajes-catalogo"
+                        infoClass="msj-info" errorClass="msj-error" />
 
-                <div class="productos-toolbar">
-                    <label class="busqueda-productos">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <h:inputText id="buscarMarca" value="#{marcaBean.textoBusqueda}"
-                                     pt:placeholder="Buscar por nombre..."
-                                     pt:aria-label="Buscar marcas"
-                                     pt:autocomplete="off" />
-                    </label>
+            <h:form id="frmListaMarcas" prependId="false">
 
-                    <h:commandLink id="btnBuscarMarca" action="#{marcaBean.buscar}" styleClass="btn-toolbar btn-buscar">
-                        Buscar
-                    </h:commandLink>
-                    <h:commandLink id="btnListarMarca" action="#{marcaBean.listar}" styleClass="btn-toolbar btn-listar">
-                        Listar todo
-                    </h:commandLink>
+                <!-- Condición de filtro (como Productos.xhtml) -->
+                <div class="criterios-busqueda" role="radiogroup" aria-label="Condición de búsqueda">
+                    <span class="criterios-titulo"><i class="fa-solid fa-filter"></i> Buscar por:</span>
+                    <h:selectOneRadio id="criterioBusqueda" value="#{marcaBean.criterioBusqueda}"
+                                      layout="lineDirection" styleClass="criterios-opciones">
+                        <f:selectItem itemLabel="Nombre" itemValue="NOMBRE" />
+                        <f:selectItem itemLabel="Código" itemValue="CODIGO" />
+                    </h:selectOneRadio>
                 </div>
 
+                <div class="productos-toolbar toolbar-busqueda">
+
+                    <label class="busqueda-productos">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <h:inputText id="textoBusqueda" value="#{marcaBean.textoBusqueda}"
+                                     pt:type="search"
+                                     pt:aria-label="Buscar marcas"
+                                     pt:placeholder="#{marcaBean.criterioBusqueda eq 'CODIGO' ? 'Escriba el código...' : 'Buscar por nombre...'}" />
+                    </label>
+
+                    <h:commandLink id="btnBuscar" action="#{marcaBean.buscar}" styleClass="btn-toolbar btn-buscar">
+                        <i class="fa-solid fa-magnifying-glass"></i>&#160;Buscar (F5)
+                    </h:commandLink>
+                    <h:commandLink id="btnListar" action="#{marcaBean.listar}" styleClass="btn-toolbar btn-listar">
+                        <i class="fa-solid fa-list"></i>&#160;Listar (F7)
+                    </h:commandLink>
+
+                </div>
+
+                <!-- TABLA -->
                 <div class="tabla-scroll" data-paginar="marcas">
 
                     <table class="tabla-movimientos tabla-productos catalogo-tabla">
+
+                        <colgroup>
+                            <col class="col-codigo" />
+                            <col />
+                            <col class="col-estado" />
+                            <col class="col-acciones" />
+                        </colgroup>
+
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>Código</th>
                                 <th>Marca</th>
                                 <th>Estado</th>
                                 <th class="acciones-col">Acciones</th>
@@ -239,43 +436,49 @@
                         <tbody id="filasMarcas">
                             <ui:repeat value="#{marcaBean.lista}" var="m">
                                 <tr>
-                                    <td>#{marcaBean.codigo(m)}</td>
+                                    <td>#{m.marca_ID}</td>
 
                                     <td>
-                                        <span class="mov-icon prod-icon catalogo-item-icon">
-                                            <i class="fa-solid fa-copyright"></i>
-                                        </span>
-                                        <span class="mov-info">
+                                        <div class="marca-nombre">
+                                            <span class="marca-icono">
+                                                <i class="fa-solid fa-copyright"></i>
+                                            </span>
                                             <strong>#{m.nombre}</strong>
-                                        </span>
+                                        </div>
                                     </td>
 
                                     <td>
-                                        <span class="categoria-estado marca-estado">
-                                            <span class="punto"></span> #{m.estadoMarca}
+                                        <span class="marca-estado">
+                                            <span class="punto"></span> #{empty m.estadoMarca ? 'Activo' : m.estadoMarca}
                                         </span>
                                     </td>
 
                                     <td class="acciones">
-                                        <h:commandLink action="#{marcaBean.editar(m)}" styleClass="accion-btn editar-btn"
-                                                       title="Editar marca">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </h:commandLink>
+                                        <div class="marca-acciones">
+                                            <!-- Editar: carga la fila en marcaBean y abre RegistrarMarca.xhtml?modo=editar -->
+                                            <h:commandLink action="#{marcaBean.editar(m)}"
+                                                           styleClass="accion-btn editar-btn"
+                                                           title="Editar marca">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </h:commandLink>
 
-                                        <h:commandLink action="#{marcaBean.eliminar(m)}" styleClass="accion-btn eliminar-btn"
-                                                       title="Eliminar marca"
-                                                       onclick="return confirm('¿Eliminar marca?');">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </h:commandLink>
+                                            <h:commandLink action="#{marcaBean.eliminar(m)}"
+                                                           styleClass="accion-btn eliminar-btn"
+                                                           title="Eliminar marca"
+                                                           onclick="return confirm('¿Eliminar la marca seleccionada? Si tiene productos quedará Inactiva.');">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </h:commandLink>
+                                        </div>
                                     </td>
                                 </tr>
                             </ui:repeat>
                         </tbody>
+
                     </table>
 
-                    <h:panelGroup layout="block" styleClass="categoria-vacio marca-vacio"
-                                  rendered="#{marcaBean.totalResultados eq 0}">
-                        No se encontraron marcas.
+                    <h:panelGroup layout="block" styleClass="marca-vacio"
+                                  rendered="#{empty marcaBean.lista}">
+                        No se encontraron marcas con esa búsqueda.
                     </h:panelGroup>
 
                 </div>
@@ -285,5 +488,43 @@
         </section>
 
     </main>
+    </ui:define>
+    <ui:define name="scripts">
+<script type="text/javascript">
+document.addEventListener("DOMContentLoaded", function () {
+    "use strict";
+
+    const texto = document.getElementById("textoBusqueda");
+    const criterios = document.querySelectorAll('input[name="criterioBusqueda"]');
+
+    // Cambia la ayuda del campo según la condición marcada
+    criterios.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            if (!radio.checked) return;
+            texto.placeholder = radio.value === "CODIGO" ? "Escriba el código..." : "Buscar por nombre...";
+            texto.focus();
+        });
+    });
+
+    // Enter en el texto ejecuta Buscar
+    texto.addEventListener("keydown", function (evento) {
+        if (evento.key === "Enter") {
+            evento.preventDefault();
+            document.getElementById("btnBuscar").click();
+        }
+    });
+
+    // F5 Buscar, F7 Listar (igual que Productos)
+    document.addEventListener("keydown", function (evento) {
+        let id = null;
+        if (evento.key === "F5") id = "btnBuscar";
+        if (evento.key === "F7") id = "btnListar";
+        if (id) {
+            evento.preventDefault();
+            document.getElementById(id).click();
+        }
+    });
+});
+</script>
     </ui:define>
 </ui:composition>

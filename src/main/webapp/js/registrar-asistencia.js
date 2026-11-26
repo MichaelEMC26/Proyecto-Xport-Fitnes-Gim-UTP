@@ -64,7 +64,7 @@
         }
         var foto = document.getElementById("raFoto");
         if (foto && !foto.querySelector("i")) foto.insertAdjacentHTML("afterbegin", '<i class="fa-solid fa-user"></i>');
-        document.getElementById("raPeriodo").innerHTML = '<tr class="ra-fila-vacia"><td colspan="8">Sin datos</td></tr>';
+        document.getElementById("raPeriodo").innerHTML = '<tr class="ra-fila-vacia"><td colspan="7">Sin datos</td></tr>';
         document.getElementById("raHistorial").innerHTML = '<tr class="ra-fila-vacia"><td colspan="3">Sin asistencias</td></tr>';
         bloquearControles(false);   // solo aquí (Nuevo) se vuelven a activar
     }

@@ -14,7 +14,7 @@
  *     resumen: "Efectivo S/ 50.00 + Pago Virtual (Yape) S/ 10.00" }
  *
  * Las formas de pago del menú vienen de la tabla (solo ACTIVAS: FormasPagoVentaBean ->
- * FacturacionFACADE.ListaFormasPagoActivoF). Cada botón trae:
+ * PuntoVentaFACADE.ListaFormasPagoActivoF). Cada botón trae:
  *   data-m (clave única), data-tipo (panel: efectivo, virtual, tarjeta, deposito, nota, credito, otro),
  *   data-id (IDFormaPago) y data-nombre.
  * Crédito/Deuda (IDFormaPago "06"): pide la fecha de vencimiento y envía CondPago = "Credito".

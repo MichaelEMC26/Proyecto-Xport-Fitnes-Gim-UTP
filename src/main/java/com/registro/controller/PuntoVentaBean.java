@@ -2,12 +2,17 @@ package com.registro.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.registro.dao.FacturacionDAO;
-import com.registro.dto.AperturaCierreCajaDTO;
-import com.registro.dto.FacturacionDTO;
+import com.registro.config.AlmacenImagenesProducto;
+import com.registro.dao.PuntoVentaDAO;
+import com.registro.dto.CajaDTO;
+import com.registro.dto.ClienteDTO;
+import com.registro.dto.PuntoVentaDTO;
+import com.registro.dto.MembresiaDTO;
 import com.registro.dto.UsuarioDTO;
-import com.registro.facade.AperturaCierreCajaFACADE;
-import com.registro.facade.FacturacionFACADE;
+import com.registro.facade.CajaFACADE;
+import com.registro.facade.ClienteFACADE;
+import com.registro.facade.PuntoVentaFACADE;
+import com.registro.facade.MembresiaFACADE;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -28,11 +33,16 @@ import java.util.Map;
  * Controlador del Punto de Venta (PuntoVenta.xhtml): grabar, modificar y eliminar ventas.
  *
  * La página (JavaScript) arma la venta en JSON y la envía por ajax a {@link #grabar()}; el resultado vuelve
- * en {@link #getResultado()} (también JSON). La transacción la hace FacturacionFACADE:
+ * en {@link #getResultado()} (también JSON). La transacción la hace PuntoVentaFACADE:
  *  - grabar   -> RegistrarVentaF  (venta nueva)        |  pedidoId vacío
  *  - grabar   -> ModificarVentaF  (venta en edición)   |  pedidoId con el N° de pedido
  *  - eliminar -> AnularVentaF
  * Los datos de la caja (FechaTurno, Turno, CodResp) salen del turno abierto, y CodEmp / CodUser del usuario en sesión.
+ *
+ * Cobro de membresías (Generar comprobante [F4] de frm_RegistroMembresia): PuntoVenta.xhtml?suscripcion=NRO
+ * carga la suscripción pendiente de pago como una línea del carrito (Producto_ID = CodigoM, cantidad 1,
+ * precio = total de la suscripción) con los datos del socio. Al grabar, la línea se vuelve a armar con los
+ * datos de la BD y la suscripción pasa a "Efectiva" en la misma transacción de la venta.
  */
 @Named("puntoVentaBean")
 @ViewScoped
@@ -45,7 +55,7 @@ public class PuntoVentaBean implements Serializable {
     private static final int LARGO_CLIENTE = 8;            // Cliente_ID char(8)
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    private transient FacturacionFACADE facade;
+    private transient PuntoVentaFACADE facade;
 
     private String codEmp;
     private int codPer;
@@ -54,15 +64,23 @@ public class PuntoVentaBean implements Serializable {
     private String turno;
     private String errorCaja;
     private String errorProductos = "";
-    private List<FacturacionDTO> tiposDoc;
+    private List<PuntoVentaDTO> tiposDoc;
+
+    /** Suscripción pendiente que se abrió para cobrar (?suscripcion=), con el nombre de su plan. */
+    private MembresiaDTO suscripcionCobro;
+    /** Datos del socio de esa suscripción (se graban como cliente de la venta). */
+    private HashMap<String, String> socioCobro;
+    /** JSON de la suscripción para la página ("" si no se abrió ninguna) y aviso si no se pudo cargar. */
+    private String suscripcionJson = "";
+    private String avisoSuscripcion = "";
 
     /** JSON que envía la página (venta, o {pedidoId} para cargar / eliminar). */
     private String datos;
     /** JSON con la respuesta para la página. */
     private String resultado = "{}";
 
-    private FacturacionFACADE facade() {
-        if (facade == null) facade = new FacturacionFACADE();
+    private PuntoVentaFACADE facade() {
+        if (facade == null) facade = new PuntoVentaFACADE();
         return facade;
     }
 
@@ -72,7 +90,7 @@ public class PuntoVentaBean implements Serializable {
         codEmp = u == null || vacio(u.getCodEmp()) ? MembresiaBean.COD_EMP_DEFECTO : u.getCodEmp().trim();
         codUser = u == null ? 0 : (u.getId_UserSist() > 0 ? u.getId_UserSist() : u.getPersonal_ID());
         try {
-            AperturaCierreCajaDTO caja = new AperturaCierreCajaFACADE().ListaTurnoAbiertoF(codEmp, LocalDate.now().atStartOfDay());
+            CajaDTO caja = new CajaFACADE().ListaTurnoAbiertoF(codEmp, LocalDate.now().atStartOfDay());
             if (caja == null || caja.getFechaTurno() == null) {
                 errorCaja = "No hay un turno de caja abierto. Abra la caja antes de vender.";
             } else {
@@ -83,7 +101,106 @@ public class PuntoVentaBean implements Serializable {
         } catch (RuntimeException ex) {
             errorCaja = "No se pudo leer el turno de caja: " + ex.getMessage();
         }
+        // Solo al abrir la página desde la suscripción (en una venta normal no se hace ninguna consulta extra)
+        String nro = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap().get("suscripcion");
+        if (!vacio(nro)) prepararCobroSuscripcion(nro.trim());
     }
+
+    /* ======================================================================================
+     *  Cobro de la membresía (?suscripcion=)
+     * ====================================================================================== */
+
+    private void prepararCobroSuscripcion(String nro) {
+        try {
+            MembresiaDTO s = suscripcionPendiente(nro);
+            Map<String, String> c = datosSocio(s);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("nro", limpio(s.getNroSuscripcion_id()));
+            m.put("productoId", limpio(s.getCodigoM()));
+            m.put("descripcion", PuntoVentaDAO.descripcionSuscripcion(s.getNombreMembresia(), s.getNroSuscripcion_id()));
+            m.put("precio", redondear(s.getTotalSusc()));
+            m.put("clienteId", limpio(s.getcliente_id()));
+            m.put("clienteNombre", c.get("nombre"));
+            m.put("telefono", c.get("telefono"));
+            m.put("email", c.get("email"));
+            m.put("direccion", c.get("direccion"));
+            suscripcionJson = JSON.writeValueAsString(m);
+        } catch (IllegalArgumentException ex) {
+            avisoSuscripcion = ex.getMessage();
+        } catch (Exception ex) {
+            avisoSuscripcion = "No se pudo cargar la suscripción N° " + nro + ": " + ex.getMessage();
+        }
+    }
+
+    /**
+     * Suscripción que se puede cobrar: existe y está Pendiente de pago. Al grabar se reutiliza la que se
+     * cargó al abrir la página (sin volver a consultar); el UPDATE de la transacción vuelve a comprobar
+     * que siga Pendiente, así dos cajas no la cobran dos veces.
+     */
+    private MembresiaDTO suscripcionPendiente(String nro) {
+        if (suscripcionCobro != null && limpio(suscripcionCobro.getNroSuscripcion_id()).equals(nro)) {
+            return suscripcionCobro;
+        }
+        MembresiaFACADE mf = new MembresiaFACADE();
+        MembresiaDTO s = mf.Listasuscripciones_MembresiaXRegistroF(codEmp, nro);
+        if (s == null) throw new IllegalArgumentException("La suscripción N° " + nro + " no existe.");
+        String estado = limpio(s.getEstadoSusc());
+        if (!estado.isEmpty() && !estado.toUpperCase(Locale.ROOT).startsWith("PENDIENTE")) {
+            throw new IllegalArgumentException("La suscripción N° " + nro + " no está pendiente de pago (estado: " + estado + ").");
+        }
+        if (vacio(s.getCodigoM()) || s.getTotalSusc() <= 0) {
+            throw new IllegalArgumentException("La suscripción N° " + nro + " no tiene plan o importe para cobrar.");
+        }
+        MembresiaDTO plan = mf.ListaMembresiaXCodF(limpio(s.getCodigoM()));
+        s.setNombreMembresia(plan != null ? plan.getNombreMembresia() : s.getCodigoM());
+        suscripcionCobro = s;
+        return s;
+    }
+
+    /**
+     * Datos del socio de la suscripción (código, nombre, teléfono, correo, dirección). Se consultan una vez y
+     * se reutilizan al grabar; solo se vuelve a consultar si la suscripción es de otro socio.
+     */
+    private Map<String, String> datosSocio(MembresiaDTO s) {
+        String id = limpio(s.getcliente_id());
+        if (socioCobro != null && id.equals(socioCobro.get("id"))) return socioCobro;
+        ClienteDTO c = new ClienteFACADE().ListaClienteXCod(id);
+        HashMap<String, String> m = new HashMap<>();
+        m.put("id", id);
+        m.put("nombre", c == null ? "" : limpio(c.getRazonSocial()));
+        m.put("telefono", c == null ? "" : limpio(c.getTelefono()));
+        m.put("email", c == null ? "" : limpio(c.getCorreo()));
+        m.put("direccion", c == null ? "" : limpio(c.getDireccion()));
+        socioCobro = m;
+        return m;
+    }
+
+    /**
+     * Línea de la venta para la membresía: código, descripción y precio salen de la BD (no del navegador).
+     * Los datos del cliente de la venta también se reemplazan por los del socio: en la página están
+     * bloqueados y, aunque alguien los cambie en el navegador, se graba siempre al socio de la suscripción.
+     */
+    private PuntoVentaDTO detalleSuscripcion(String nro, PuntoVentaDTO cab) {
+        MembresiaDTO s = suscripcionPendiente(nro);
+        Map<String, String> socio = datosSocio(s);
+        cab.setCliente_ID(socio.get("id"));
+        cab.setRazonSocial(recortar(socio.get("nombre").isEmpty() ? "CLIENTE" : socio.get("nombre").toUpperCase(Locale.ROOT), 100));
+        cab.setDireccion(recortar(socio.get("direccion"), 100));
+        cab.setTelefono(recortar(socio.get("telefono"), 20));
+        cab.setCorreo(recortar(socio.get("email"), 100));
+        PuntoVentaDTO d = new PuntoVentaDTO();
+        d.setProducto_ID(limpio(s.getCodigoM()));
+        d.setDescripcion(PuntoVentaDAO.descripcionSuscripcion(s.getNombreMembresia(), nro));
+        d.setPrecioCosto(0);
+        d.setPrecioUnitario(redondear(s.getTotalSusc()));
+        d.setCantidad(1);
+        d.setImporte(d.getPrecioUnitario());
+        return d;
+    }
+
+    /** Suscripción para cobrar (JSON) o "" si la página se abrió sin ?suscripcion=. */
+    public String getSuscripcionJson() { return suscripcionJson; }
+    public String getAvisoSuscripcion() { return avisoSuscripcion; }
 
     /* ======================================================================================
      *  Datos para la página
@@ -102,27 +219,27 @@ public class PuntoVentaBean implements Serializable {
     public String getErrorProductos() { return errorProductos; }
 
     /** Tipos de documento activos (Nota de venta, Boleta, Factura). Se consultan una vez por pantalla. */
-    public List<FacturacionDTO> getTiposDoc() {
+    public List<PuntoVentaDTO> getTiposDoc() {
         if (tiposDoc == null) tiposDoc = cargarTiposDoc();
         return tiposDoc;
     }
 
-    private List<FacturacionDTO> cargarTiposDoc() {
+    private List<PuntoVentaDTO> cargarTiposDoc() {
         try {
-            List<FacturacionDTO> lista = facade().Lista_TiposDocF();
+            List<PuntoVentaDTO> lista = facade().Lista_TiposDocF();
             if (!lista.isEmpty()) return lista;
         } catch (RuntimeException ex) {
             System.err.println("Lista_TiposDocF: " + ex.getMessage());
         }
-        List<FacturacionDTO> fijos = new ArrayList<>();
-        fijos.add(tipo(FacturacionDAO.DOC_NOTA_VENTA, "NOTA DE VENTA"));
-        fijos.add(tipo(FacturacionDAO.DOC_BOLETA, "BOLETA DE VENTA"));
-        fijos.add(tipo(FacturacionDAO.DOC_FACTURA, "FACTURA"));
+        List<PuntoVentaDTO> fijos = new ArrayList<>();
+        fijos.add(tipo(PuntoVentaDAO.DOC_NOTA_VENTA, "NOTA DE VENTA"));
+        fijos.add(tipo(PuntoVentaDAO.DOC_BOLETA, "BOLETA DE VENTA"));
+        fijos.add(tipo(PuntoVentaDAO.DOC_FACTURA, "FACTURA"));
         return fijos;
     }
 
-    private static FacturacionDTO tipo(String id, String descripcion) {
-        FacturacionDTO t = new FacturacionDTO();
+    private static PuntoVentaDTO tipo(String id, String descripcion) {
+        PuntoVentaDTO t = new PuntoVentaDTO();
         t.setDocumento_ID(id);
         t.setDescripcion(descripcion);
         return t;
@@ -148,16 +265,16 @@ public class PuntoVentaBean implements Serializable {
             // Venta original (al modificar): sus cantidades vuelven al stock disponible
             Map<String, Double> reservado = new HashMap<>();
             if (modificar) {
-                for (FacturacionDTO d : facade().ListaDetalleVentaXPedidoF(pedidoId)) {
+                for (PuntoVentaDTO d : facade().ListaDetalleVentaXPedidoF(pedidoId)) {
                     reservado.merge(limpio(d.getProducto_ID()), d.getCantidad(), Double::sum);
                 }
             }
 
-            FacturacionDTO cab = armarCabecera(v);
-            List<FacturacionDTO> detalles = armarDetalle(v, reservado);
-            List<FacturacionDTO> pagos = armarPagos(v, cab);
+            PuntoVentaDTO cab = armarCabecera(v);
+            List<PuntoVentaDTO> detalles = armarDetalle(v, reservado, cab);
+            List<PuntoVentaDTO> pagos = armarPagos(v, cab);
 
-            FacturacionDTO hecho;
+            PuntoVentaDTO hecho;
             if (modificar) {
                 cab.setPedido_ID(pedidoId);
                 hecho = facade().ModificarVentaF(cab, detalles, pagos);
@@ -165,8 +282,11 @@ public class PuntoVentaBean implements Serializable {
                 hecho = facade().RegistrarVentaF(cab, detalles, pagos);
             }
 
+            boolean conMembresia = detalles.stream().anyMatch(PuntoVentaDAO::esDetalleSuscripcion);
+            if (conMembresia) suscripcionCobro = null;     // ya cobrada: no se reutiliza
             Map<String, Object> r = ok((modificar ? "Se hicieron los cambios de la venta N° " : "Se grabó la venta N° ")
-                    + hecho.getPedido_ID() + " (" + documento(hecho) + ").");
+                    + hecho.getPedido_ID() + " (" + documento(hecho) + ")."
+                    + (conMembresia ? " La membresía quedó pagada (Efectiva)." : ""));
             r.put("pedido", hecho.getPedido_ID());
             r.put("documento", documento(hecho));
             r.put("modificada", modificar);
@@ -182,9 +302,9 @@ public class PuntoVentaBean implements Serializable {
         try {
             exigirCaja();
             String pedidoId = texto(JSON.readTree(datos == null ? "{}" : datos), "pedidoId");
-            FacturacionDTO cab = facade().ListaVentaXPedidoF(codEmp, pedidoId);
+            PuntoVentaDTO cab = facade().ListaVentaXPedidoF(codEmp, pedidoId);
             if (cab == null) throw new IllegalArgumentException("La venta N° " + pedidoId + " no existe.");
-            if (!FacturacionDAO.DOC_NOTA_VENTA.equals(cab.getTipoDoc()) && "SI".equalsIgnoreCase(cab.getImpreso())) {
+            if (!PuntoVentaDAO.DOC_NOTA_VENTA.equals(cab.getTipoDoc()) && "SI".equalsIgnoreCase(cab.getImpreso())) {
                 throw new IllegalArgumentException("El comprobante ya se imprimió; no se puede modificar.");
             }
             Map<String, Object> venta = new LinkedHashMap<>();
@@ -195,7 +315,7 @@ public class PuntoVentaBean implements Serializable {
             venta.put("clienteNombre", "CLIENTE".equalsIgnoreCase(cab.getRazonSocial()) ? "" : cab.getRazonSocial());
             venta.put("total", cab.getTotal());
             List<Map<String, Object>> items = new ArrayList<>();
-            for (FacturacionDTO d : facade().ListaDetalleVentaXPedidoF(pedidoId)) {
+            for (PuntoVentaDTO d : facade().ListaDetalleVentaXPedidoF(pedidoId)) {
                 Map<String, Object> it = new LinkedHashMap<>();
                 it.put("productoId", d.getProducto_ID());
                 it.put("descripcion", d.getDescripcion());
@@ -219,7 +339,7 @@ public class PuntoVentaBean implements Serializable {
             exigirCaja();
             String pedidoId = texto(JSON.readTree(datos == null ? "{}" : datos), "pedidoId");
             if (pedidoId.isEmpty()) throw new IllegalArgumentException("Indique la venta que desea eliminar.");
-            FacturacionDTO v = facade().AnularVentaF(codEmp, pedidoId);
+            PuntoVentaDTO v = facade().AnularVentaF(codEmp, pedidoId);
             Map<String, Object> r = ok("Se eliminó la venta N° " + pedidoId + " (" + documento(v) + ").");
             r.put("pedido", pedidoId);
             r.put("productos", productos());
@@ -234,7 +354,7 @@ public class PuntoVentaBean implements Serializable {
         try {
             exigirCaja();
             List<Map<String, Object>> ventas = new ArrayList<>();
-            for (FacturacionDTO c : facade().ListaVentasTurnoF(codEmp, fechaTurno, turno)) {
+            for (PuntoVentaDTO c : facade().ListaVentasTurnoF(codEmp, fechaTurno, turno)) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("pedido", c.getPedido_ID());
                 m.put("documento", documento(c));
@@ -244,7 +364,7 @@ public class PuntoVentaBean implements Serializable {
                 m.put("condPago", c.getCondPago());
                 m.put("formaPago", c.getFormaPago());
                 m.put("total", c.getTotal());
-                m.put("impreso", !FacturacionDAO.DOC_NOTA_VENTA.equals(c.getTipoDoc()) && "SI".equalsIgnoreCase(c.getImpreso()));
+                m.put("impreso", !PuntoVentaDAO.DOC_NOTA_VENTA.equals(c.getTipoDoc()) && "SI".equalsIgnoreCase(c.getImpreso()));
                 ventas.add(m);
             }
             Map<String, Object> r = ok("");
@@ -260,11 +380,11 @@ public class PuntoVentaBean implements Serializable {
      *  Armado de la venta
      * ====================================================================================== */
 
-    private FacturacionDTO armarCabecera(JsonNode v) {
+    private PuntoVentaDTO armarCabecera(JsonNode v) {
         String tipoDoc = texto(v, "tipoDoc");
-        if (!tipoDoc.equals(FacturacionDAO.DOC_NOTA_VENTA) && !tipoDoc.equals(FacturacionDAO.DOC_BOLETA)
-                && !tipoDoc.equals(FacturacionDAO.DOC_FACTURA)) {
-            tipoDoc = FacturacionDAO.DOC_NOTA_VENTA;
+        if (!tipoDoc.equals(PuntoVentaDAO.DOC_NOTA_VENTA) && !tipoDoc.equals(PuntoVentaDAO.DOC_BOLETA)
+                && !tipoDoc.equals(PuntoVentaDAO.DOC_FACTURA)) {
+            tipoDoc = PuntoVentaDAO.DOC_NOTA_VENTA;
         }
         double total = redondear(v.path("total").asDouble(0));
         if (total <= 0) throw new IllegalArgumentException("El total de la venta no es válido.");
@@ -276,11 +396,11 @@ public class PuntoVentaBean implements Serializable {
             throw new IllegalArgumentException("El DNI / código del cliente admite como máximo " + LARGO_CLIENTE
                     + " caracteres (Cliente_ID es char(8)).");
         }
-        if (FacturacionDAO.DOC_FACTURA.equals(tipoDoc) && clienteId.isEmpty()) {
+        if (PuntoVentaDAO.DOC_FACTURA.equals(tipoDoc) && clienteId.isEmpty()) {
             throw new IllegalArgumentException("Para emitir FACTURA indique el documento del cliente (pestaña Cliente).");
         }
 
-        FacturacionDTO c = new FacturacionDTO();
+        PuntoVentaDTO c = new PuntoVentaDTO();
         c.setTipoDoc(tipoDoc);
         c.setCliente_ID(clienteId.isEmpty() ? CLIENTE_GENERAL : clienteId);
         c.setRazonSocial(nombre.isEmpty() ? "CLIENTE" : recortar(nombre.toUpperCase(Locale.ROOT), 100));
@@ -304,22 +424,28 @@ public class PuntoVentaBean implements Serializable {
         return c;
     }
 
-    private List<FacturacionDTO> armarDetalle(JsonNode v, Map<String, Double> reservado) {
-        Map<String, FacturacionDTO> catalogo = new HashMap<>();
-        for (FacturacionDTO p : facade().Lista_ProductosGral_ActivosXNomF(codEmp, "")) {
+    private List<PuntoVentaDTO> armarDetalle(JsonNode v, Map<String, Double> reservado, PuntoVentaDTO cab) {
+        Map<String, PuntoVentaDTO> catalogo = new HashMap<>();
+        for (PuntoVentaDTO p : facade().Lista_ProductosGral_ActivosXNomF(codEmp, "")) {
             catalogo.put(limpio(p.getProducto_ID()), p);
         }
         // Un producto por fila (sp_Insert_Detalle_Ventas actualiza si el producto se repite)
-        Map<String, FacturacionDTO> filas = new LinkedHashMap<>();
+        Map<String, PuntoVentaDTO> filas = new LinkedHashMap<>();
         for (JsonNode it : v.path("items")) {
+            // Membresía abierta desde la suscripción: una línea por suscripción, armada con los datos de la BD
+            String nroSusc = texto(it, "suscripcion");
+            if (!nroSusc.isEmpty()) {
+                if (!filas.containsKey("SUSC:" + nroSusc)) filas.put("SUSC:" + nroSusc, detalleSuscripcion(nroSusc, cab));
+                continue;
+            }
             String id = texto(it, "productoId");
             double cant = it.path("cantidad").asDouble(0);
             double precio = it.path("precio").asDouble(-1);
             if (id.isEmpty() || cant <= 0) continue;
-            FacturacionDTO p = catalogo.get(id);
-            FacturacionDTO d = filas.get(id);
+            PuntoVentaDTO p = catalogo.get(id);
+            PuntoVentaDTO d = filas.get(id);
             if (d == null) {
-                d = new FacturacionDTO();
+                d = new PuntoVentaDTO();
                 d.setProducto_ID(id);
                 d.setDescripcion(recortar(p != null ? p.getDescripcion() : texto(it, "descripcion"), 100));
                 d.setPrecioCosto(p != null ? p.getPrecioCosto() : it.path("costo").asDouble(0));
@@ -332,8 +458,9 @@ public class PuntoVentaBean implements Serializable {
         if (filas.isEmpty()) throw new IllegalArgumentException("No ha ingresado productos; imposible grabar la venta.");
 
         // Stock: lo que hay más lo que la venta original ya tenía (al modificar)
-        for (FacturacionDTO d : filas.values()) {
-            FacturacionDTO p = catalogo.get(d.getProducto_ID());
+        for (PuntoVentaDTO d : filas.values()) {
+            if (PuntoVentaDAO.esDetalleSuscripcion(d)) continue;   // la membresía no maneja stock
+            PuntoVentaDTO p = catalogo.get(d.getProducto_ID());
             double disponible = (p != null ? p.getStockFinal() : 0) + reservado.getOrDefault(d.getProducto_ID(), 0d);
             if (p == null && !reservado.containsKey(d.getProducto_ID())) {
                 throw new IllegalArgumentException("El producto " + d.getDescripcion() + " ya no está activo.");
@@ -347,16 +474,16 @@ public class PuntoVentaBean implements Serializable {
     }
 
     /** Formas de pago de la ventana; también deja en la cabecera CondPago, FormaPago, IDFormaPago y el crédito. */
-    private List<FacturacionDTO> armarPagos(JsonNode v, FacturacionDTO cab) {
+    private List<PuntoVentaDTO> armarPagos(JsonNode v, PuntoVentaDTO cab) {
         JsonNode pago = v.path("pago");
         double total = cab.getTotal();
         double vuelto = Math.max(0, pago.path("vuelto").asDouble(0));
 
-        List<FacturacionDTO> pagos = new ArrayList<>();
+        List<PuntoVentaDTO> pagos = new ArrayList<>();
         double pagado = 0;
         double credito = 0;
         boolean soloEfectivo = true;
-        FacturacionDTO mayor = null;
+        PuntoVentaDTO mayor = null;
         for (JsonNode d : pago.path("detalle")) {
             double monto = redondear(d.path("monto").asDouble(0));
             if (monto <= 0) continue;
@@ -372,7 +499,7 @@ public class PuntoVentaBean implements Serializable {
                 vuelto = redondear(vuelto - resta);
                 if (monto <= 0) continue;
             }
-            FacturacionDTO p = new FacturacionDTO();
+            PuntoVentaDTO p = new PuntoVentaDTO();
             p.setIDFormaPago(idForma);
             p.setFormaPago(recortar(texto(d, "metodo"), 30));
             p.setMontoParcial(monto);
@@ -439,10 +566,13 @@ public class PuntoVentaBean implements Serializable {
     private List<Map<String, Object>> productos() {
         List<Map<String, Object>> lista = new ArrayList<>();
         errorProductos = "";
+        String ctx = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath();
         try {
-            for (FacturacionDTO p : facade().Lista_ProductosGral_ActivosXNomF(codEmp, "")) {
+            for (PuntoVentaDTO p : facade().Lista_ProductosGral_ActivosXNomF(codEmp, "")) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id", limpio(p.getProducto_ID()));
+                // Imagen del producto: URL externa o /reportes/imagenProducto?f=... ("" = sin imagen); no toca el disco
+                m.put("imagen", AlmacenImagenesProducto.url(ctx, p.getImagen()));
                 m.put("nombre", vacio(p.getDescripcion()) ? limpio(p.getNombreProducto()) : p.getDescripcion());
                 m.put("codigo", limpio(p.getCodigoBarra()));
                 m.put("precio", p.getPrecioVenta());
@@ -464,11 +594,11 @@ public class PuntoVentaBean implements Serializable {
         if (errorCaja != null) throw new IllegalStateException(errorCaja);
     }
 
-    private static String documento(FacturacionDTO c) {
+    private static String documento(PuntoVentaDTO c) {
         String serie = limpio(c.getNroSerie());
         String nro = limpio(c.getNro_Doc());
         String tipo = limpio(c.getTipo_documento());
-        if (FacturacionDAO.DOC_NOTA_VENTA.equals(limpio(c.getTipoDoc())) || tipo.equals("NOTA DE VENTA")) {
+        if (PuntoVentaDAO.DOC_NOTA_VENTA.equals(limpio(c.getTipoDoc())) || tipo.equals("NOTA DE VENTA")) {
             return "Nota de venta " + limpio(c.getPedido_ID());
         }
         return (tipo.isEmpty() ? "Comprobante" : capitalizar(tipo)) + " " + serie + (nro.isEmpty() ? "" : "-" + nro);

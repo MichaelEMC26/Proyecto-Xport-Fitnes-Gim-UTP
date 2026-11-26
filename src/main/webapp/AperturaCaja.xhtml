@@ -2,7 +2,7 @@
 <!--
     Generar Apertura de Caja.
     Misma estructura y funcionalidad que frm_GenerarAperturaCaja de SisdataGimnasio.
-    Controlador: AperturaCajaBean (aperturaCajaBean) -> AperturaCierreCajaFACADE
+    Controlador: CajaBean (cajaBean) -> CajaFACADE
     (sp_ListaAperturaCierreCajaAbierto, sp_ListaTurnoDia, sp_InsertAperturaCierreCaja).
 -->
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
@@ -34,7 +34,7 @@
                             <!-- cboconcepto -->
                             <div class="cj-campo cj-campo-ancho">
                                 <label for="cjConcepto">Tipo de concepto:</label>
-                                <h:selectOneMenu id="cjConcepto" value="#{aperturaCajaBean.concepto}" disabled="true">
+                                <h:selectOneMenu id="cjConcepto" value="#{cajaBean.concepto}" disabled="true">
                                     <f:selectItem itemValue="APERTURA DE CAJA" itemLabel="APERTURA DE CAJA" />
                                 </h:selectOneMenu>
                             </div>
@@ -42,8 +42,8 @@
                             <!-- dateFechaTurno -->
                             <div class="cj-campo">
                                 <label for="cjFechaTurno">Fecha de turno:</label>
-                                <h:inputText id="cjFechaTurno" value="#{aperturaCajaBean.fechaTurno}" a:type="date"
-                                             disabled="#{aperturaCajaBean.bloqueado}">
+                                <h:inputText id="cjFechaTurno" value="#{cajaBean.fechaTurno}" a:type="date"
+                                             disabled="#{cajaBean.bloqueado}">
                                     <f:convertDateTime type="localDate" pattern="yyyy-MM-dd" />
                                 </h:inputText>
                             </div>
@@ -57,8 +57,8 @@
                             <!-- txtmontoInicial -->
                             <div class="cj-campo cj-campo-ancho">
                                 <label for="cjMontoInicial">Monto inicial (S/):</label>
-                                <h:inputText id="cjMontoInicial" value="#{aperturaCajaBean.montoInicial}"
-                                             styleClass="cj-monto-grande" disabled="#{aperturaCajaBean.bloqueado}"
+                                <h:inputText id="cjMontoInicial" value="#{cajaBean.montoInicial}"
+                                             styleClass="cj-monto-grande" disabled="#{cajaBean.bloqueado}"
                                              a:autocomplete="off" a:inputmode="decimal" />
                             </div>
 
@@ -66,16 +66,16 @@
                             <div class="cj-campo cj-campo-ancho">
                                 <label>Responsable:</label>
                                 <div class="cj-resp">
-                                    <div class="cj-dato">#{aperturaCajaBean.codResp}</div>
-                                    <div class="cj-dato">#{aperturaCajaBean.nombreResp}</div>
+                                    <div class="cj-dato">#{cajaBean.codResp}</div>
+                                    <div class="cj-dato">#{cajaBean.nombreResp}</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="cj-botones-fila">
-                            <h:commandButton id="cjGenerar" value="Generar apertura" action="#{aperturaCajaBean.generar}"
-                                             styleClass="cj-btn cj-btn-primario" disabled="#{aperturaCajaBean.bloqueado}" />
-                            <ui:fragment rendered="#{aperturaCajaBean.bloqueado}">
+                            <h:commandButton id="cjGenerar" value="Generar apertura" action="#{cajaBean.generar}"
+                                             styleClass="cj-btn cj-btn-primario" disabled="#{cajaBean.bloqueado}" />
+                            <ui:fragment rendered="#{cajaBean.bloqueado}">
                                 <h:link outcome="/RegistrarCierreCaja.xhtml" styleClass="cj-btn cj-btn-verde">
                                     <i class="fa-solid fa-lock"></i> Ir a cierre de caja
                                 </h:link>

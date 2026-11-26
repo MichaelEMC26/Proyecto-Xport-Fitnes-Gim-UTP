@@ -1,7 +1,7 @@
 package com.registro.dao;
 
 import com.registro.config.ConexionBD;
-import com.registro.dto.FacturacionDTO;
+import com.registro.dto.PuntoVentaDTO;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,15 +17,11 @@ import java.util.Optional;
 /**
  * Capa de datos de Facturación (Punto de Venta).
  *
- * Hay dos tipos de métodos:
- *  - Consultas: abren y cierran su propia conexión.
- *  - Transacción (reciben un {@link Connection}): NO abren, NO confirman ni cierran la conexión.
- *    Los usa FacturacionFACADE dentro de una sola transacción (grabar, modificar y anular una venta),
- *    para que si falla cualquier paso se deshaga todo.
+
  *
  * @author Ing
  */
-public class FacturacionDAO {
+public class PuntoVentaDAO {
 
     /* =========================================================================================
      *  Tipos de documento (TIPO_DOCUMENTO.Documento_ID, igual que frm_Facturacion)
@@ -117,13 +113,13 @@ public class FacturacionDAO {
      * ========================================================================================= */
 
     /** Formas de pago activas (sp_ListaFormasPagoActivo): IDFormaPago, FormasPago, Estado. */
-    public List<FacturacionDTO> ListaFormasPagoActivo() {
-        List<FacturacionDTO> lista = new ArrayList<>();
+    public List<PuntoVentaDTO> ListaFormasPagoActivo() {
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_ListaFormasPagoActivo}");
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                FacturacionDTO item = new FacturacionDTO();
+                PuntoVentaDTO item = new PuntoVentaDTO();
                 item.setIDFormaPago(texto(rs, "IDFormaPago"));
                 item.setFormasPago(texto(rs, "FormasPago"));
                 item.setEstado(texto(rs, "Estado"));
@@ -136,13 +132,13 @@ public class FacturacionDAO {
     }
 
     /** Tipos de documento activos (sp_Lista_TiposDoc): 01 Nota de venta, 02 Boleta, 03 Factura. */
-    public List<FacturacionDTO> Lista_TiposDoc() {
-        List<FacturacionDTO> lista = new ArrayList<>();
+    public List<PuntoVentaDTO> Lista_TiposDoc() {
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_Lista_TiposDoc}");
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                FacturacionDTO item = new FacturacionDTO();
+                PuntoVentaDTO item = new PuntoVentaDTO();
                 item.setDocumento_ID(texto(rs, "Documento_ID"));
                 item.setDescripcion(texto(rs, "Descripcion"));
                 item.setDescripcionTipoDoc(item.getDescripcion());
@@ -157,16 +153,14 @@ public class FacturacionDAO {
 
     /**
      * Configuración del sistema (sp_ListaConfiguracionSistema).
-     * Ojo: el procedimiento tiene "[FlagActivaCodigoBarra][FlagEnvioDirecto]" sin coma, así que devuelve
-     * FlagActivaCodigoBarra con el nombre FlagEnvioDirecto. Por eso las columnas se leen con tolerancia.
      */
-    public List<FacturacionDTO> ListaConfiguracionSistema() {
-        List<FacturacionDTO> lista = new ArrayList<>();
+    public List<PuntoVentaDTO> ListaConfiguracionSistema() {
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_ListaConfiguracionSistema}");
              ResultSet rs = cs.executeQuery()) {
             while (rs.next()) {
-                FacturacionDTO item = new FacturacionDTO();
+                PuntoVentaDTO item = new PuntoVentaDTO();
                 item.setidConfiguracion((int) numero(rs, "idConfiguracion"));
                 item.setFlagStockNegativo(texto(rs, "FlagStockNegativo"));
                 item.setFlagAlertaS(texto(rs, "FlagAlertaS"));
@@ -185,14 +179,14 @@ public class FacturacionDAO {
     }
 
     /** Cajas abiertas de la empresa (sp_ListaAperturaCierreCajaAbierto @CodEmp). */
-    public List<FacturacionDTO> ListaAperturaCierreCajaAbierto(String codEmp) {
-        List<FacturacionDTO> lista = new ArrayList<>();
+    public List<PuntoVentaDTO> ListaAperturaCierreCajaAbierto(String codEmp) {
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_ListaAperturaCierreCajaAbierto(?)}")) {
             cs.setString(1, codEmp);
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
-                    FacturacionDTO item = new FacturacionDTO();
+                    PuntoVentaDTO item = new PuntoVentaDTO();
                     item.setidAperturaCierre(rs.getInt("idAperturaCierre"));
                     item.setFechaTurno(fecha(rs, "FechaTurno"));
                     item.setFechaCaja(fecha(rs, "FechaCaja"));
@@ -222,7 +216,7 @@ public class FacturacionDAO {
     }
 
     /** Última venta del turno y horas de bloqueo (sp_UltimaVentaTurno). */
-    public Optional<FacturacionDTO> ultimaVentaTurno(String codEmp, LocalDate fechaTurno, String turno) {
+    public Optional<PuntoVentaDTO> ultimaVentaTurno(String codEmp, LocalDate fechaTurno, String turno) {
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_UltimaVentaTurno(?, ?, ?)}")) {
             cs.setString(1, codEmp);
@@ -230,7 +224,7 @@ public class FacturacionDAO {
             cs.setString(3, turno);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    FacturacionDTO f = new FacturacionDTO();
+                    PuntoVentaDTO f = new PuntoVentaDTO();
                     Timestamp ultima = rs.getTimestamp("UltimaVenta");
                     f.setUltimaVenta(ultima != null ? ultima.toLocalDateTime() : null);
                     f.setHorasBloqueo(rs.getDouble("HorasBloqueo"));
@@ -244,12 +238,12 @@ public class FacturacionDAO {
     }
 
     /** Siguiente código de boleta (sp_autogenera_cod_BoletaVenta: columna sin nombre). */
-    public Optional<FacturacionDTO> autogenera_cod_BoletaVenta() {
+    public Optional<PuntoVentaDTO> autogenera_cod_BoletaVenta() {
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_autogenera_cod_BoletaVenta}")) {
             String v = primerValor(cs);
             if (v == null) return Optional.empty();
-            FacturacionDTO dato = new FacturacionDTO();
+            PuntoVentaDTO dato = new PuntoVentaDTO();
             dato.setBoleta_id(v);
             return Optional.of(dato);
         } catch (SQLException ex) {
@@ -258,12 +252,12 @@ public class FacturacionDAO {
     }
 
     /** Serie de boleta (sp_numero_SerieBoleta: columna sin nombre, '001' si no hay). */
-    public Optional<FacturacionDTO> numero_SerieBoleta() {
+    public Optional<PuntoVentaDTO> numero_SerieBoleta() {
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_numero_SerieBoleta}")) {
             String v = primerValor(cs);
             if (v == null) return Optional.empty();
-            FacturacionDTO dato = new FacturacionDTO();
+            PuntoVentaDTO dato = new PuntoVentaDTO();
             dato.setNroSerie(v);
             return Optional.of(dato);
         } catch (SQLException ex) {
@@ -272,7 +266,7 @@ public class FacturacionDAO {
     }
 
     /** Serie y siguiente número del tipo de documento (sp_ConfiguracionSeries_Siguiente). */
-    public Optional<FacturacionDTO> ConfiguracionSeries_Siguiente(String codEmp, String documentoId) {
+    public Optional<PuntoVentaDTO> ConfiguracionSeries_Siguiente(String codEmp, String documentoId) {
         try (Connection cn = ConexionBD.obtenerConexion()) {
             return ConfiguracionSeries_Siguiente(cn, codEmp, documentoId);
         } catch (SQLException ex) {
@@ -281,13 +275,13 @@ public class FacturacionDAO {
     }
 
     /** Cliente por código (sp_lista_ClienteXcod @cliente_id char(8)). */
-    public Optional<FacturacionDTO> lista_ClienteXcod(String clienteId) {
+    public Optional<PuntoVentaDTO> lista_ClienteXcod(String clienteId) {
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_lista_ClienteXcod(?)}")) {
             cs.setString(1, clienteId);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    FacturacionDTO f = new FacturacionDTO();
+                    PuntoVentaDTO f = new PuntoVentaDTO();
                     f.setCliente_ID(texto(rs, "Cliente_ID"));
                     f.setRazonSocial(texto(rs, "RazonSocial"));
                     f.setDireccion(texto(rs, "Direccion"));
@@ -311,24 +305,24 @@ public class FacturacionDAO {
     }
 
     /** Productos activos por nombre (sp_Lista_ProductosGral_ActivosXNom). "" = todos. */
-    public List<FacturacionDTO> Lista_ProductosGral_ActivosXNom(String codEmp, String nombreProducto) {
+    public List<PuntoVentaDTO> Lista_ProductosGral_ActivosXNom(String codEmp, String nombreProducto) {
         return listarProductos("{call sp_Lista_ProductosGral_ActivosXNom(?,?)}", codEmp, nombreProducto);
     }
 
     /** Productos activos por código de barras (sp_Lista_ProductosGral_ActivosXCodBarra). */
-    public List<FacturacionDTO> Lista_ProductosGral_ActivosXCodBarra(String codEmp, String codigoBarra) {
+    public List<PuntoVentaDTO> Lista_ProductosGral_ActivosXCodBarra(String codEmp, String codigoBarra) {
         return listarProductos("{call sp_Lista_ProductosGral_ActivosXCodBarra(?,?)}", codEmp, codigoBarra);
     }
 
-    private List<FacturacionDTO> listarProductos(String sql, String codEmp, String filtro) {
-        List<FacturacionDTO> lista = new ArrayList<>();
+    private List<PuntoVentaDTO> listarProductos(String sql, String codEmp, String filtro) {
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {
             cs.setString(1, codEmp);                    // los parámetros van ANTES de ejecutar
             cs.setString(2, filtro == null ? "" : filtro);
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
-                    FacturacionDTO item = new FacturacionDTO();
+                    PuntoVentaDTO item = new PuntoVentaDTO();
                     item.setProducto_ID(texto(rs, "Producto_ID"));
                     item.setDescripcion(texto(rs, "Descripcion"));
                     item.setUnidadMedida(texto(rs, "UnidadMedida"));
@@ -355,14 +349,14 @@ public class FacturacionDAO {
     }
 
     /** Tipo de producto (sp_listaTipoProductoXCodigo). */
-    public Optional<FacturacionDTO> listaTipoProductoXCodigo(String codEmp, String productoId) {
+    public Optional<PuntoVentaDTO> listaTipoProductoXCodigo(String codEmp, String productoId) {
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_listaTipoProductoXCodigo(?, ?)}")) {
             cs.setString(1, codEmp);
             cs.setString(2, productoId);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    FacturacionDTO f = new FacturacionDTO();
+                    PuntoVentaDTO f = new PuntoVentaDTO();
                     f.setTipoProd(texto(rs, "TipoProd"));
                     return Optional.of(f);
                 }
@@ -390,13 +384,13 @@ public class FacturacionDAO {
      * Ventas de un turno (para el historial del Punto de Venta: modificar / eliminar).
      * Consulta directa a Cabecera_Ventas (no hay procedimiento para esto).
      */
-    public List<FacturacionDTO> ListaVentasTurno(String codEmp, LocalDate fechaTurno, String turno) {
+    public List<PuntoVentaDTO> ListaVentasTurno(String codEmp, LocalDate fechaTurno, String turno) {
         String sql = "SELECT Pedido_ID, Tipo_documento, Venta_id, NroSerie, Nro_Documento, Cliente_ID, RazonSocial,"
                 + " Fecha_Pedido, CondPago, FormaPago, SubTotal, IGV, Total, Estado, Impreso, FechaHora, FechaTurno, Turno, TipoDoc"
                 + " FROM dbo.Cabecera_Ventas"
                 + " WHERE CodEmp = ? AND FechaTurno >= ? AND FechaTurno < ? AND LTRIM(RTRIM(Turno)) = ?"
                 + " ORDER BY FechaHora DESC, Pedido_ID DESC";
-        List<FacturacionDTO> lista = new ArrayList<>();
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, codEmp);
@@ -413,7 +407,7 @@ public class FacturacionDAO {
     }
 
     /** Cabecera de una venta (null si no existe). */
-    public FacturacionDTO ListaVentaXPedido(String codEmp, String pedidoId) {
+    public PuntoVentaDTO ListaVentaXPedido(String codEmp, String pedidoId) {
         try (Connection cn = ConexionBD.obtenerConexion()) {
             return ListaVentaXPedido(cn, codEmp, pedidoId);
         } catch (SQLException ex) {
@@ -422,16 +416,16 @@ public class FacturacionDAO {
     }
 
     /** Detalle de una venta (Detalle_Ventas). */
-    public List<FacturacionDTO> ListaDetalleVentaXPedido(String pedidoId) {
+    public List<PuntoVentaDTO> ListaDetalleVentaXPedido(String pedidoId) {
         String sql = "SELECT Producto_ID, Descripcion, PrecioCosto, PrecioUnitario, Cantidad, Importe"
                 + " FROM dbo.Detalle_Ventas WHERE Pedido_ID = ? ORDER BY Descripcion";
-        List<FacturacionDTO> lista = new ArrayList<>();
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, pedidoId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    FacturacionDTO d = new FacturacionDTO();
+                    PuntoVentaDTO d = new PuntoVentaDTO();
                     d.setProducto_ID(texto(rs, "Producto_ID"));
                     d.setDescripcion(texto(rs, "Descripcion"));
                     d.setPrecioCosto(rs.getDouble("PrecioCosto"));
@@ -448,15 +442,15 @@ public class FacturacionDAO {
     }
 
     /** Ticket de cierre de caja (sp_Reporte_TicketCierreCaja). Antes tenía el mismo nombre que la búsqueda por código de barras. */
-    public List<FacturacionDTO> Reporte_TicketCierreCaja(String codEmp, int idAperturaCierre) {
-        List<FacturacionDTO> lista = new ArrayList<>();
+    public List<PuntoVentaDTO> Reporte_TicketCierreCaja(String codEmp, int idAperturaCierre) {
+        List<PuntoVentaDTO> lista = new ArrayList<>();
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall("{call sp_Reporte_TicketCierreCaja(?,?)}")) {
             cs.setString(1, codEmp);
             cs.setInt(2, idAperturaCierre);
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
-                    FacturacionDTO item = new FacturacionDTO();
+                    PuntoVentaDTO item = new PuntoVentaDTO();
                     item.setEmpresaRazon(texto(rs, "EmpresaRazon"));
                     item.setEmpresaComercial(texto(rs, "EmpresaComercial"));
                     item.setEmpresaRuc(texto(rs, "EmpresaRuc"));
@@ -521,13 +515,13 @@ public class FacturacionDAO {
     }
 
     /** Serie y siguiente número (sp_ConfiguracionSeries_Siguiente), leídos al grabar por si otra caja usó el número. */
-    public Optional<FacturacionDTO> ConfiguracionSeries_Siguiente(Connection cn, String codEmp, String documentoId) throws SQLException {
+    public Optional<PuntoVentaDTO> ConfiguracionSeries_Siguiente(Connection cn, String codEmp, String documentoId) throws SQLException {
         try (CallableStatement cs = cn.prepareCall("{call sp_ConfiguracionSeries_Siguiente(?, ?)}")) {
             cs.setString(1, codEmp);
             cs.setString(2, documentoId);
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    FacturacionDTO f = new FacturacionDTO();
+                    PuntoVentaDTO f = new PuntoVentaDTO();
                     f.setNroSerie(texto(rs, "NroSerie"));
                     f.setNroDocumento(texto(rs, "NroDocumento"));
                     return Optional.of(f);
@@ -550,7 +544,7 @@ public class FacturacionDAO {
     }
 
     /** Crea el cliente solo si no existe (RegistraClienteSiNoExiste del WinForm; no toca un cliente existente). */
-    public void RegistraClienteSiNoExiste(Connection cn, FacturacionDTO c) throws SQLException {
+    public void RegistraClienteSiNoExiste(Connection cn, PuntoVentaDTO c) throws SQLException {
         String id = limpio(c.getCliente_ID());
         if (id.isEmpty()) return;
         try (PreparedStatement ps = cn.prepareStatement("SELECT COUNT(*) FROM dbo.Cliente WHERE Cliente_ID = ?")) {
@@ -580,7 +574,7 @@ public class FacturacionDAO {
     }
 
     /** Cabecera de la venta (sp_Insert_CabeceraVentas: también Nota_Venta / Boleta / Factura y DetalleFormasPago). */
-    public void Insert_CabeceraVentas(Connection cn, FacturacionDTO c) throws SQLException {
+    public void Insert_CabeceraVentas(Connection cn, PuntoVentaDTO c) throws SQLException {
         try (CallableStatement cs = cn.prepareCall(
                 "{call sp_Insert_CabeceraVentas(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}")) {
             cs.setString(1, c.getPedido_ID());
@@ -612,9 +606,9 @@ public class FacturacionDAO {
     }
 
     /** Detalle de la venta, un producto por llamada (sp_Insert_Detalle_Ventas: también descuenta el stock). */
-    public void Insert_Detalle_Ventas(Connection cn, FacturacionDTO c, List<FacturacionDTO> detalles) throws SQLException {
+    public void Insert_Detalle_Ventas(Connection cn, PuntoVentaDTO c, List<PuntoVentaDTO> detalles) throws SQLException {
         try (CallableStatement cs = cn.prepareCall("{call sp_Insert_Detalle_Ventas(?,?,?,?,?,?,?,?,?,?,?,?)}")) {
-            for (FacturacionDTO d : detalles) {
+            for (PuntoVentaDTO d : detalles) {
                 cs.setString(1, c.getPedido_ID());
                 cs.setString(2, c.getVenta_id());
                 cs.setString(3, d.getProducto_ID());
@@ -633,7 +627,7 @@ public class FacturacionDAO {
     }
 
     /** Comprobante electrónico (sp_InsertCont_CabCompVentas): solo boleta y factura. */
-    public void InsertCont_CabCompVentas(Connection cn, FacturacionDTO c) throws SQLException {
+    public void InsertCont_CabCompVentas(Connection cn, PuntoVentaDTO c) throws SQLException {
         try (CallableStatement cs = cn.prepareCall("{call sp_InsertCont_CabCompVentas(?, ?, ?, ?)}")) {
             cs.setString(1, c.getCodEmp());
             cs.setString(2, c.getPedido_ID());
@@ -647,7 +641,7 @@ public class FacturacionDAO {
      * Cuenta por cobrar de la venta al crédito (sp_InsertCtasXCobrar).
      * CondCli = "CREDITO" crea o actualiza la cuenta; NroRegistro = Pedido_ID (igual que el WinForm).
      */
-    public void InsertCtasXCobrar(Connection cn, FacturacionDTO c) throws SQLException {
+    public void InsertCtasXCobrar(Connection cn, PuntoVentaDTO c) throws SQLException {
         try (CallableStatement cs = cn.prepareCall("{call sp_InsertCtasXCobrar(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}")) {
             cs.setString(1, c.getCliente_ID());          // @Cliente_ID
             cs.setString(2, c.getPedido_ID());           // @NroRegistro
@@ -674,7 +668,7 @@ public class FacturacionDAO {
      * sp_Insert_CabeceraVentas solo graba una fila "Efectivo" por el total cuando no hay datos en
      * TempDetalleFormasPago; aquí se graban todas las formas de pago elegidas en la ventana.
      */
-    public void ReemplazaDetalleFormasPago(Connection cn, FacturacionDTO c, List<FacturacionDTO> pagos) throws SQLException {
+    public void ReemplazaDetalleFormasPago(Connection cn, PuntoVentaDTO c, List<PuntoVentaDTO> pagos) throws SQLException {
         try (PreparedStatement del = cn.prepareStatement(
                 "DELETE FROM dbo.DetalleFormasPago WHERE Pedido_ID = ? AND CodEmp = ?")) {
             del.setString(1, c.getPedido_ID());
@@ -684,7 +678,7 @@ public class FacturacionDAO {
         try (PreparedStatement ins = cn.prepareStatement(
                 "INSERT INTO dbo.DetalleFormasPago ([IDFormaPago],[Pedido_ID],[FormaPago],[MontoParcial],[PorcInc],"
               + "[MontoInc],[MontoReal],[IDBanco],[NroOperacion],[CodEmp]) VALUES (?,?,?,?,?,?,?,?,?,?)")) {
-            for (FacturacionDTO p : pagos) {
+            for (PuntoVentaDTO p : pagos) {
                 ins.setString(1, p.getIDFormaPago());
                 ins.setString(2, c.getPedido_ID());
                 ins.setString(3, p.getFormaPago());
@@ -702,7 +696,7 @@ public class FacturacionDAO {
     }
 
     /** Cabecera de una venta dentro de la transacción (null si no existe). */
-    public FacturacionDTO ListaVentaXPedido(Connection cn, String codEmp, String pedidoId) throws SQLException {
+    public PuntoVentaDTO ListaVentaXPedido(Connection cn, String codEmp, String pedidoId) throws SQLException {
         String sql = "SELECT Pedido_ID, Tipo_documento, Venta_id, NroSerie, Nro_Documento, Cliente_ID, RazonSocial,"
                 + " Fecha_Pedido, CondPago, FormaPago, SubTotal, IGV, Total, Estado, Impreso, FechaHora, FechaTurno, Turno, TipoDoc"
                 + " FROM dbo.Cabecera_Ventas WHERE CodEmp = ? AND Pedido_ID = ?";
@@ -715,8 +709,8 @@ public class FacturacionDAO {
         }
     }
 
-    private static FacturacionDTO leerCabecera(ResultSet rs) throws SQLException {
-        FacturacionDTO v = new FacturacionDTO();
+    private static PuntoVentaDTO leerCabecera(ResultSet rs) throws SQLException {
+        PuntoVentaDTO v = new PuntoVentaDTO();
         v.setPedido_ID(texto(rs, "Pedido_ID"));
         v.setTipo_documento(texto(rs, "Tipo_documento"));
         v.setVenta_id(texto(rs, "Venta_id"));
@@ -741,7 +735,7 @@ public class FacturacionDAO {
     }
 
     /** Modifica la cabecera (sp_Update_CabeceraVentas: también Nota_Venta / Boleta / Factura). */
-    public void Update_CabeceraVentas(Connection cn, FacturacionDTO c) throws SQLException {
+    public void Update_CabeceraVentas(Connection cn, PuntoVentaDTO c) throws SQLException {
         try (CallableStatement cs = cn.prepareCall("{call sp_Update_CabeceraVentas(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}")) {
             cs.setString(1, c.getPedido_ID());
             cs.setString(2, c.getTipo_documento());
@@ -782,7 +776,7 @@ public class FacturacionDAO {
      * del comprobante), para volver a grabarlo con sp_Insert_Detalle_Ventas.
      * Si no se hace, sp_Insert_Detalle_Ventas actualiza la fila existente y vuelve a descontar todo el stock.
      */
-    public void RevierteDetalleVenta(Connection cn, FacturacionDTO c) throws SQLException {
+    public void RevierteDetalleVenta(Connection cn, PuntoVentaDTO c) throws SQLException {
         ejecutar(cn, "UPDATE P SET P.StockFinal = P.StockFinal + D.Cantidad"
                 + " FROM dbo.Productos P INNER JOIN dbo.Detalle_Ventas D ON D.Producto_ID = P.Producto_ID"
                 + " WHERE D.Pedido_ID = ?", c.getPedido_ID());
@@ -819,11 +813,9 @@ public class FacturacionDAO {
     /**
      * Elimina la venta (sp_EliminaVenta): devuelve el stock y borra la cabecera, el detalle y el comprobante.
      *
-     * Ojo: sp_EliminaVenta usa otros códigos de documento que el resto del sistema
-     * (01 = Boleta, 02 = Factura, 03 = Nota de venta). Si se le pasa el TipoDoc de la venta tal cual,
-     * al eliminar una nota de venta (01) borraría una BOLETA con el mismo número. Por eso se traduce aquí.
+
      */
-    public void EliminaVenta(Connection cn, FacturacionDTO c) throws SQLException {
+    public void EliminaVenta(Connection cn, PuntoVentaDTO c) throws SQLException {
         String tipoSp;
         switch (limpio(c.getTipoDoc())) {
             case DOC_BOLETA: tipoSp = "01"; break;
@@ -842,6 +834,73 @@ public class FacturacionDAO {
         // sp_EliminaVenta no borra las formas de pago ni el comprobante electrónico de la venta
         ejecutar(cn, "DELETE FROM dbo.DetalleFormasPago WHERE Pedido_ID = ? AND CodEmp = ?", c.getPedido_ID(), c.getCodEmp());
         ejecutar(cn, "DELETE FROM dbo.Cont_CabCompVentas WHERE Pedido_ID = ? AND CodEmp = ?", c.getPedido_ID(), c.getCodEmp());
+    }
+
+    /* ======================================================================================
+     *  Membresías cobradas en el Punto de Venta (Generar comprobante [F4] de frm_RegistroMembresia)
+     * ====================================================================================== */
+
+    public static final String MARCA_SUSCRIPCION = "SUSC. ";
+
+    /** Descripción de la línea de la membresía (máx. 100, como Detalle_Ventas.Descripcion). */
+    public static String descripcionSuscripcion(String nombrePlan, String nroSuscripcion) {
+        String sufijo = " (" + MARCA_SUSCRIPCION + limpio(nroSuscripcion) + ")";
+        String nombre = "MEMBRESIA " + limpio(nombrePlan);
+        int max = 100 - sufijo.length();
+        return (nombre.length() > max ? nombre.substring(0, max) : nombre) + sufijo;
+    }
+
+    /** true si la línea del detalle es una membresía (lleva la marca de la suscripción). */
+    public static boolean esDetalleSuscripcion(PuntoVentaDTO d) {
+        return d != null && d.getDescripcion() != null && d.getDescripcion().contains("(" + MARCA_SUSCRIPCION);
+    }
+
+    /** N° de suscripción que lleva la línea en su descripción ("... (SUSC. 00000012)"), o "" si no es membresía. */
+    public static String nroSuscripcion(PuntoVentaDTO d) {
+        if (!esDetalleSuscripcion(d)) return "";
+        String t = d.getDescripcion();
+        int ini = t.lastIndexOf("(" + MARCA_SUSCRIPCION) + MARCA_SUSCRIPCION.length() + 1;
+        int fin = t.indexOf(')', ini);
+        return fin < 0 ? "" : t.substring(ini, fin).trim();
+    }
+
+    /**
+
+     */
+    public String[] EstadoSuscripcionBloqueo(Connection cn, String nroSuscripcion) throws SQLException {
+        // Estado, Condicion, cliente_id y cuántas suscripciones ACTIVA / Pendiente del MISMO plan tiene ese
+        // cliente (sp_Insert_Detalle_Ventas marca la más antigua de ese plan: debe ser esta).
+        try (PreparedStatement ps = cn.prepareStatement(
+                "SELECT ISNULL(RTRIM(s.Estado), ''), ISNULL(RTRIM(s.Condicion), ''), RTRIM(s.cliente_id),"
+                + " (SELECT COUNT(*) FROM dbo.suscripciones_Membresia o"
+                + "   WHERE o.cliente_id = s.cliente_id AND o.CodigoM = s.CodigoM"
+                + "     AND o.Condicion = 'ACTIVA' AND o.Estado = 'Pendiente')"
+                + " FROM dbo.suscripciones_Membresia s WITH (UPDLOCK, ROWLOCK)"
+                + " WHERE s.NroSuscripcion_id = ?")) {
+            ps.setString(1, nroSuscripcion);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next()
+                        ? new String[] { rs.getString(1), rs.getString(2), rs.getString(3), String.valueOf(rs.getInt(4)) }
+                        : null;
+            }
+        }
+    }
+
+    /**
+     * Al eliminar la venta o antes de rehacer su detalle al modificarla: las suscripciones cobradas en ella
+     * (las que figuran en su Detalle_Ventas) vuelven de Efectiva a Pendiente. Una sola sentencia filtrada
+     * por Pedido_ID; la suscripción se ubica por su número dentro de la descripción de la línea.
+     */
+    public int RevierteSuscripcionesVenta(Connection cn, String pedidoId) throws SQLException {
+        try (PreparedStatement ps = cn.prepareStatement(
+                "UPDATE s SET s.Estado = 'Pendiente'"
+                + " FROM dbo.suscripciones_Membresia s"
+                + " INNER JOIN dbo.Detalle_Ventas d"
+                + "   ON d.Descripcion LIKE '%(" + MARCA_SUSCRIPCION + "' + RTRIM(s.NroSuscripcion_id) + ')%'"
+                + " WHERE d.Pedido_ID = ? AND RTRIM(s.Estado) = 'Efectiva'")) {
+            ps.setString(1, pedidoId);
+            return ps.executeUpdate();
+        }
     }
 
     private static void ejecutar(Connection cn, String sql, String... parametros) throws SQLException {
