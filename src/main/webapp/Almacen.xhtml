@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
     xmlns:ui="jakarta.faces.facelets" xmlns:h="jakarta.faces.html" xmlns:f="jakarta.faces.core"
-    xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
+    xmlns:pt="jakarta.faces.passthrough" xmlns:app="jakarta.faces.composite/components" template="/WEB-INF/templates/principal.xhtml">
     <ui:param name="menuOpcion" value="almacen" />
     <ui:param name="menuSubmenu" value="" />
+    <ui:define name="metadata">
+        <f:metadata>
+            <f:viewAction action="#{almacenBean.prepararListado}" />
+        </f:metadata>
+    </ui:define>
     <ui:define name="title">Almacén | Xport Fitness Gym</ui:define>
     <ui:define name="styles">
 <!-- ESTILOS DEL PROYECTO -->
@@ -428,7 +433,7 @@
                 </div>
 
                 <p class="resumen-label">Productos registrados</p>
-                <p class="resumen-value" id="totalProductos">0</p>
+                <p class="resumen-value" id="totalProductos">#{almacenBean.totalProductos}</p>
 
                 <span class="resumen-foot">
                     <i class="fa-solid fa-layer-group"></i>
@@ -442,7 +447,7 @@
                 </div>
 
                 <p class="resumen-label">Unidades disponibles</p>
-                <p class="resumen-value" id="unidadesDisponibles">0</p>
+                <p class="resumen-value" id="unidadesDisponibles"><h:outputText value="#{almacenBean.unidadesDisponibles}"><f:convertNumber maxFractionDigits="2" /></h:outputText></p>
 
                 <span class="resumen-foot">
                     <i class="fa-solid fa-circle-check"></i>
@@ -456,7 +461,7 @@
                 </div>
 
                 <p class="resumen-label">Requieren reposición</p>
-                <p class="resumen-value" id="totalReposicion">0</p>
+                <p class="resumen-value" id="totalReposicion">#{almacenBean.requierenReposicion}</p>
 
                 <span class="resumen-foot">
                     <i class="fa-solid fa-arrow-rotate-right"></i>
@@ -486,36 +491,36 @@
                     <div class="almacen-barra-item">
                         <div class="almacen-barra-meta">
                             <span>Disponibles</span>
-                            <strong id="cantidadDisponibles">0 productos</strong>
+                            <strong id="cantidadDisponibles">#{almacenBean.textoProductos(almacenBean.productosDisponibles)}</strong>
                         </div>
 
                         <div class="almacen-barra-fondo">
                             <span class="almacen-barra almacen-barra-disponible"
-                                  id="barraDisponible"></span>
+                                  id="barraDisponible" style="width: #{almacenBean.porcentajeDisponible}%;"></span>
                         </div>
                     </div>
 
                     <div class="almacen-barra-item">
                         <div class="almacen-barra-meta">
                             <span>Stock bajo</span>
-                            <strong id="cantidadStockBajo">0 productos</strong>
+                            <strong id="cantidadStockBajo">#{almacenBean.textoProductos(almacenBean.productosStockBajo)}</strong>
                         </div>
 
                         <div class="almacen-barra-fondo">
                             <span class="almacen-barra almacen-barra-bajo"
-                                  id="barraStockBajo"></span>
+                                  id="barraStockBajo" style="width: #{almacenBean.porcentajeStockBajo}%;"></span>
                         </div>
                     </div>
 
                     <div class="almacen-barra-item">
                         <div class="almacen-barra-meta">
                             <span>Agotados</span>
-                            <strong id="cantidadAgotados">0 productos</strong>
+                            <strong id="cantidadAgotados">#{almacenBean.textoProductos(almacenBean.productosAgotados)}</strong>
                         </div>
 
                         <div class="almacen-barra-fondo">
                             <span class="almacen-barra almacen-barra-agotado"
-                                  id="barraAgotados"></span>
+                                  id="barraAgotados" style="width: #{almacenBean.porcentajeAgotado}%;"></span>
                         </div>
                     </div>
 
@@ -582,50 +587,46 @@
                 </div>
 
                 <span class="movimientos-count" id="cantidadResultados">
-                    0 resultados
+                    #{almacenBean.totalResultados} #{almacenBean.totalResultados eq 1 ? 'resultado' : 'resultados'}
                 </span>
             </div>
 
             <!-- BÚSQUEDA Y FILTROS -->
-            <div class="productos-toolbar almacen-toolbar">
+            <h:form id="frmAlmacen" prependId="false" styleClass="productos-toolbar almacen-toolbar">
 
                 <label class="busqueda-productos">
                     <i class="fa-solid fa-magnifying-glass"></i>
 
-                    <input type="search"
-                           id="buscarAlmacen"
-                           placeholder="Buscar por producto, código o ubicación..."
-                           aria-label="Buscar en almacén" />
+                    <h:inputText id="buscarAlmacen" value="#{almacenBean.textoBusqueda}"
+                                 pt:placeholder="Buscar por producto o código..."
+                                 pt:aria-label="Buscar en almacén"
+                                 pt:autocomplete="off" />
                 </label>
 
                 <label class="almacen-filtro">
                     <i class="fa-solid fa-filter"></i>
 
-                    <select id="filtroEstado"
-                            aria-label="Filtrar por estado">
-
-                        <option value="">Todos los estados</option>
-                        <option value="disponible">Disponible</option>
-                        <option value="bajo">Stock bajo</option>
-                        <option value="agotado">Agotado</option>
-                    </select>
+                    <h:selectOneMenu id="filtroEstado" value="#{almacenBean.estadoFiltro}"
+                                     pt:aria-label="Filtrar por estado">
+                        <f:selectItem itemValue="" itemLabel="Todos los estados" />
+                        <f:selectItem itemValue="disponible" itemLabel="Disponible" />
+                        <f:selectItem itemValue="bajo" itemLabel="Stock bajo" />
+                        <f:selectItem itemValue="agotado" itemLabel="Agotado" />
+                    </h:selectOneMenu>
                 </label>
 
-                <button class="almacen-buscar"
-                        id="btnBuscarAlmacen"
-                        type="button">
+                <h:commandLink id="btnBuscarAlmacen" action="#{almacenBean.buscar}" styleClass="almacen-buscar">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     Buscar
-                </button>
+                </h:commandLink>
 
-                <button class="almacen-limpiar"
-                        id="btnLimpiarAlmacen"
-                        type="button">
+                <h:commandLink id="btnLimpiarAlmacen" action="#{almacenBean.limpiar}" immediate="true"
+                               styleClass="almacen-limpiar">
                     <i class="fa-solid fa-eraser"></i>
                     Limpiar
-                </button>
+                </h:commandLink>
 
-            </div>
+            </h:form>
 
             <!-- TABLA -->
             <div class="tabla-scroll" data-paginar="productos">
@@ -637,387 +638,64 @@
                             <th>Producto</th>
                             <th>Categoría</th>
                             <th>Marca</th>
-                            <th>Ubicación</th>
+                            <th>Unidad</th>
                             <th>Stock</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
 
                     <tbody id="filasAlmacen">
-                        <!-- Las filas se generan con JavaScript. -->
+                        <ui:repeat value="#{almacenBean.lista}" var="p">
+                            <tr>
+                                <td>
+                                    <div class="almacen-producto">
+                                        <span class="almacen-producto-icon">
+                                            <i class="fa-solid fa-box"></i>
+                                        </span>
+                                        <span class="almacen-producto-info">
+                                            <strong>#{p.productos}</strong>
+                                            <small>#{p.idproducto} · Código de producto</small>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>#{empty p.categoria ? '—' : p.categoria}</td>
+                                <td>#{empty p.marcaProducto ? '—' : p.marcaProducto}</td>
+                                <td>
+                                    <span class="ubicacion-tabla">
+                                        <i class="fa-solid fa-ruler"></i>
+                                        <span>#{empty p.unidadMedida ? '—' : p.unidadMedida}</span>
+                                    </span>
+                                </td>
+                                <td class="almacen-stock #{almacenBean.claseStock(p)}">
+                                    <h:outputText value="#{p.stockFinal}">
+                                        <f:convertNumber maxFractionDigits="2" />
+                                    </h:outputText>
+                                    unidades
+                                </td>
+                                <td>
+                                    <span class="almacen-estado #{almacenBean.estado(p)}">#{almacenBean.etiquetaEstado(p)}</span>
+                                </td>
+                            </tr>
+                        </ui:repeat>
                     </tbody>
 
                 </table>
 
-                <p id="almacenSinResultados"
-                   class="almacen-vacio"
-                   hidden="hidden">
+                <h:panelGroup layout="block" styleClass="almacen-vacio"
+                              rendered="#{almacenBean.totalResultados eq 0}">
                     No se encontraron productos con esos filtros.
-                </p>
+                </h:panelGroup>
 
             </div>
 
             <p class="almacen-nota">
                 <i class="fa-solid fa-circle-info"></i>
-                Existencias de demostración. Esta vista es únicamente de consulta:
-                los datos no se guardan ni modifican en SQL Server.
+                Vista de consulta: las existencias se leen de SQL Server
+                (sp_ReporteExistenciasProductos) y no se modifican desde aquí.
             </p>
 
         </section>
 
     </main>
-
-
-
-
-
-
-<!-- LÓGICA DE DEMOSTRACIÓN -->
-    </ui:define>
-    <ui:define name="scripts">
-        <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const filas = document.getElementById("filasAlmacen");
-            const busqueda = document.getElementById("buscarAlmacen");
-            const filtroEstado = document.getElementById("filtroEstado");
-
-            const totalProductos = document.getElementById("totalProductos");
-            const unidadesDisponibles = document.getElementById("unidadesDisponibles");
-            const totalReposicion = document.getElementById("totalReposicion");
-
-            const cantidadDisponibles = document.getElementById("cantidadDisponibles");
-            const cantidadStockBajo = document.getElementById("cantidadStockBajo");
-            const cantidadAgotados = document.getElementById("cantidadAgotados");
-
-            const barraDisponible = document.getElementById("barraDisponible");
-            const barraStockBajo = document.getElementById("barraStockBajo");
-            const barraAgotados = document.getElementById("barraAgotados");
-
-            const cantidadResultados = document.getElementById("cantidadResultados");
-            const sinResultados = document.getElementById("almacenSinResultados");
-
-            /*
-             * Datos de demostración.
-             * El stock mínimo se establece en 5 unidades.
-             */
-            const inventarioDemo = [
-                {
-                    codigo: "PRO-001",
-                    nombre: "Proteína Whey",
-                    categoria: "Suplementos",
-                    marca: "Optimum Nutrition",
-                    ubicacion: "A-01",
-                    stock: 18
-                },
-                {
-                    codigo: "PRO-002",
-                    nombre: "Creatina Monohidratada",
-                    categoria: "Suplementos",
-                    marca: "Universal Nutrition",
-                    ubicacion: "A-02",
-                    stock: 12
-                },
-                {
-                    codigo: "PRO-003",
-                    nombre: "Multivitamínico",
-                    categoria: "Suplementos",
-                    marca: "Universal Nutrition",
-                    ubicacion: "A-03",
-                    stock: 4
-                },
-                {
-                    codigo: "PRO-004",
-                    nombre: "Guantes de entrenamiento",
-                    categoria: "Accesorios",
-                    marca: "Everlast",
-                    ubicacion: "B-01",
-                    stock: 8
-                },
-                {
-                    codigo: "PRO-005",
-                    nombre: "Botella deportiva",
-                    categoria: "Accesorios",
-                    marca: "Adidas",
-                    ubicacion: "B-02",
-                    stock: 0
-                },
-                {
-                    codigo: "PRO-006",
-                    nombre: "Polo deportivo",
-                    categoria: "Ropa deportiva",
-                    marca: "Nike",
-                    ubicacion: "C-01",
-                    stock: 20
-                },
-                {
-                    codigo: "PRO-007",
-                    nombre: "Short deportivo",
-                    categoria: "Ropa deportiva",
-                    marca: "Puma",
-                    ubicacion: "C-02",
-                    stock: 3
-                },
-                {
-                    codigo: "PRO-008",
-                    nombre: "Barra de proteína",
-                    categoria: "Suplementos",
-                    marca: "Universal Nutrition",
-                    ubicacion: "A-02",
-                    stock: 0
-                }
-            ];
-
-            function obtenerEstado(producto) {
-                if (producto.stock === 0) {
-                    return "agotado";
-                }
-
-                // Clasificar como stock bajo los productos con 5 unidades o menos.
-                if (Math.max(producto.stock - 5, 0) === 0) {
-                    return "bajo";
-                }
-
-                return "disponible";
-            }
-
-            function crearCelda(texto, clase) {
-                const celda = document.createElement("td");
-
-                if (clase) {
-                    celda.className = clase;
-                }
-
-                celda.textContent = texto || "—";
-
-                return celda;
-            }
-
-            function crearCeldaProducto(producto) {
-                const celda = document.createElement("td");
-
-                const contenedor = document.createElement("div");
-                contenedor.className = "almacen-producto";
-
-                const icono = document.createElement("span");
-                icono.className = "almacen-producto-icon";
-
-                const iconoCaja = document.createElement("i");
-                iconoCaja.className = "fa-solid fa-box";
-
-                icono.appendChild(iconoCaja);
-
-                const informacion = document.createElement("span");
-                informacion.className = "almacen-producto-info";
-
-                const nombre = document.createElement("strong");
-                nombre.textContent = producto.nombre;
-
-                const codigo = document.createElement("small");
-                codigo.textContent = producto.codigo + " · Código de producto";
-
-                informacion.appendChild(nombre);
-                informacion.appendChild(codigo);
-
-                contenedor.appendChild(icono);
-                contenedor.appendChild(informacion);
-
-                celda.appendChild(contenedor);
-
-                return celda;
-            }
-
-            function crearCeldaUbicacion(producto) {
-                const celda = document.createElement("td");
-
-                const ubicacion = document.createElement("span");
-                ubicacion.className = "ubicacion-tabla";
-
-                const icono = document.createElement("i");
-                icono.className = "fa-solid fa-location-dot";
-
-                const texto = document.createElement("span");
-                texto.textContent = producto.ubicacion;
-
-                ubicacion.appendChild(icono);
-                ubicacion.appendChild(texto);
-
-                celda.appendChild(ubicacion);
-
-                return celda;
-            }
-
-            function crearCeldaStock(producto) {
-                const celda = document.createElement("td");
-                const estado = obtenerEstado(producto);
-
-                celda.className = "almacen-stock";
-                celda.textContent = producto.stock + " unidades";
-
-                if (estado === "bajo") {
-                    celda.classList.add("alerta");
-                } else {
-                    if (estado === "agotado") {
-                        celda.classList.add("agotado");
-                    }
-                }
-
-                return celda;
-            }
-
-            function crearCeldaEstado(producto) {
-                const celda = document.createElement("td");
-                const estado = obtenerEstado(producto);
-
-                const etiqueta = document.createElement("span");
-                etiqueta.className = "almacen-estado " + estado;
-
-                if (estado === "disponible") {
-                    etiqueta.textContent = "Disponible";
-                } else {
-                    if (estado === "bajo") {
-                        etiqueta.textContent = "Stock bajo";
-                    } else {
-                        etiqueta.textContent = "Agotado";
-                    }
-                }
-
-                celda.appendChild(etiqueta);
-
-                return celda;
-            }
-
-            function crearFila(producto) {
-                const fila = document.createElement("tr");
-
-                fila.appendChild(crearCeldaProducto(producto));
-                fila.appendChild(crearCelda(producto.categoria));
-                fila.appendChild(crearCelda(producto.marca));
-                fila.appendChild(crearCeldaUbicacion(producto));
-                fila.appendChild(crearCeldaStock(producto));
-                fila.appendChild(crearCeldaEstado(producto));
-
-                return fila;
-            }
-
-            function actualizarResumen() {
-                const total = inventarioDemo.length;
-
-                let unidades = 0;
-                let disponibles = 0;
-                let bajo = 0;
-                let agotados = 0;
-
-                inventarioDemo.forEach(function (producto) {
-                    unidades += producto.stock;
-
-                    const estado = obtenerEstado(producto);
-
-                    if (estado === "disponible") {
-                        disponibles++;
-                    } else {
-                        if (estado === "bajo") {
-                            bajo++;
-                        } else {
-                            agotados++;
-                        }
-                    }
-                });
-
-                totalProductos.textContent = total;
-                unidadesDisponibles.textContent = unidades;
-                totalReposicion.textContent = bajo + agotados;
-
-                cantidadDisponibles.textContent =
-                    disponibles + (disponibles === 1 ? " producto" : " productos");
-
-                cantidadStockBajo.textContent =
-                    bajo + (bajo === 1 ? " producto" : " productos");
-
-                cantidadAgotados.textContent =
-                    agotados + (agotados === 1 ? " producto" : " productos");
-
-                const porcentajeDisponible =
-                    total ? (disponibles / total) * 100 : 0;
-
-                const porcentajeBajo =
-                    total ? (bajo / total) * 100 : 0;
-
-                const porcentajeAgotado =
-                    total ? (agotados / total) * 100 : 0;
-
-                barraDisponible.style.width = porcentajeDisponible + "%";
-                barraStockBajo.style.width = porcentajeBajo + "%";
-                barraAgotados.style.width = porcentajeAgotado + "%";
-            }
-
-            function renderizarInventario() {
-                const texto = busqueda.value.trim().toLocaleLowerCase("es");
-                const estadoSeleccionado = filtroEstado.value;
-
-                const filtrados = inventarioDemo.filter(function (producto) {
-
-                    const contenido = [
-                        producto.nombre,
-                        producto.codigo,
-                        producto.categoria,
-                        producto.marca,
-                        producto.ubicacion
-                    ].join(" ").toLocaleLowerCase("es");
-
-                    const coincideTexto = contenido.includes(texto);
-
-                    let coincideEstado = true;
-
-                    if (estadoSeleccionado !== "") {
-                        coincideEstado =
-                            obtenerEstado(producto) === estadoSeleccionado;
-                    }
-
-                    // Comprobar si coincide el texto de búsqueda.
-                    if (coincideTexto === false) {
-                        return false;
-                    }
-
-                    if (coincideEstado === false) {
-                        return false;
-                    }
-
-                    return true;
-                });
-
-                filas.replaceChildren();
-
-                filtrados.forEach(function (producto) {
-                    filas.appendChild(crearFila(producto));
-                });
-
-                cantidadResultados.textContent =
-                    filtrados.length
-                    + (filtrados.length === 1 ? " resultado" : " resultados");
-
-                sinResultados.hidden = filtrados.length !== 0;
-            }
-
-            document.getElementById("btnBuscarAlmacen")
-                .addEventListener("click", renderizarInventario);
-
-            busqueda.addEventListener("input", renderizarInventario);
-            filtroEstado.addEventListener("change", renderizarInventario);
-
-            document.getElementById("btnLimpiarAlmacen")
-                .addEventListener("click", function () {
-                    busqueda.value = "";
-                    filtroEstado.value = "";
-
-                    renderizarInventario();
-                    busqueda.focus();
-                });
-
-            actualizarResumen();
-            renderizarInventario();
-
-        });
-        </script>
     </ui:define>
 </ui:composition>
