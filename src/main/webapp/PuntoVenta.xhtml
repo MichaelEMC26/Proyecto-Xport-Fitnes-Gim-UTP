@@ -1048,6 +1048,11 @@
             border-radius: 8px; background: #eff5ff; color: #1e3a8a; font-size: 12px; font-weight: 600;
         }
         .pv-aviso-socio[hidden] { display: none; }
+    
+        /* Solo la etiqueta de stock cambia de color: amarilla en el stock mínimo, roja sin stock.
+           La tarjeta y la imagen del producto se mantienen blancas. */
+        .pv-product-card.pv-card-stock-bajo .pv-stock { background: #F5B700 !important; color: #3D2E00; }
+        .pv-product-card.pv-card-agotado .pv-stock { background: #C84635 !important; color: #FFFFFF; }
     </style>
     </ui:define>
     <ui:define name="content">
@@ -1939,8 +1944,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? "AGOTADO"
                 : "Stock: " + stockTotal(p);
 
+            // Sin stock: rojo; stock igual o menor al stock mínimo: amarillo
+            const minimo = Math.max(0, Number(p.stockMinimo) || 0);
             if (stockTotal(p) === 0) {
-                stock.style.background = "#c84635";
+                card.classList.add("pv-card-agotado");
+                card.title = p.nombre + " · sin stock";
+            } else if (!(stockTotal(p) > minimo)) {
+                card.classList.add("pv-card-stock-bajo");
+                card.title = p.nombre + " · stock bajo (mínimo " + minimo + ")";
             }
 
             card.appendChild(stock);

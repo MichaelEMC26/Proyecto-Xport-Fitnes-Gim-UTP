@@ -45,7 +45,8 @@ public class DashboardBean implements Serializable {
     @PostConstruct
     public void init() {
         UsuarioDTO u = MembresiaBean.usuarioEnSesion();
-        areaAdministrativa = u != null && esAreaAdministracionOSistemas(u.getArea());
+        // Área Administración / Sistemas o rol Administrador / Sistemas (tabla Rol)
+        areaAdministrativa = u != null && (esAreaAdministracionOSistemas(u.getArea()) || LoginBean.tieneAccesoTotal(u));
         String codEmp = MembresiaBean.codEmpSesion();
         LocalDate hoy = LocalDate.now();
 

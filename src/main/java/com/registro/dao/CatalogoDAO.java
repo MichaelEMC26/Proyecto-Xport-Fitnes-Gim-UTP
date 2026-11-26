@@ -20,51 +20,71 @@ import com.registro.dto.UsuarioDTO;
  */
 public class CatalogoDAO {
     
-  public CatalogoDTO ListaTipoBien()
+  /**
+   * sp_ListaTipo_Bien (SELECT * FROM Tipo_Bien): tipos de bien para el combo de RegistrarProducto.
+   * Se lee el código (TipoBien_ID), la descripción y el estado; si la tabla usa otros nombres de
+   * columna se toma la primera como código y la segunda como descripción.
+   */
+  public List<CatalogoDTO> ListaTipoBien()
   {
-      CatalogoDTO TipoBien = null;
-      Connection cn = null;
-      CallableStatement cs = null;
-      ResultSet rs = null;
-      
-      try
+      List<CatalogoDTO> lista = new ArrayList<>();
+      String sql = "{call sp_ListaTipo_Bien}";
+      try (Connection cn = ConexionBD.obtenerConexion();
+           CallableStatement cs = cn.prepareCall(sql);
+           ResultSet rs = cs.executeQuery())
       {
-          cn = ConexionBD.obtenerConexion();
-          String sql = "{call sp_ListaTipo_Bien}";
-          
-          cs = cn.prepareCall(sql);
-          rs = cs.executeQuery();
-
-          if(rs.next())
+          int columnas = rs.getMetaData().getColumnCount();
+          while (rs.next())
           {
-              TipoBien = new CatalogoDTO();
-              
-              TipoBien.setTipoBien_ID(rs.getString("TipoBien"));
-              
+              CatalogoDTO tipo = new CatalogoDTO();
+              String id = columnaOpcional(rs, "TipoBien_ID");
+              if (id == null) id = rs.getString(1);
+              String descripcion = columnaOpcional(rs, "Descripcion");
+              if (descripcion == null && columnas > 1) descripcion = rs.getString(2);
+              tipo.setTipoBien_ID(recortar(id));
+              tipo.setDescripcionTipo(descripcion == null ? recortar(id) : descripcion.trim());
+              tipo.setEstadoTipo(recortar(columnaOpcional(rs, "Estado")));
+              lista.add(tipo);
           }
-
       }
-      catch(SQLException ex)
+      catch (SQLException ex)
       {
           ex.printStackTrace();
       }
-      finally
-      {
-         try
-         {
-          if(cn != null)cn.close();
-          if(cs != null)cs.close();
-          if(rs != null)rs.close();          
-         }        
-         catch(SQLException ex)
-         {
-             ex.printStackTrace();
-         }
-      }
-      
-      return TipoBien;
+      return lista;
   }
-  
+
+  /**
+   * StockMinimo y TipoBien_ID de los productos de la empresa (clave: Producto_ID).
+   * Completa los listados cuyos SP todavía no devuelven esas columnas.
+   */
+  public java.util.Map<String, CatalogoDTO> StockMinimoYTipoBien(String codEmp)
+  {
+      java.util.Map<String, CatalogoDTO> mapa = new java.util.HashMap<>();
+      String sql = "SELECT Producto_ID, StockMinimo = ISNULL(StockMinimo, 0), TipoBien_ID FROM Productos WHERE CodEmp = ?";
+      try (Connection cn = ConexionBD.obtenerConexion();
+           PreparedStatement ps = cn.prepareStatement(sql))
+      {
+          ps.setString(1, codEmp);
+          try (ResultSet rs = ps.executeQuery())
+          {
+              while (rs.next())
+              {
+                  CatalogoDTO p = new CatalogoDTO();
+                  p.setProducto_ID(recortar(rs.getString("Producto_ID")));
+                  p.setStockMinimo(rs.getDouble("StockMinimo"));
+                  p.setTipoBien_ID(recortar(rs.getString("TipoBien_ID")));
+                  mapa.put(p.getProducto_ID(), p);
+              }
+          }
+      }
+      catch (SQLException ex)
+      {
+          ex.printStackTrace();
+      }
+      return mapa;
+  }
+
   public List<CategoriaDTO> ListaCategorias()
   {
       List<CategoriaDTO> listaCat = new ArrayList<>();
@@ -362,6 +382,7 @@ public class CatalogoDAO {
         {
             cs.setString("CodEmp", codEmp);
             leerListado(cs, lista);
+            completarStockMinimo(lista, codEmp);
         }
         catch (SQLException ex)
         {
@@ -381,6 +402,7 @@ public class CatalogoDAO {
             cs.setString("CodEmp", codEmp);
             cs.setString("descprod", texto);
             leerListado(cs, lista);
+            completarStockMinimo(lista, codEmp);
         }
         catch (SQLException ex)
         {
@@ -400,6 +422,7 @@ public class CatalogoDAO {
             cs.setString("CodEmp", codEmp);
             cs.setString("MarcaProducto_ID", String.valueOf(marcaId));
             leerListado(cs, lista);
+            completarStockMinimo(lista, codEmp);
         }
         catch (SQLException ex)
         {
@@ -432,8 +455,30 @@ public class CatalogoDAO {
                 p.setImagen(rs.getString("Imagen"));
                 p.setCodigoBarra(rs.getString("CodigoBarra"));
                 p.setTipoProd(recortar(rs.getString("TipoProd")));
+                // Columnas nuevas: se leen si el SP ya las devuelve (si no, ver completarStockMinimo)
+                String minimo = columnaOpcional(rs, "StockMinimo");
+                p.setStockMinimo(minimo == null ? -1 : Double.parseDouble(minimo.trim()));
+                p.setTipoBien_ID(recortar(columnaOpcional(rs, "TipoBien_ID")));
                 lista.add(p);
             }
+        }
+    }
+
+    /** Si el SP no devolvió StockMinimo / TipoBien_ID (quedó -1), se completan desde la tabla Productos. */
+    private void completarStockMinimo(List<CatalogoDTO> lista, String codEmp)
+    {
+        boolean falta = false;
+        for (CatalogoDTO p : lista)
+        {
+            if (p.getStockMinimo() < 0) { falta = true; break; }
+        }
+        if (!falta) return;
+        java.util.Map<String, CatalogoDTO> datos = StockMinimoYTipoBien(codEmp);
+        for (CatalogoDTO p : lista)
+        {
+            CatalogoDTO d = datos.get(p.getProducto_ID());
+            if (p.getStockMinimo() < 0) p.setStockMinimo(d == null ? 0 : d.getStockMinimo());
+            if (p.getTipoBien_ID() == null && d != null) p.setTipoBien_ID(d.getTipoBien_ID());
         }
     }
 
@@ -489,7 +534,7 @@ public class CatalogoDAO {
     /** sp_Insert_Productos. Devuelve true si el procedimiento terminó sin error. */
     public boolean Insert_ProductosD(CatalogoDTO p)
     {
-        String sql = "{call sp_Insert_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
+        String sql = "{call sp_Insert_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
         {
@@ -511,8 +556,8 @@ public class CatalogoDAO {
     public boolean Update_Productos(CatalogoDTO p, boolean incluyeStock)
     {
         String sql = incluyeStock
-                ? "{call sp_Update_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}"
-                : "{call sp_Update_Productos2(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
+                ? "{call sp_Update_Productos(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}"
+                : "{call sp_Update_Productos2(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql))
         {
@@ -527,7 +572,7 @@ public class CatalogoDAO {
         }
     }
 
-    /** Parámetros que envía Alm_Mante_ProductosD (Insert / Update / Update2). */
+    /** Parámetros que envía Alm_Mante_ProductosD (Insert / Update / Update2), más @TipoBien_ID y @StockMinimo. */
     private void asignarComunes(CallableStatement cs, CatalogoDTO p, boolean incluyeStock) throws SQLException
     {
         cs.setString("Producto_ID", p.getProducto_ID());
@@ -550,6 +595,8 @@ public class CatalogoDAO {
         cs.setString("CodigoBarra", p.getCodigoBarra() == null ? "" : p.getCodigoBarra());
         cs.setString("CodEmp", p.getCodEmp());
         cs.setString("TipoProd", p.getTipoProd());
+        cs.setString("TipoBien_ID", p.getTipoBien_ID());
+        cs.setDouble("StockMinimo", p.getStockMinimo());
     }
 
     private static java.math.BigDecimal dinero(double valor)

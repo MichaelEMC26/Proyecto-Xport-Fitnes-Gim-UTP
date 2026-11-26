@@ -1,5 +1,7 @@
 package com.registro.controller;
 
+import com.registro.dto.CatalogoDTO;
+import com.registro.facade.CatalogoFACADE;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.registro.config.AlmacenImagenesProducto;
@@ -568,6 +570,8 @@ public class PuntoVentaBean implements Serializable {
         errorProductos = "";
         String ctx = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath();
         try {
+            // Stock mínimo de cada producto (las tarjetas se pintan amarillas en el mínimo y rojas sin stock)
+            Map<String, CatalogoDTO> minimos = new CatalogoFACADE().StockMinimoYTipoBien(codEmp);
             for (PuntoVentaDTO p : facade().Lista_ProductosGral_ActivosXNomF(codEmp, "")) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("id", limpio(p.getProducto_ID()));
@@ -578,6 +582,8 @@ public class PuntoVentaBean implements Serializable {
                 m.put("precio", p.getPrecioVenta());
                 m.put("costo", p.getPrecioCosto());
                 m.put("stock", p.getStockFinal());
+                CatalogoDTO minimo = minimos.get(limpio(p.getProducto_ID()));
+                m.put("stockMinimo", minimo == null ? 0 : minimo.getStockMinimo());
                 m.put("categoria", limpio(p.getCategoria()));
                 m.put("marca", limpio(p.getMarca()));
                 m.put("unidad", limpio(p.getUnidadMedida()));

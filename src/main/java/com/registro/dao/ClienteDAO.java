@@ -266,6 +266,7 @@ public class ClienteDAO {
                listaCliente.setContacto(rs.getString("Contacto"));
                listaCliente.setTelefonoCont(rs.getString("TelefonoCont"));
                listaCliente.setHuellaDactilar(rs.getBytes("HuellaDactilar"));
+
                listaCliente.setFechaCumpleaños(fechaCumpleanos(rs));
               
           }
@@ -328,6 +329,7 @@ public class ClienteDAO {
                listaCliente.setContacto(rs.getString("Contacto"));
                listaCliente.setTelefonoCont(rs.getString("TelefonoCont"));
                listaCliente.setHuellaDactilar(rs.getBytes("HuellaDactilar"));
+
                listaCliente.setFechaCumpleaños(fechaCumpleanos(rs));
               
           }
@@ -385,6 +387,7 @@ public class ClienteDAO {
                 cliente.setContacto(rs.getString("Contacto"));
                 cliente.setTelefonoCont(rs.getString("TelefonoCont"));
                 cliente.setHuellaDactilar(rs.getBytes("HuellaDactilar"));
+
                 cliente.setFechaCumpleaños(fechaCumpleanos(rs));
                 lista.add(cliente);
             }
@@ -468,5 +471,45 @@ public class ClienteDAO {
             } catch (SQLException ex) { ex.printStackTrace(); }
         }
         return lista;
-    } 
+    }
+
+    // ---------------------------------------------------------
+    // Huellas para el lector ZK9500 (identificación en el agente local de recepción)
+    // ---------------------------------------------------------
+
+    private static final String FILTRO_HUELLA =
+            " FROM dbo.Cliente WHERE Estado = 'Activo' AND HuellaDactilar IS NOT NULL AND DATALENGTH(HuellaDactilar) > 0";
+
+    /** Socios activos con huella: [Cliente_ID, plantilla]. Solo estas dos columnas. */
+    public java.util.List<Object[]> ListaHuellasActivas() {
+        java.util.List<Object[]> lista = new ArrayList<>();
+        try (Connection cn = ConexionBD.obtenerConexion();
+             Statement st = cn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT Cliente_ID, HuellaDactilar" + FILTRO_HUELLA)) {
+            while (rs.next()) {
+                String id = rs.getString(1);
+                byte[] huella = rs.getBytes(2);
+                if (id != null && huella != null && huella.length > 0) lista.add(new Object[] { id.trim(), huella });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    /**
+     * "Versión" de las huellas: cambia cuando se registra, cambia o se da de baja una huella.
+     * Así la página de asistencia solo vuelve a descargar las huellas cuando hubo cambios.
+     */
+    public String VersionHuellasActivas() {
+        try (Connection cn = ConexionBD.obtenerConexion();
+             Statement st = cn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT COUNT(*), ISNULL(CHECKSUM_AGG(CHECKSUM(Cliente_ID,"
+                     + " HASHBYTES('SHA2_256', HuellaDactilar))), 0)" + FILTRO_HUELLA)) {
+            return rs.next() ? rs.getInt(1) + "-" + rs.getInt(2) : "";
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
 }

@@ -22,56 +22,79 @@ public class UsuarioDAO {
     public static final int PERSONAL_ELIMINADO = 1;
     public static final int PERSONAL_INACTIVADO = 2;
 
+    /**
+     * Login con sp_IngresoUsuarioSistema. Igual que IngresoUsuarioSistemaN del WinForms, se prueba:
+     *  1. la clave encriptada (SHA-256 UTF-8 en Base64, la misma del WinForms);
+     *  2. la clave en texto plano (cuentas antiguas, registradas antes del encriptado);
+     *  3. la clave con el encriptado anterior de este proyecto web.
+     * Si entra con 2 o 3, la clave se vuelve a grabar con el encriptado 1 para que la próxima vez
+     * funcione igual en los dos sistemas.
+     */
     public UsuarioDTO ValidaAcceso(String usuario, String pass)
     {
-        UsuarioDTO usuario2 = null;
-        Connection cn = null;
-        CallableStatement cs = null;
-        ResultSet rs = null;
+        if (usuario == null || pass == null || pass.isEmpty()) return null;
 
-        try
+        String claveEncriptada = Seguridad.encriptarContraseña(pass);
+        UsuarioDTO dto = buscarAcceso(usuario, claveEncriptada);
+        if (dto != null) return dto;
+
+        dto = buscarAcceso(usuario, pass);
+        if (dto == null) {
+            String anterior = Seguridad.encriptarContraseñaWebAnterior(pass);
+            if (!anterior.isEmpty()) dto = buscarAcceso(usuario, anterior);
+        }
+        if (dto != null) {
+            regrabarClave(dto.getPersonal_ID(), claveEncriptada);
+        }
+        return dto;
+    }
+
+    /** Una llamada a sp_IngresoUsuarioSistema con la clave tal como está guardada en la BD. */
+    private UsuarioDTO buscarAcceso(String usuario, String claveGuardada)
+    {
+        String sql = "{call sp_IngresoUsuarioSistema(?,?)}";
+        try (Connection cn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cn.prepareCall(sql))
         {
-            String contraseñaEncriptada = Seguridad.encriptarContraseña(pass);
-            
-            cn = ConexionBD.obtenerConexion();
-            String sql = "{call sp_IngresoUsuarioSistema(?,?)}";
-            cs = cn.prepareCall(sql);
             cs.setString(1, usuario);
-            cs.setString(2, contraseñaEncriptada);
-
-            rs = cs.executeQuery();
-
-            if (rs.next()) {
-                
-            //     String contrasenaGuardadaBD = rs.getString("Contraseña"); // Reemplaza con el nombre real de tu columna
-
-            // 3. Usa el método de verificación correcto de tu librería de seguridad
-            // SI USAS BCRYPT:
-            // boolean esValida = BCrypt.checkpw(pass, contrasenaGuardadaBD);
-            
-                usuario2 = new UsuarioDTO();
-
-                usuario2.setPersonal_ID(rs.getInt("Personal_ID"));
-                usuario2.setApellidoPaterno(rs.getString("ApellidoPaterno"));
-                usuario2.setApellidoMaterno(rs.getString("ApellidoMaterno"));
-                usuario2.setNombres(rs.getString("Nombres"));
-                usuario2.setArea_ID(rs.getString("Area_ID"));
-                usuario2.setArea(rs.getString("Area"));
-                usuario2.setRol(rs.getString("Rol"));
-                usuario2.setCodEmp(rs.getString("CodEmp"));    
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (cs != null) cs.close();
-                if (cn != null) cn.close();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            cs.setString(2, claveGuardada);
+            try (ResultSet rs = cs.executeQuery())
+            {
+                if (!rs.next()) return null;
+                UsuarioDTO dto = new UsuarioDTO();
+                dto.setPersonal_ID(rs.getInt("Personal_ID"));
+                dto.setApellidoPaterno(rs.getString("ApellidoPaterno"));
+                dto.setApellidoMaterno(rs.getString("ApellidoMaterno"));
+                dto.setNombres(rs.getString("Nombres"));
+                dto.setArea_ID(rs.getString("Area_ID"));
+                dto.setArea(rs.getString("Area"));
+                dto.setRol(rs.getString("Rol"));
+                dto.setCodEmp(rs.getString("CodEmp"));
+                return dto;
             }
         }
-        return usuario2;
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /** Graba la clave ya encriptada (sp_PersonalUsuario_ActualizaClave). Si falla, el usuario igual entra. */
+    private void regrabarClave(int personalId, String claveEncriptada)
+    {
+        if (personalId <= 0 || claveEncriptada.isEmpty()) return;
+        try (Connection cn = ConexionBD.obtenerConexion();
+             CallableStatement cs = cn.prepareCall("{call sp_PersonalUsuario_ActualizaClave(?,?)}"))
+        {
+            cs.setInt(1, personalId);
+            cs.setString(2, claveEncriptada);
+            cs.execute();
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public UsuarioDTO GeneraCodPersonal()

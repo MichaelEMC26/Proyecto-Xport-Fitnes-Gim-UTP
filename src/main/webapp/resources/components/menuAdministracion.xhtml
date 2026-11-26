@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--
+    Submenú ADMINISTRACIÓN del menú lateral (lo incluye menuLateral.xhtml debajo de Almacén con
+    <nav:menuAdministracion opcion="..."/>). Gastos, que antes era una opción suelta, pasa aquí.
+    La opción activa la indica cada página con <ui:param name="menuOpcion" .../>: gastos (gastos.xhtml).
+    Registrar Gastos, Cuentas por Cobrar y Cuentas por Pagar todavía no tienen páginas:
+    se muestran como "Próximamente".
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:cc="jakarta.faces.composite"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:h="jakarta.faces.html">
+<cc:interface>
+    <cc:attribute name="opcion" type="java.lang.String" default=""/>
+</cc:interface>
+<cc:implementation>
+    <li class="menu-desplegable #{cc.attrs.opcion eq 'gastos' ? 'abierto' : ''}" id="menuAdministracion">
+        <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuAdministracion')" aria-expanded="#{cc.attrs.opcion eq 'gastos'}">
+            <i class="fa-solid fa-briefcase"></i><span>Administración</span>
+            <i class="fa-solid fa-chevron-down flecha-submenu"></i>
+        </a>
+        <ul class="submenu" id="submenuAdministracion">
+
+            <!-- Gastos (antes era una opción suelta del menú) -->
+            <li class="menu-desplegable #{cc.attrs.opcion eq 'gastos' ? 'abierto' : ''}" id="menuGastos">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuGastos')" aria-expanded="#{cc.attrs.opcion eq 'gastos'}">
+                    <i class="fa-solid fa-money-bill"></i><span>Gastos</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu-interno" id="submenuGastos">
+                    <li class="#{cc.attrs.opcion eq 'gastos' ? 'submenu-activo' : ''}"><h:link outcome="/gastos.xhtml"><i class="fa-solid fa-list"></i><span>Ver Gastos</span></h:link></li>
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-plus"></i><span>Registrar Gastos</span><small></small></span></li>
+                </ul>
+            </li>
+
+            <!-- Cuentas por Cobrar: sin páginas todavía -->
+            <li class="menu-desplegable" id="menuCuentasCobrar">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuCuentasCobrar')" aria-expanded="false">
+                    <i class="fa-solid fa-hand-holding-dollar"></i><span>Cuentas por Cobrar</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu-interno" id="submenuCuentasCobrar">
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-list"></i><span>Ver Créditos Pendientes</span><small></small></span></li>
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-pen-to-square"></i><span>Actualizar Créditos</span><small></small></span></li>
+                </ul>
+            </li>
+
+            <!-- Cuentas por Pagar: sin páginas todavía -->
+            <li class="menu-desplegable" id="menuCuentasPagar">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuCuentasPagar')" aria-expanded="false">
+                    <i class="fa-solid fa-file-invoice"></i><span>Cuentas por Pagar</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu-interno" id="submenuCuentasPagar">
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-list"></i><span>Ver Pagos Pendientes</span><small></small></span></li>
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-pen-to-square"></i><span>Actualizar Pagos</span><small></small></span></li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+</cc:implementation>
+</html>

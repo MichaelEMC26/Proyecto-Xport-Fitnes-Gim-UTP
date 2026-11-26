@@ -59,4 +59,13 @@ public class ClienteFACADE {
     {
         return dao.MuestraFechasProximasCumpleañosSocio(FechaIni,FechaFin);
     }
+
+    /** Socios activos con huella registrada: [Cliente_ID, plantilla]. */
+    public List<Object[]> ListaHuellasActivas() {
+        return dao.ListaHuellasActivas();
+    }
+
+    public String VersionHuellasActivas() {
+        return dao.VersionHuellasActivas();
+    }
 }

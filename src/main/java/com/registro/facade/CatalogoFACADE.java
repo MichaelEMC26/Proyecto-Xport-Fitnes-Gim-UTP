@@ -37,6 +37,14 @@ public class CatalogoFACADE {
     {
         return dao.AutogeneraMarca();
     }
+    public List<CatalogoDTO> ListaTipoBien()
+    {
+        return dao.ListaTipoBien();
+    }
+    public java.util.Map<String, CatalogoDTO> StockMinimoYTipoBien(String codEmp)
+    {
+        return dao.StockMinimoYTipoBien(codEmp);
+    }
     public boolean Mante_Marcas(MarcasDTO marcas)
     {
         return dao.Mante_Marcas(marcas);

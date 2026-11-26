@@ -1,0 +1,542 @@
+
+:root {
+    --navy-dark: #0e224e;       
+    --navy-banner: #132c63;     
+    --blue-primary: #2563eb;    
+    --blue-hover: #1d4ed8;
+    --bg-body: #f1f5f9;         
+    --bg-card: #ffffff;         
+    --bg-input: #f8fafc;       
+    --border-color: #e2e8f0;    
+    --text-main: #1e293b;       
+    --text-muted: #64748b;      
+    --badge-green-bg: #dcfce7;  
+    --badge-green-txt: #15803d; 
+    --badge-warn-bg: #fef3c7;   
+    --badge-warn-txt: #b45309;  
+}
+
+/*ESTILOS GENERALES Y RESET*/
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 20px 0 40px 0;
+}
+
+/* Barra superior de herramientas (solo pantalla) */
+.action-bar {
+    max-width: 210mm;
+    margin: 0 auto 15px auto;
+    background: var(--bg-card);
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+.preview-label {
+    font-weight: 600;
+    color: var(--navy-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-print {
+    background-color: var(--blue-primary);
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-print:hover {
+    background-color: var(--blue-hover);
+}
+
+/*CONTENEDOR PRINCIPAL (TAMAÑO HOJA A4)*/
+.report-container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background-color: var(--bg-body);
+    padding: 14mm;
+    box-shadow: 0 4px 15px rgba(14, 34, 78, 0.1);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/*ENCABEZADO SUPERIOR*/
+.report-header {
+    background-color: var(--bg-card);
+    padding: 14px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-logo {
+    width: 44px;
+    height: 44px;
+    background-color: var(--navy-dark);
+    color: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.brand-info h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy-dark);
+    letter-spacing: -0.3px;
+}
+
+.brand-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.doc-meta {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.doc-badge {
+    display: inline-block;
+    background-color: #dbeafe;
+    color: var(--blue-primary);
+    font-weight: 700;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+/* BANNER DE TÍTULO (ESTILO IDÉNTICO AL SISTEMA)*/
+.report-banner {
+    background: linear-gradient(90deg, var(--navy-dark) 0%, var(--navy-banner) 100%);
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(14, 34, 78, 0.15);
+}
+
+.banner-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.banner-title i {
+    font-size: 17px;
+    color: #93c5fd;
+}
+
+.banner-title h2 {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+
+.banner-period {
+    font-size: 11.5px;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+/*NUEVA SECCIÓN: RESUMEN FINANCIERO Y OPERATIVO */
+.financial-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kpi-top-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 12px;
+}
+
+.kpi-bottom-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.kpi-card {
+    background: var(--bg-card);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Tarjeta destacada: Total Ingresos del Día */
+.kpi-featured {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-left: 4px solid var(--blue-primary);
+}
+
+.kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    background-color: #eff6ff;
+    color: var(--blue-primary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.kpi-details {
+    width: 100%;
+}
+
+.kpi-alert-border {
+    border-left: 4px solid #f59e0b;
+}
+
+.kpi-label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+}
+
+.kpi-value-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kpi-value-lg {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--navy-dark);
+}
+
+.kpi-value {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy-dark);
+}
+
+.kpi-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background-color: var(--bg-body);
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+.highlight-blue {
+    color: var(--blue-primary);
+}
+
+.text-warning {
+    color: var(--badge-warn-txt);
+}
+
+.kpi-trend.positive {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--badge-green-txt);
+    background: var(--badge-green-bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Barra de progreso para Efectividad */
+.progress-bar-bg {
+    width: 100%;
+    height: 6px;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--navy-dark), var(--blue-primary));
+    border-radius: 4px;
+}
+
+/*TARJETAS DE CONTENIDO (FORMULARIOS Y TABLAS)*/
+.content-card {
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #ffffff;
+}
+
+.card-header.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.record-count {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.record-count strong {
+    color: var(--blue-primary);
+}
+
+.card-body {
+    padding: 14px 20px;
+}
+
+/* Grid de parámetros */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 20px;
+}
+
+.info-item label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 3px;
+}
+
+.info-box {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/*TABLA DE DATOS (ESTILO EXACTO A LA CAPTURA)*/
+.table-subtitle {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.gym-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+}
+
+.gym-table thead {
+    background-color: var(--navy-dark);
+    color: #ffffff;
+}
+
+.gym-table th {
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.gym-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.gym-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.code-col {
+    color: var(--blue-primary) !important;
+    font-weight: 700;
+}
+
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+
+/* Etiquetas de Estado (Badges) */
+.badge-status {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+
+.badge-active {
+    background-color: var(--badge-green-bg);
+    color: var(--badge-green-txt);
+}
+
+.badge-warning {
+    background-color: var(--badge-warn-bg);
+    color: var(--badge-warn-txt);
+}
+
+/* Pie de tabla */
+.gym-table tfoot td {
+    background-color: #f1f5f9;
+    border-top: 2px solid var(--navy-dark);
+    border-bottom: none;
+    padding: 10px 12px;
+    color: var(--navy-dark);
+}
+
+.total-amount {
+    font-size: 13.5px;
+    color: var(--blue-primary) !important;
+}
+
+/* Observaciones */
+.notes-text {
+    font-size: 12px;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+/*PIE DE PÁGINA Y FIRMAS */
+.report-footer {
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+.signatures {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 18px;
+    padding-top: 16px;
+}
+
+.sig-box {
+    text-align: center;
+    width: 200px;
+}
+
+.sig-line {
+    border-top: 1px solid #94a3b8;
+    margin-bottom: 5px;
+}
+
+.sig-box p {
+    font-size: 11px;
+    color: var(--navy-dark);
+}
+
+.sig-box span {
+    font-size: 10.5px;
+    color: var(--text-muted);
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--border-color);
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-muted);
+}
+
+/* REGLAS DE IMPRESIÓN / EXPORTACIÓN A PDF */
+@media print {
+    body {
+        background-color: #ffffff;
+        padding: 0;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .report-container {
+        width: 100%;
+        min-height: auto;
+        box-shadow: none;
+        padding: 10mm;
+        margin: 0;
+        background-color: #ffffff;
+    }
+
+    .content-card, .kpi-card, .report-header {
+        box-shadow: none;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .kpi-featured {
+        border-left: 4px solid var(--blue-primary) !important;
+    }
+
+    .kpi-alert-border {
+        border-left: 4px solid #f59e0b !important;
+    }
+}

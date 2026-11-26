@@ -108,3 +108,13 @@
 .ra-ayuda .ra-ayuda-bloqueado{display:none;color:#B45309}
 .ra-ayuda[data-bloqueado="true"] .ra-ayuda-activo{display:none}
 .ra-ayuda[data-bloqueado="true"] .ra-ayuda-bloqueado{display:inline}
+
+/* Estado del lector de huellas ZK9500 */
+.ra-huella-estado{display:block;max-width:140px;text-align:center;font-size:11px;line-height:1.3;color:#64748b}
+.ra-huella-caja{transition:border-color .2s,color .2s,background .2s}
+.ra-huella[data-estado="listo"] .ra-huella-caja{border:2px solid #2864F0;color:#2864F0;background:#EEF4FF;animation:ra-pulso 1.6s ease-in-out infinite}
+.ra-huella[data-estado="ok"] .ra-huella-caja{border:2px solid #16A34A;color:#16A34A;background:#ECFDF3}
+.ra-huella[data-estado="error"] .ra-huella-caja{border:2px solid #DC2626;color:#DC2626;background:#FEF2F2}
+.ra-huella[data-estado="error"] .ra-huella-estado{color:#B42318}
+.ra-huella[data-estado="sin"] .ra-huella-estado{color:#B45309}
+@keyframes ra-pulso{50%{box-shadow:0 0 0 6px rgba(40,100,240,.12)}}

@@ -504,7 +504,7 @@ public class AsistenciaDAO {
     public List<AsistenciaDTO> ListaDetRegistroAsistenciasXFechaXTurno(String CodEmp, LocalDateTime FechaIngreso, String Turno)
     {
         List<AsistenciaDTO> lista = new ArrayList<>();
-        String sql = "{call (?,?,?)}";
+        String sql = "{call sp_ListaDetRegistroAsistenciasXFechaXTurno(?,?,?)}";
 
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(sql)) {

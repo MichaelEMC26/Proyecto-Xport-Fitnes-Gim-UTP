@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<!--
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:cc="jakarta.faces.composite"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:h="jakarta.faces.html">
+<cc:interface>
+    <cc:attribute name="opcion" type="java.lang.String" default=""/>
+</cc:interface>
+<cc:implementation>
+    <li class="menu-desplegable #{cc.attrs.opcion eq 'ventas' or cc.attrs.opcion eq 'puntoVenta' or cc.attrs.opcion eq 'aperturaCaja' or cc.attrs.opcion eq 'cierreCaja' ? 'abierto' : ''}" id="menuVentas">
+        <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuVentas')" aria-expanded="#{cc.attrs.opcion eq 'ventas' or cc.attrs.opcion eq 'puntoVenta' or cc.attrs.opcion eq 'aperturaCaja' or cc.attrs.opcion eq 'cierreCaja'}">
+            <i class="fa-solid fa-chart-line"></i><span>Ventas</span>
+            <i class="fa-solid fa-chevron-down flecha-submenu"></i>
+        </a>
+        <ul class="submenu" id="submenuVentas">
+            <li class="#{cc.attrs.opcion eq 'ventas' ? 'submenu-activo' : ''}">
+                <h:link outcome="/Ventas.xhtml"><i class="fa-solid fa-receipt"></i><span>Ver Ventas e Ingresos</span></h:link>
+            </li>
+            <li class="#{cc.attrs.opcion eq 'puntoVenta' ? 'submenu-activo' : ''}">
+                <h:link outcome="/PuntoVenta.xhtml"><i class="fa-solid fa-cash-register"></i><span>Punto de Venta</span></h:link>
+            </li>
+
+            <!-- Caja (antes era un menú aparte) -->
+            <li class="menu-desplegable #{cc.attrs.opcion eq 'aperturaCaja' or cc.attrs.opcion eq 'cierreCaja' ? 'abierto' : ''}" id="menuCaja">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuCaja')" aria-expanded="#{cc.attrs.opcion eq 'aperturaCaja' or cc.attrs.opcion eq 'cierreCaja'}">
+                    <i class="fa-solid fa-vault"></i><span>Caja</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu-interno" id="submenuCaja">
+                    <li class="#{cc.attrs.opcion eq 'aperturaCaja' ? 'submenu-activo' : ''}"><h:link outcome="/AperturaCaja.xhtml"><i class="fa-solid fa-lock-open"></i><span>Apertura de Caja</span></h:link></li>
+                    <li class="#{cc.attrs.opcion eq 'cierreCaja' ? 'submenu-activo' : ''}"><h:link outcome="/RegistrarCierreCaja.xhtml"><i class="fa-solid fa-lock"></i><span>Cierre de Caja</span></h:link></li>
+                </ul>
+            </li>
+
+            <!-- Notas de Crédito: sin páginas todavía -->
+            <li class="menu-desplegable" id="menuNotasCredito">
+                <a href="#" class="menu-enlace" onclick="toggleSubmenu(event, 'submenuNotasCredito')" aria-expanded="false">
+                    <i class="fa-solid fa-file-invoice-dollar"></i><span>Notas de Crédito</span><i class="fa-solid fa-chevron-down flecha-submenu"></i>
+                </a>
+                <ul class="submenu-interno" id="submenuNotasCredito">
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-list"></i><span>Ver Notas de Crédito</span><small></small></span></li>
+                    <li class="menu-proximamente"><span class="enlace-proximamente" title="Próximamente"><i class="fa-solid fa-plus"></i><span>Registrar Nota de Crédito</span><small></small></span></li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+</cc:implementation>
+</html>

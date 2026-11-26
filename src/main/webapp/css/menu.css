@@ -113,3 +113,50 @@
 .sidebar-menu .menu-desplegable.abierto > .menu-enlace .flecha-submenu {
     transform: rotate(180deg);
 }
+
+/* ==========================================
+   OPCIONES "PRÓXIMAMENTE" (menuVentas / menuAdministracion)
+   Opciones previstas que todavía no tienen página: se ven atenuadas y no se pueden pulsar.
+   ========================================== */
+/* Versión compacta: una sola línea, letra pequeña y un relojito en lugar de la etiqueta
+   (el texto "Próximamente" aparece al pasar el mouse, por el title). */
+.sidebar-menu .submenu li.menu-proximamente {
+    margin: 1px 0;
+}
+
+.sidebar-menu .submenu li.menu-proximamente .enlace-proximamente {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    color: #d8e5fa;
+    font-size: 11.5px;
+    line-height: 1.3;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sidebar-menu .submenu li.menu-proximamente .enlace-proximamente > span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sidebar-menu .submenu li.menu-proximamente .enlace-proximamente i {
+    width: 14px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.sidebar-menu .submenu li.menu-proximamente .enlace-proximamente small {
+    display: none;
+}
+
+.sidebar-menu .submenu li.menu-proximamente .enlace-proximamente::after {
+    content: "\f017";               /* fa-clock */
+    margin-left: auto;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 400;
+    font-size: 10px;
+}

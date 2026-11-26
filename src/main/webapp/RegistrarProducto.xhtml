@@ -307,8 +307,8 @@
 
                     <div class="grupo-titulo"><i class="fa-solid fa-layer-group"></i> Clasificación</div>
 
-                    <!-- CATEGORIA Y MARCA -->
-                    <div class="fila">
+                    <!-- CATEGORIA, MARCA Y TIPO DE BIEN -->
+                    <div class="fila fila-tres">
                         <div class="campo">
                             <label for="categoriaProducto">
                                 <i class="fa-solid fa-tags"></i>
@@ -330,6 +330,19 @@
                                 <f:selectItem itemLabel="-- Seleccione --" itemValue="0" />
                                 <f:selectItems value="#{catalogoBean.listaMarcas}" var="m"
                                                itemValue="#{m.marca_ID}" itemLabel="#{m.nombre}" />
+                            </h:selectOneMenu>
+                        </div>
+
+                        <!-- TIPO DE BIEN (CatalogoFACADE.ListaTipoBien = sp_ListaTipo_Bien) -->
+                        <div class="campo">
+                            <label for="tipoBien">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                                Tipo de Bien
+                            </label>
+                            <h:selectOneMenu id="tipoBien" value="#{catalogoBean.producto.tipoBien_ID}">
+                                <f:selectItem itemLabel="-- Seleccione --" itemValue="" />
+                                <f:selectItems value="#{catalogoBean.listaTiposBien}" var="tb"
+                                               itemValue="#{tb.tipoBien_ID}" itemLabel="#{tb.descripcionTipo}" />
                             </h:selectOneMenu>
                         </div>
                     </div>
@@ -368,8 +381,8 @@
 
                     <div class="grupo-titulo"><i class="fa-solid fa-coins"></i> Stock y precios</div>
 
-                    <!-- STOCK Y PRECIOS -->
-                    <div class="fila fila-tres">
+                    <!-- STOCK FINAL Y STOCK MINIMO -->
+                    <div class="fila">
                         <div class="campo">
                             <label for="stockActual">
                                 <i class="fa-solid fa-cubes"></i>
@@ -382,6 +395,21 @@
                                           value="Tiene ventas: el stock no se modifica aquí." />
                         </div>
 
+                        <div class="campo">
+                            <label for="stockMinimo">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                Stock Mínimo
+                            </label>
+                            <h:inputText id="stockMinimo" value="#{catalogoBean.producto.stockMinimo}"
+                                         pt:type="number" pt:min="0" pt:step="1">
+                                <f:convertNumber maxFractionDigits="2" groupingUsed="false" locale="en_US" />
+                            </h:inputText>
+                            <span class="ayuda-campo">Con stock igual o menor se avisa en amarillo.</span>
+                        </div>
+                    </div>
+
+                    <!-- PRECIOS -->
+                    <div class="fila fila-tres">
                         <div class="campo">
                             <label for="precioCompra">
                                 <i class="fa-solid fa-cart-shopping"></i>
@@ -403,10 +431,7 @@
                                 <f:convertNumber minFractionDigits="2" maxFractionDigits="2" groupingUsed="false" locale="en_US" />
                             </h:inputText>
                         </div>
-                    </div>
 
-                    <!-- PRECIO LIMITE, UTILIDAD Y MARGEN -->
-                    <div class="fila fila-tres">
                         <div class="campo">
                             <label for="precioLimite">
                                 <i class="fa-solid fa-arrow-down-short-wide"></i>
@@ -417,7 +442,10 @@
                                 <f:convertNumber minFractionDigits="2" maxFractionDigits="2" groupingUsed="false" locale="en_US" />
                             </h:inputText>
                         </div>
+                    </div>
 
+                    <!-- UTILIDAD Y MARGEN -->
+                    <div class="fila">
                         <div class="campo">
                             <label for="utilidadProducto">
                                 <i class="fa-solid fa-coins"></i>
